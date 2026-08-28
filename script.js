@@ -582,6 +582,26 @@ function initInstallPrompt() {
 }
 
 // ---------------------------------------------------------
+// BANNER "PROJETO GRATUITO" — reaparece a cada nova visita/sessão.
+// Usa sessionStorage (não localStorage) de propósito: fechando o X,
+// ele some só enquanto essa aba/sessão do navegador estiver aberta.
+// Ao abrir de novo depois (nova aba, navegador fechado e reaberto
+// etc.), o banner volta a aparecer.
+// ---------------------------------------------------------
+function initFreeBanner() {
+  const seenThisSession = sessionStorage.getItem("np3d_free_banner_seen") === "1";
+  if (seenThisSession) return;
+
+  const banner = el("freeBanner");
+  banner.hidden = false;
+
+  el("closeFreeBanner").addEventListener("click", () => {
+    banner.hidden = true;
+    sessionStorage.setItem("np3d_free_banner_seen", "1");
+  });
+}
+
+// ---------------------------------------------------------
 // INICIALIZAÇÃO
 // ---------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
@@ -590,4 +610,5 @@ document.addEventListener("DOMContentLoaded", () => {
   bindEvents();
   registerServiceWorker();
   initInstallPrompt();
+  initFreeBanner();
 });

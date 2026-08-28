@@ -60,15 +60,41 @@
 
   <!-- ===================== BANNER: INSTALAR APP ===================== -->
   <div class="install-banner" id="installBanner" hidden>
-    <img src="assets/icon-192.png" alt="" class="install-banner-icon" aria-hidden="true">
-    <div class="install-banner-text">
-      <strong>Instale a calculadora no seu celular</strong>
-      <span>Acesse com um toque, direto da tela inicial — sem precisar abrir o navegador.</span>
-    </div>
-    <button id="installBannerBtn" class="btn-install" type="button">Instalar app</button>
-    <button id="dismissInstallBanner" class="install-banner-close" type="button" aria-label="Fechar aviso">
+    <button id="dismissInstallBanner" class="banner-close" type="button" aria-label="Fechar aviso">
       <svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
     </button>
+    <div class="install-banner-main">
+      <img src="assets/icon-192.png" alt="" class="install-banner-icon" aria-hidden="true">
+      <div class="install-banner-text">
+        <strong>Instale a calculadora no seu celular</strong>
+        <span>Acesse com um toque, direto da tela inicial — sem precisar abrir o navegador.</span>
+      </div>
+    </div>
+    <button id="installBannerBtn" class="btn-install" type="button">Instalar app</button>
+  </div>
+
+  <!-- ===================== BANNER: PROJETO GRATUITO + INSTAGRAM ===================== -->
+  <!-- Aparece só na primeira visita (fica guardado no navegador da pessoa depois de fechado) -->
+  <div class="free-banner" id="freeBanner" hidden>
+    <button id="closeFreeBanner" class="banner-close" type="button" aria-label="Fechar aviso">
+      <svg viewBox="0 0 24 24" width="16" height="16"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+    </button>
+    <div class="free-banner-main">
+      <span class="free-banner-icon" aria-hidden="true">💚</span>
+      <p class="free-banner-text">
+        Esse projeto é 100% gratuito, feito com carinho pra comunidade Bambu Lab —
+        sem nenhuma intenção de cobrar nada de ninguém. Se quiser apoiar, nos siga lá:
+      </p>
+    </div>
+    <a class="btn-follow" href="https://www.instagram.com/nossoprojeto3d" target="_blank" rel="noopener noreferrer">
+      <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+        <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+        <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+        <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor"/>
+      </svg>
+      Seguir @nossoprojeto3d
+    </a>
+  </div>
   </div>
 
   <main class="page">
