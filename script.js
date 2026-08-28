@@ -122,9 +122,12 @@ function syncMaterialUI(prefillPrice) {
 // Remove qualquer caractere que não seja dígito conforme o
 // usuário digita, garantindo que nunca haja valor quebrado.
 // ---------------------------------------------------------
-function enforceIntegerInput(inputEl) {
+function enforceIntegerInput(inputEl, maxValue) {
   inputEl.addEventListener("input", () => {
-    const digitsOnly = inputEl.value.replace(/[^\d]/g, "");
+    let digitsOnly = inputEl.value.replace(/[^\d]/g, "");
+    if (typeof maxValue === "number" && digitsOnly !== "" && Number(digitsOnly) > maxValue) {
+      digitsOnly = String(maxValue);
+    }
     if (inputEl.value !== digitsOnly) inputEl.value = digitsOnly;
   });
 }
@@ -200,7 +203,7 @@ function validateAll() {
   const rules = [
     { input: jobNameInput, test: (v) => v.trim().length > 0 },
     { input: printHoursInput, test: (v) => v !== "" && Number.isInteger(Number(v)) && Number(v) >= 0 },
-    { input: printMinutesInput, test: (v) => v !== "" && Number.isInteger(Number(v)) && Number(v) > 0 },
+    { input: printMinutesInput, test: (v) => v !== "" && Number.isInteger(Number(v)) && Number(v) > 0 && Number(v) <= 59 },
     { input: printGramsInput, test: (v) => v !== "" && Number(v) > 0 },
     { input: pricePerKgInput, test: (v) => v !== "" && Number(v) > 0 },
     { input: kwhPriceInput, test: (v) => v !== "" && Number(v) > 0 },
@@ -497,7 +500,7 @@ function bindEvents() {
   });
 
   enforceIntegerInput(printHoursInput);
-  enforceIntegerInput(printMinutesInput);
+  enforceIntegerInput(printMinutesInput, 59);
 
   bindMarginExclusivity();
 }
