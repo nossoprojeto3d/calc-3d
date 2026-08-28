@@ -506,10 +506,66 @@ function bindEvents() {
 }
 
 // ---------------------------------------------------------
+// PWA — REGISTRA O SERVICE WORKER E CONTROLA O BOTÃO "INSTALAR APP"
+// ---------------------------------------------------------
+function registerServiceWorker() {
+  if (!("serviceWorker" in navigator)) return;
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch(() => {
+      // Sem problema se falhar (ex: rodando via file:// direto do disco) —
+      // o app continua funcionando normalmente, só sem o modo offline/instalação.
+    });
+  });
+}
+
+function initInstallPrompt() {
+  const installBtn = el("installBtn");
+  const modalOverlay = el("installModalOverlay");
+
+  const isStandalone = window.matchMedia("(display-mode: standalone)").matches
+    || window.navigator.standalone === true;
+  if (isStandalone) return; // já instalado, não precisa mostrar o botão
+
+  const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  if (isIOS) {
+    // Safari no iOS não dispara "beforeinstallprompt" — mostramos o botão
+    // direto, e ao clicar exibimos o passo a passo manual.
+    installBtn.hidden = false;
+    installBtn.addEventListener("click", () => { modalOverlay.hidden = false; });
+    el("closeInstallModal").addEventListener("click", () => { modalOverlay.hidden = true; });
+    return;
+  }
+
+  // Chrome/Edge/Android: o navegador avisa quando o app pode ser instalado.
+  let deferredPrompt = null;
+
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredPrompt = event;
+    installBtn.hidden = false;
+  });
+
+  installBtn.addEventListener("click", async () => {
+    if (!deferredPrompt) return;
+    deferredPrompt.prompt();
+    await deferredPrompt.userChoice;
+    deferredPrompt = null;
+    installBtn.hidden = true;
+  });
+
+  window.addEventListener("appinstalled", () => {
+    installBtn.hidden = true;
+  });
+}
+
+// ---------------------------------------------------------
 // INICIALIZAÇÃO
 // ---------------------------------------------------------
 document.addEventListener("DOMContentLoaded", () => {
   populateSelects();
   initTheme();
   bindEvents();
+  registerServiceWorker();
+  initInstallPrompt();
 });

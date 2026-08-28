@@ -118,6 +118,8 @@ input[type="number"]{
   line-height: 1.35;
 }
 
+.header-actions{ display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+
 .icon-btn{
   width: 38px; height: 38px;
   border-radius: 10px;
@@ -129,6 +131,55 @@ input[type="number"]{
   transition: border-color .15s ease, transform .15s ease;
 }
 .icon-btn:hover{ border-color: var(--accent-2); transform: translateY(-1px); }
+
+/* Botão de instalar o app: recebe um leve destaque no gradiente da marca */
+#installBtn{
+  border-color: var(--accent-1);
+  color: var(--accent-2);
+}
+
+/* ===================== MODAL (instruções de instalação no iPhone) ===================== */
+.modal-overlay{
+  position: fixed;
+  inset: 0;
+  background: rgba(6, 6, 9, 0.62);
+  backdrop-filter: blur(3px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 100;
+}
+
+.modal-card{
+  width: 100%;
+  max-width: 360px;
+  background: var(--surface);
+  border: 1px solid var(--accent-1);
+  border-radius: var(--radius);
+  padding: 22px;
+  box-shadow: var(--shadow), 0 0 40px -18px var(--accent-glow);
+}
+
+.modal-card h3{
+  margin: 0 0 14px;
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+.modal-card ol{
+  margin: 0 0 18px;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--text-muted);
+  line-height: 1.4;
+}
+.modal-card ol strong{ color: var(--text); }
+
+.modal-card .btn-secondary{ margin-top: 0; }
 
 /* ===================== LAYOUT ===================== */
 .page{

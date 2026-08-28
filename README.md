@@ -14,15 +14,39 @@ completa (histórico, modo profissional, importação de `.3MF`, PDF, dashboard 
 
 ```
 calc-bambu-v1/
-├── index.html   → estrutura da página
-├── style.css    → identidade visual (paleta, tipografia, componentes)
-├── script.js    → lógica de cálculo, impressoras/materiais e interações
-└── README.md    → este arquivo
+├── index.html          → estrutura da página
+├── style.css           → identidade visual (paleta, tipografia, componentes)
+├── script.js           → lógica de cálculo, impressoras/materiais e interações
+├── manifest.json        → configuração do app instalável (PWA)
+├── service-worker.js    → cache offline e habilita o botão "instalar"
+├── assets/
+│   ├── logo.png          → logo usada no cabeçalho
+│   ├── favicon.png       → ícone da aba do navegador
+│   ├── icon-192.png      → ícone do app instalado (Android/desktop)
+│   └── icon-512.png      → ícone do app instalado (tela cheia/splash)
+└── README.md            → este arquivo
 ```
 
 Os dados de impressoras e materiais Bambu Lab ficam no topo do `script.js`,
 nos arrays `PRINTERS` e `MATERIALS` — dá pra editar preços, adicionar ou
 remover itens direto ali, sem precisar mexer no resto do código.
+
+---
+
+## Instalar como aplicativo (PWA)
+
+O site tem um botão de instalar no cabeçalho (ícone de seta pra baixo).
+
+- **Android / Chrome / Edge**: o botão aparece sozinho quando o navegador
+  detecta que o app pode ser instalado. Basta tocar nele.
+- **iPhone / iPad (Safari)**: a Apple não permite instalar direto por um
+  botão — ao tocar, aparece um passo a passo explicando como usar o
+  "Compartilhar → Adicionar à Tela de Início".
+
+⚠️ **Importante**: isso só funciona quando o site está publicado com HTTPS
+(como acontece automaticamente no GitHub Pages). Abrindo o `index.html`
+direto do computador (`file://`), o navegador não oferece a opção de
+instalar — é só pra isso que existe o passo de publicação abaixo.
 
 ---
 
