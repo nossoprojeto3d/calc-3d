@@ -633,6 +633,25 @@ input[type="number"]{
   border-top: 1px solid var(--border);
 }
 
+.footer-verse{
+  margin: 0;
+  max-width: 380px;
+  font-family: var(--font-display);
+  font-style: italic;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: var(--text-muted);
+}
+.footer-verse span{
+  display: block;
+  margin-top: 4px;
+  font-style: normal;
+  font-size: 10.5px;
+  letter-spacing: 0.6px;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
 .footer-social{
   display: inline-flex;
   align-items: center;
