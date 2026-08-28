@@ -117,11 +117,13 @@
         </div>
       </div>
 
-      <!-- Aparece somente quando o material selecionado for "Outro" -->
+      <!-- Aparece somente quando o material selecionado for "Outro" — agora serve
+           só pra dar um nome ao material, o preço é sempre definido no campo
+           "Preço do filamento" lá embaixo, na seção Dados da peça. -->
       <div class="field" id="customMaterialWrap" hidden>
-        <label for="customMaterialPrice">Preço/kg do material personalizado (R$)</label>
-        <input type="number" id="customMaterialPrice" min="0" step="0.01" placeholder="Ex: 120.00">
-        <p class="field-error-text" id="customMaterialPriceError" hidden>Informe o preço por kg deste material.</p>
+        <label for="customMaterialName">Nome do material personalizado</label>
+        <input type="text" id="customMaterialName" placeholder="Ex: Metal 3D PA-CF">
+        <p class="field-error-text" id="customMaterialNameError" hidden>Informe o nome do material personalizado.</p>
       </div>
     </section>
 

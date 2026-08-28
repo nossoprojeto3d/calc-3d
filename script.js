@@ -44,7 +44,7 @@ const materialSelect    = el("materialSelect");
 const printerHint       = el("printerHint");
 const materialHint      = el("materialHint");
 const customWrap        = el("customMaterialWrap");
-const customPriceInput  = el("customMaterialPrice");
+const customNameInput   = el("customMaterialName");
 const jobNameInput      = el("jobName");
 const printHoursInput   = el("printHours");
 const printMinutesInput = el("printMinutes");
@@ -91,29 +91,35 @@ function updatePrinterHint() {
 
 /**
  * Ajusta a interface conforme o material selecionado: mostra/esconde
- * o campo de preço personalizado e atualiza a dica de preço padrão.
- * Quando prefillPrice=true (mudança feita pelo usuário), também
- * preenche automaticamente o campo "Preço do filamento (R$/kg)".
+ * o campo de nome personalizado (quando for "Outro") e prepara o
+ * campo "Preço do filamento" na seção seguinte.
+ * Quando prefillPrice=true (mudança feita pelo usuário), preenche o
+ * campo de preço: com o valor padrão do catálogo para materiais
+ * conhecidos, ou com "0.00" para "Outro" (a pessoa ajusta manualmente).
  * Na carga inicial da página (prefillPrice=false) o campo de preço
  * permanece vazio, para respeitar a regra de página limpa ao começar.
+ * A dica abaixo do select é sempre o mesmo texto fixo — não fala mais
+ * de valores, já que o preço agora vive só no campo da seção 2.
  */
 function syncMaterialUI(prefillPrice) {
   const material = MATERIALS.find((m) => m.id === materialSelect.value);
   const isCustom = material.id === "outro";
 
   customWrap.hidden = !isCustom;
+  materialHint.textContent = "Material utilizado na impressão";
 
   if (isCustom) {
-    materialHint.textContent = "Informe o preço por kg deste material abaixo.";
-    if (prefillPrice) pricePerKgInput.value = customPriceInput.value || "";
-  } else {
     if (prefillPrice) {
-      customPriceInput.value = "";
-      clearFieldError(customPriceInput);
+      pricePerKgInput.value = "0.00";
+      clearFieldError(pricePerKgInput);
+    }
+  } else {
+    customNameInput.value = "";
+    clearFieldError(customNameInput);
+    if (prefillPrice) {
       pricePerKgInput.value = material.pricePerKg.toFixed(2);
       clearFieldError(pricePerKgInput);
     }
-    materialHint.textContent = `Preço padrão: R$ ${material.pricePerKg.toFixed(2).replace(".", ",")}/kg`;
   }
 }
 
@@ -210,7 +216,7 @@ function validateAll() {
   ];
 
   if (isCustomMaterial) {
-    rules.push({ input: customPriceInput, test: (v) => v !== "" && Number(v) > 0 });
+    rules.push({ input: customNameInput, test: (v) => v.trim().length > 0 });
   }
 
   let firstInvalid = null;
@@ -299,10 +305,15 @@ function calculate() {
   // 8) Diferença adicionada pelo arredondamento
   const roundingDiff = finalPrice - calculatedPrice;
 
+  const selectedMaterial = MATERIALS.find((m) => m.id === materialSelect.value);
+  const materialName = selectedMaterial.id === "outro"
+    ? (customNameInput.value.trim() || "Outro (personalizado)")
+    : selectedMaterial.name;
+
   const result = {
     jobName: jobNameInput.value.trim(),
     printerName: printer.name,
-    materialName: MATERIALS.find((m) => m.id === materialSelect.value).name,
+    materialName,
     hours, minutes, grams,
     filamentCost, energyCost, energyKwh, totalCost,
     profit, calculatedPrice, finalPrice, roundingDiff,
@@ -358,7 +369,7 @@ function clearAll() {
   printMinutesInput.value = "";
   printGramsInput.value = "";
   pricePerKgInput.value = "";
-  customPriceInput.value = "";
+  customNameInput.value = "";
   kwhPriceInput.value = "";
 
   marginPctInput.value = "";
@@ -373,7 +384,7 @@ function clearAll() {
   el("roundToggleText").textContent = "Arredondar para .99 acima";
 
   [jobNameInput, printHoursInput, printMinutesInput, printGramsInput,
-   pricePerKgInput, customPriceInput, kwhPriceInput]
+   pricePerKgInput, customNameInput, kwhPriceInput]
     .forEach(clearFieldError);
 
   el("finalPrice").textContent   = "R$ 0,00";
@@ -477,11 +488,7 @@ function bindEvents() {
 
   materialSelect.addEventListener("change", () => syncMaterialUI(true));
 
-  customPriceInput.addEventListener("input", () => {
-    pricePerKgInput.value = customPriceInput.value;
-    clearFieldError(customPriceInput);
-    clearFieldError(pricePerKgInput);
-  });
+  customNameInput.addEventListener("input", () => clearFieldError(customNameInput));
 
   roundToggle.addEventListener("change", () => {
     el("roundToggleText").textContent = roundToggle.checked
