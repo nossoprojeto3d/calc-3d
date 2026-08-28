@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nosso Projeto 3D — Calculadora (V1 Básica)</title>
+
+<!-- Fontes: display técnico (Space Grotesk), corpo (Inter) e leitor numérico tipo display de impressora (JetBrains Mono) -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ===================== CABEÇALHO ===================== -->
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark" aria-hidden="true">
+        <!-- ícone: bico de extrusora estilizado -->
+        <svg viewBox="0 0 24 24" width="22" height="22">
+          <path d="M7 3h10l-1.4 7H8.4L7 3z" fill="currentColor" opacity="0.9"/>
+          <path d="M9 10h6l-1 5.5a2 2 0 0 1-2 1.6h0a2 2 0 0 1-2-1.6L9 10z" fill="currentColor"/>
+          <circle cx="12" cy="19.5" r="1.6" fill="currentColor"/>
+        </svg>
+      </span>
+      <div class="brand-text">
+        <strong>Nosso Projeto 3D</strong>
+        <span class="brand-tag">calculadora · v1 básica</span>
+      </div>
+    </div>
+
+    <button id="themeToggle" class="icon-btn" type="button" aria-label="Alternar tema claro/escuro" title="Alternar tema">
+      <svg id="iconMoon" viewBox="0 0 24 24" width="18" height="18"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" fill="currentColor"/></svg>
+      <svg id="iconSun" viewBox="0 0 24 24" width="18" height="18" style="display:none"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2v2.4M12 19.6V22M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2 12h2.4M19.6 12H22M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></g></svg>
+    </button>
+  </header>
+
+  <main class="page">
+
+    <!-- ===================== CARD: IMPRESSORA + MATERIAL ===================== -->
+    <section class="panel">
+      <h2 class="panel-title"><span class="step-dot">1</span> Impressora &amp; material</h2>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="printerSelect">Impressora Bambu Lab</label>
+          <select id="printerSelect"></select>
+          <p class="hint" id="printerHint">—</p>
+        </div>
+
+        <div class="field">
+          <label for="materialSelect">Material</label>
+          <select id="materialSelect"></select>
+          <p class="hint" id="materialHint">—</p>
+        </div>
+      </div>
+
+      <!-- Aparece somente quando o material selecionado for "Outro" -->
+      <div class="field" id="customMaterialWrap" hidden>
+        <label for="customMaterialPrice">Preço/kg do material personalizado (R$)</label>
+        <input type="number" id="customMaterialPrice" min="0" step="0.01" placeholder="Ex: 120.00">
+        <p class="field-error-text" id="customMaterialPriceError" hidden>Informe o preço por kg deste material.</p>
+      </div>
+    </section>
+
+    <!-- ===================== CARD: PARÂMETROS DA PEÇA ===================== -->
+    <section class="panel">
+      <h2 class="panel-title"><span class="step-dot">2</span> Dados da peça</h2>
+
+      <div class="field">
+        <label for="jobName">Nome do orçamento</label>
+        <input type="text" id="jobName" placeholder="Ex: Suporte de celular">
+        <p class="field-error-text" id="jobNameError" hidden>Informe um nome para o orçamento.</p>
+      </div>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="printHours">Tempo de impressão — horas</label>
+          <input type="number" id="printHours" min="0" step="1" inputmode="numeric" placeholder="Ex: 2">
+          <p class="field-error-text" id="printHoursError" hidden>Informe as horas (número inteiro, pode ser 0).</p>
+        </div>
+        <div class="field">
+          <label for="printMinutes">Tempo de impressão — minutos</label>
+          <input type="number" id="printMinutes" min="1" step="1" inputmode="numeric" placeholder="Ex: 30">
+          <p class="field-error-text" id="printMinutesError" hidden>Informe os minutos (inteiro, maior que 0).</p>
+        </div>
+      </div>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="printGrams">Peso do filamento utilizado (g)</label>
+          <input type="number" id="printGrams" min="0" step="1" placeholder="Ex: 45">
+          <p class="field-error-text" id="printGramsError" hidden>Informe o peso do filamento utilizado.</p>
+        </div>
+        <div class="field">
+          <label for="pricePerKg">Preço do filamento (R$/kg)</label>
+          <input type="number" id="pricePerKg" min="0" step="0.01" placeholder="Ex: 89.90">
+          <p class="field-error-text" id="pricePerKgError" hidden>Informe o preço do filamento por kg.</p>
+        </div>
+      </div>
+
+      <div class="field">
+        <label for="kwhPrice">Valor do kWh da sua energia (R$)</label>
+        <input type="number" id="kwhPrice" min="0" step="0.01" placeholder="Ex: 0.85">
+        <p class="field-error-text" id="kwhPriceError" hidden>Informe o valor do kWh da sua energia.</p>
+      </div>
+    </section>
+
+    <!-- ===================== CARD: MARGEM DE LUCRO ===================== -->
+    <section class="panel">
+      <h2 class="panel-title"><span class="step-dot">3</span> Margem de lucro</h2>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="marginPct">Margem de lucro (%)</label>
+          <input type="number" id="marginPct" min="0" step="1" placeholder="Ex: 100">
+        </div>
+        <div class="field">
+          <label for="marginFixed">Valor fixo (R$)</label>
+          <input type="number" id="marginFixed" min="0" step="0.01" placeholder="Ex: 15.00">
+        </div>
+      </div>
+      <p class="hint">Preencha apenas um dos dois — ao usar um, o outro fica bloqueado.</p>
+      <p class="field-error-text" id="marginError" hidden>Preencha a margem de lucro em % ou em valor fixo.</p>
+
+      <div class="field" style="margin-top: 14px;">
+        <span class="pseudo-label">Arredondamento inteligente</span>
+        <label class="switch">
+          <input type="checkbox" id="roundToggle" checked>
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+          <span class="switch-text" id="roundToggleText">Arredondar para .99 acima</span>
+        </label>
+      </div>
+
+      <button id="calcBtn" class="btn-primary" type="button">Calcular preço</button>
+      <button id="clearBtn" class="btn-secondary" type="button">Limpar tudo</button>
+    </section>
+
+    <!-- ===================== PAINEL DE RESULTADO (elemento de assinatura) ===================== -->
+    <section class="readout" id="readoutPanel">
+      <div class="readout-scanline" aria-hidden="true"></div>
+
+      <div class="readout-head">
+        <span class="readout-led" id="readoutLed" aria-hidden="true"></span>
+        PAINEL DE ORÇAMENTO
+      </div>
+
+      <div class="readout-main">
+        <span class="readout-label">Preço final sugerido</span>
+        <span class="readout-value" id="finalPrice">R$ 0,00</span>
+        <span class="readout-sub" id="roundingNote"></span>
+      </div>
+
+      <div class="readout-grid">
+        <div class="readout-cell">
+          <span class="readout-cell-label">Filamento</span>
+          <span class="readout-cell-value" id="filamentCost">R$ 0,00</span>
+          <span class="readout-cell-sub" id="filamentGramsSub">0 g utilizados</span>
+        </div>
+        <div class="readout-cell">
+          <span class="readout-cell-label">Energia</span>
+          <span class="readout-cell-value" id="energyCost">R$ 0,00</span>
+          <span class="readout-cell-sub" id="energyKwhSub">0,00 kWh consumidos</span>
+        </div>
+        <div class="readout-cell">
+          <span class="readout-cell-label">Custo total</span>
+          <span class="readout-cell-value" id="totalCost">R$ 0,00</span>
+        </div>
+        <div class="readout-cell">
+          <span class="readout-cell-label">Lucro</span>
+          <span class="readout-cell-value" id="profitValue">R$ 0,00</span>
+        </div>
+      </div>
+
+      <button id="copyBtn" class="btn-copy" type="button" disabled>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 4h9a2 2 0 0 1 2 2v12M6 8h9a2 2 0 0 1 2 2v10H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <span id="copyBtnLabel">Copiar orçamento para o WhatsApp</span>
+      </button>
+    </section>
+
+    <p class="footnote">
+      Versão de validação (V1) — inclui apenas o fluxo básico de precificação. Modo profissional, histórico, importação de .3MF, PDF e app instalável (PWA) chegam na V2.
+    </p>
+
+  </main>
+
+<script src="script.js"></script>
+</body>
+</html>

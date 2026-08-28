@@ -1,0 +1,422 @@
+/* =========================================================
+   NOSSO PROJETO 3D — V1 BÁSICA
+   Token system:
+   - Paleta vibrante e "brilhosa": gradiente violeta -> ciano,
+     usada de forma consistente em toda a interface, incluindo
+     o preço final
+   - Tipografia: Space Grotesk (display) / Inter (corpo) / JetBrains Mono (leitura numérica)
+   - Elemento de assinatura: painel "readout" no estilo tela LCD de impressora
+   ========================================================= */
+
+:root{
+  --bg: #101014;
+  --surface: #17171E;
+  --surface-2: #1F1F28;
+  --border: #30303C;
+  --text: #F1F1F6;
+  --text-muted: #8D8DA0;
+
+  /* acento vibrante (gradiente violeta -> ciano) usado em toda a interface,
+     inclusive no preço final */
+  --accent-1: #8B5CF6;
+  --accent-2: #22D3EE;
+  --accent-grad: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
+  --accent-soft: rgba(139, 92, 246, 0.16);
+  --accent-glow: rgba(34, 211, 238, 0.45);
+
+  /* aviso (nota de arredondamento) */
+  --amber: #FBBF24;
+
+  /* erro de validação */
+  --error: #F0596B;
+  --error-soft: rgba(240, 89, 107, 0.12);
+
+  --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
+  --font-body: 'Inter', 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Courier New', monospace;
+
+  --radius: 14px;
+  --shadow: 0 10px 30px rgba(0,0,0,0.4);
+}
+
+[data-theme="light"]{
+  --bg: #F3F2F8;
+  --surface: #FFFFFF;
+  --surface-2: #F7F6FB;
+  --border: #E1DEEE;
+  --text: #14141B;
+  --text-muted: #67677A;
+
+  --accent-1: #7C3AED;
+  --accent-2: #0EA5C4;
+  --accent-grad: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
+  --accent-soft: rgba(124, 58, 237, 0.10);
+  --accent-glow: rgba(14, 165, 196, 0.30);
+
+  --shadow: 0 10px 24px rgba(30, 20, 50, 0.10);
+}
+
+*{ box-sizing: border-box; }
+
+/* Garante que o atributo [hidden] sempre vença, independentemente
+   de outras regras de display definidas nos componentes (.field, etc.) */
+[hidden]{ display: none !important; }
+
+html, body{
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Remove as setinhas nativas de incremento/decremento dos campos numéricos */
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button{
+  -webkit-appearance: none;
+  margin: 0;
+}
+input[type="number"]{
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* ===================== CABEÇALHO ===================== */
+.topbar{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: blur(8px);
+  z-index: 10;
+}
+
+.brand{ display: flex; align-items: center; gap: 10px; }
+
+.brand-mark{
+  width: 36px; height: 36px;
+  display: flex; align-items: center; justify-content: center;
+  border-radius: 10px;
+  background: var(--accent-grad);
+  color: #0D0D12;
+  box-shadow: 0 4px 14px var(--accent-glow);
+}
+
+.brand-text{ display: flex; flex-direction: column; line-height: 1.15; }
+.brand-text strong{ font-family: var(--font-display); font-size: 15px; letter-spacing: 0.2px; }
+.brand-tag{ font-size: 11px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.6px; }
+
+.icon-btn{
+  width: 38px; height: 38px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: border-color .15s ease, transform .15s ease;
+}
+.icon-btn:hover{ border-color: var(--accent-2); transform: translateY(-1px); }
+
+/* ===================== LAYOUT ===================== */
+.page{
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 22px 16px 60px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.panel{
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.panel-title{
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 600;
+  margin: 0 0 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.step-dot{
+  width: 22px; height: 22px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  color: #0D0D12;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  font-weight: 700;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.field-grid{ display: grid; gap: 14px; }
+.field-grid.two-cols{ grid-template-columns: 1fr 1fr; }
+@media (max-width: 520px){
+  .field-grid.two-cols{ grid-template-columns: 1fr; }
+}
+
+.field{ display: flex; flex-direction: column; gap: 6px; margin-bottom: 14px; }
+.field:last-child{ margin-bottom: 0; }
+
+.field label, .pseudo-label{
+  font-size: 12.5px;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+.field select,
+.field input[type="text"],
+.field input[type="number"]{
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  padding: 10px 12px;
+  color: var(--text);
+  font-family: var(--font-body);
+  font-size: 14.5px;
+  width: 100%;
+  transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.field select:focus,
+.field input:focus{
+  outline: none;
+  border-color: var(--accent-2);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+
+/* Campo bloqueado por conta da seleção mutuamente exclusiva (% x valor fixo) */
+.field input.disabled-field{
+  opacity: 0.4;
+  cursor: not-allowed;
+  background: var(--surface);
+}
+
+/* Estado de campo obrigatório não preenchido */
+.field select.invalid,
+.field input.invalid{
+  border-color: var(--error);
+  background: var(--error-soft);
+}
+.field select.invalid:focus,
+.field input.invalid:focus{
+  box-shadow: 0 0 0 3px var(--error-soft);
+}
+
+.field-error-text{
+  margin: 0;
+  font-size: 12px;
+  color: var(--error);
+}
+
+.hint{
+  margin: 0;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+/* Switch (toggle) */
+.switch{
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  margin-top: 2px;
+}
+.switch input{ position: absolute; opacity: 0; width: 0; height: 0; }
+.switch-track{
+  width: 40px; height: 22px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  position: relative;
+  transition: background .15s ease;
+  flex-shrink: 0;
+}
+.switch-thumb{
+  position: absolute;
+  top: 2px; left: 2px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: var(--text-muted);
+  transition: transform .18s ease, background .18s ease;
+}
+.switch input:checked + .switch-track{ background: var(--accent-grad); border-color: transparent; }
+.switch input:checked + .switch-track .switch-thumb{ transform: translateX(18px); background: #0D0D12; }
+.switch-text{ font-size: 13.5px; color: var(--text); }
+
+/* Botão principal (Calcular preço) */
+.btn-primary{
+  width: 100%;
+  margin-top: 4px;
+  padding: 13px 16px;
+  border: none;
+  border-radius: 10px;
+  background: var(--accent-grad);
+  color: #0D0D12;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: transform .12s ease, box-shadow .12s ease;
+  box-shadow: 0 6px 20px var(--accent-soft);
+}
+.btn-primary:hover{ transform: translateY(-1px); box-shadow: 0 10px 26px var(--accent-glow); }
+.btn-primary:active{ transform: translateY(0); }
+
+/* Botão secundário (Limpar tudo) */
+.btn-secondary{
+  width: 100%;
+  margin-top: 10px;
+  padding: 12px 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13.5px;
+  letter-spacing: 0.2px;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease;
+}
+.btn-secondary:hover{ border-color: var(--accent-2); color: var(--text); }
+
+/* ===================== PAINEL DE RESULTADO (assinatura visual) ===================== */
+.readout{
+  position: relative;
+  overflow: hidden;
+  background: radial-gradient(120% 140% at 15% 0%, #241E36 0%, var(--surface) 55%);
+  border: 1px solid var(--accent-1);
+  border-radius: var(--radius);
+  padding: 20px;
+  box-shadow: var(--shadow), 0 0 0 1px rgba(139,92,246,0.08), 0 0 40px -18px var(--accent-glow);
+}
+
+[data-theme="light"] .readout{
+  background: radial-gradient(120% 140% at 15% 0%, #EFE8FC 0%, var(--surface) 60%);
+}
+
+.readout-scanline{
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(139,92,246,0.04) 0px,
+    rgba(139,92,246,0.04) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  mix-blend-mode: overlay;
+}
+
+.readout-head{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  color: var(--accent-2);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.readout-led{
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--accent-grad);
+  box-shadow: 0 0 10px var(--accent-glow);
+  animation: blink 2.4s ease-in-out infinite;
+}
+@keyframes blink{ 0%,100%{ opacity: 1; } 50%{ opacity: 0.35; } }
+
+.readout-main{
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+.readout-label{ font-size: 12.5px; color: var(--text-muted); }
+.readout-value{
+  font-family: var(--font-mono);
+  font-size: clamp(32px, 8vw, 44px);
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  background: var(--accent-grad);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 18px var(--accent-glow));
+  transition: opacity .15s ease;
+}
+.readout-value.pulse{ animation: pulseIn .4s ease; }
+@keyframes pulseIn{ from{ opacity: 0.2; transform: translateY(2px); } to{ opacity: 1; transform: translateY(0); } }
+
+.readout-sub{ font-size: 12px; color: var(--amber); min-height: 16px; }
+
+.readout-grid{
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.readout-cell{
+  background: rgba(0,0,0,0.22);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+[data-theme="light"] .readout-cell{ background: rgba(0,0,0,0.03); }
+
+.readout-cell-label{ font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
+.readout-cell-value{ font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--accent-2); }
+.readout-cell-sub{ font-size: 11px; color: var(--text-muted); }
+
+/* Botão de copiar orçamento para WhatsApp */
+.btn-copy{
+  width: 100%;
+  padding: 12px 16px;
+  border: 1px solid var(--accent-1);
+  border-radius: 10px;
+  background: var(--accent-soft);
+  color: var(--text);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13.5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  cursor: pointer;
+  transition: background .15s ease, opacity .15s ease, box-shadow .15s ease;
+}
+.btn-copy:hover{ box-shadow: 0 6px 18px var(--accent-soft); }
+.btn-copy:disabled{ opacity: 0.4; cursor: not-allowed; box-shadow: none; }
+.btn-copy.copied{ border-color: var(--accent-2); color: var(--accent-2); background: var(--accent-soft); }
+
+.footnote{
+  text-align: center;
+  font-size: 12px;
+  color: var(--text-muted);
+  padding-top: 6px;
+}
