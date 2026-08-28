@@ -138,7 +138,77 @@ input[type="number"]{
   color: var(--accent-2);
 }
 
-/* ===================== MODAL (instruções de instalação no iPhone) ===================== */
+/* ===================== BANNER: INSTALAR APP ===================== */
+.install-banner{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: calc(100% - 32px);
+  max-width: 720px;
+  margin: 16px auto 0;
+  padding: 12px 14px;
+  background: var(--accent-soft);
+  border: 1px solid var(--accent-1);
+  border-radius: 12px;
+  box-shadow: 0 6px 20px -10px var(--accent-glow);
+  box-sizing: border-box;
+}
+
+.install-banner-icon{
+  width: 36px; height: 36px;
+  border-radius: 9px;
+  flex-shrink: 0;
+}
+
+.install-banner-text{
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  flex: 1;
+  min-width: 0;
+}
+.install-banner-text strong{ font-family: var(--font-display); font-size: 13.5px; }
+.install-banner-text span{ font-size: 12px; color: var(--text-muted); }
+
+.btn-install{
+  flex-shrink: 0;
+  padding: 9px 16px;
+  border: none;
+  border-radius: 9px;
+  background: var(--accent-grad);
+  color: #0D0D12;
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: transform .12s ease, box-shadow .12s ease;
+}
+.btn-install:hover{ transform: translateY(-1px); box-shadow: 0 8px 18px var(--accent-glow); }
+
+.install-banner-close{
+  flex-shrink: 0;
+  width: 26px; height: 26px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: color .15s ease, background .15s ease;
+}
+.install-banner-close:hover{ color: var(--text); background: rgba(0,0,0,0.15); }
+
+@media (max-width: 520px){
+  .install-banner{ flex-wrap: wrap; padding: 14px; }
+  .install-banner-text{ order: 1; flex-basis: calc(100% - 48px); }
+  .install-banner-icon{ order: 0; }
+  .install-banner-close{ order: 2; }
+  .btn-install{ order: 3; width: 100%; margin-top: 2px; }
+}
+
+/* Margem superior do conteúdo principal quando o banner aparece,
+   pra não colar direto na barra de topo */
 .modal-overlay{
   position: fixed;
   inset: 0;

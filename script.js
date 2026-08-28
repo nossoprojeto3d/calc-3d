@@ -520,19 +520,40 @@ function registerServiceWorker() {
 
 function initInstallPrompt() {
   const installBtn = el("installBtn");
+  const banner = el("installBanner");
+  const bannerBtn = el("installBannerBtn");
+  const dismissBtn = el("dismissInstallBanner");
   const modalOverlay = el("installModalOverlay");
 
   const isStandalone = window.matchMedia("(display-mode: standalone)").matches
     || window.navigator.standalone === true;
-  if (isStandalone) return; // já instalado, não precisa mostrar o botão
+  if (isStandalone) return; // já instalado, não precisa mostrar nada
 
+  const wasDismissed = localStorage.getItem("np3d_install_banner_dismissed") === "1";
   const isIOS = /iphone|ipad|ipod/i.test(navigator.userAgent);
+
+  function showInstallUI() {
+    installBtn.hidden = false;
+    if (!wasDismissed) banner.hidden = false;
+  }
+
+  function hideInstallUI() {
+    installBtn.hidden = true;
+    banner.hidden = true;
+  }
+
+  dismissBtn.addEventListener("click", () => {
+    banner.hidden = true;
+    localStorage.setItem("np3d_install_banner_dismissed", "1");
+  });
 
   if (isIOS) {
     // Safari no iOS não dispara "beforeinstallprompt" — mostramos o botão
-    // direto, e ao clicar exibimos o passo a passo manual.
-    installBtn.hidden = false;
-    installBtn.addEventListener("click", () => { modalOverlay.hidden = false; });
+    // e o banner direto, e ao clicar exibimos o passo a passo manual.
+    showInstallUI();
+    const openInstructions = () => { modalOverlay.hidden = false; };
+    installBtn.addEventListener("click", openInstructions);
+    bannerBtn.addEventListener("click", openInstructions);
     el("closeInstallModal").addEventListener("click", () => { modalOverlay.hidden = true; });
     return;
   }
@@ -543,20 +564,21 @@ function initInstallPrompt() {
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     deferredPrompt = event;
-    installBtn.hidden = false;
+    showInstallUI();
   });
 
-  installBtn.addEventListener("click", async () => {
+  const triggerInstall = async () => {
     if (!deferredPrompt) return;
     deferredPrompt.prompt();
     await deferredPrompt.userChoice;
     deferredPrompt = null;
-    installBtn.hidden = true;
-  });
+    hideInstallUI();
+  };
 
-  window.addEventListener("appinstalled", () => {
-    installBtn.hidden = true;
-  });
+  installBtn.addEventListener("click", triggerInstall);
+  bannerBtn.addEventListener("click", triggerInstall);
+
+  window.addEventListener("appinstalled", hideInstallUI);
 }
 
 // ---------------------------------------------------------
