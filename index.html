@@ -42,6 +42,13 @@
         <svg id="iconMoon" viewBox="0 0 24 24" width="18" height="18"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" fill="currentColor"/></svg>
         <svg id="iconSun" viewBox="0 0 24 24" width="18" height="18" style="display:none"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2v2.4M12 19.6V22M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2 12h2.4M19.6 12H22M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></g></svg>
       </button>
+
+      <button id="settingsBtn" class="icon-btn" type="button" aria-label="Configurações da loja" title="Configurações da loja">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+        </svg>
+      </button>
     </div>
   </header>
 
@@ -55,6 +62,88 @@
         <li>Toque em <strong>"Adicionar"</strong> no canto superior direito.</li>
       </ol>
       <button id="closeInstallModal" class="btn-secondary" type="button">Entendi</button>
+    </div>
+  </div>
+
+  <!-- Modal de configurações da loja — mesmo estilo visual do modal de instalação
+       acima. Todos os campos são opcionais; ao salvar viram os valores padrão
+       da calculadora (aplicados automaticamente nos campos correspondentes). -->
+  <div class="modal-overlay" id="settingsModalOverlay" hidden>
+    <div class="modal-card modal-card-lg">
+      <h3>Configurações da loja</h3>
+      <p class="hint">Preencha o que fizer sentido pro seu negócio — tudo aqui é opcional e só vira padrão depois de salvar.</p>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="settingsKwh">Valor padrão do kWh (R$)</label>
+          <input type="number" id="settingsKwh" min="0" step="0.01" placeholder="Ex: 0.85">
+        </div>
+        <div class="field">
+          <label for="settingsMarginPct">Margem de lucro padrão (%)</label>
+          <input type="number" id="settingsMarginPct" min="0" step="1" placeholder="Ex: 100">
+        </div>
+      </div>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="settingsPrinterPrice">Preço pago na impressora (R$)</label>
+          <input type="number" id="settingsPrinterPrice" min="0" step="0.01" placeholder="Ex: 3500.00">
+        </div>
+        <div class="field">
+          <label for="settingsPrinterLifespan">Vida útil estimada (horas)</label>
+          <input type="number" id="settingsPrinterLifespan" min="0" step="1" placeholder="Ex: 4000">
+          <p class="hint">Junto com o preço acima, calcula sozinho o custo profissional "Desgaste da máquina".</p>
+        </div>
+      </div>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="settingsHourlyRate">Seu valor-hora (R$)</label>
+          <input type="number" id="settingsHourlyRate" min="0" step="0.01" placeholder="Ex: 25.00">
+          <p class="hint">Calcula sozinho o custo profissional "Mão de obra" (junto com o tempo de preparo).</p>
+        </div>
+        <div class="field">
+          <label for="settingsFailurePct">Margem de falha padrão (%)</label>
+          <input type="number" id="settingsFailurePct" min="0" step="1" placeholder="Ex: 10">
+          <p class="hint">Só é usada se o item "Margem de falha" do modo Profissional estiver ligado.</p>
+        </div>
+      </div>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="settingsStoreName">Nome da loja</label>
+          <input type="text" id="settingsStoreName" placeholder="Ex: NP3D Impressões">
+        </div>
+        <div class="field">
+          <label for="settingsCity">Cidade</label>
+          <input type="text" id="settingsCity" placeholder="Ex: Belo Horizonte/MG">
+        </div>
+      </div>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="settingsWhatsapp">WhatsApp</label>
+          <input type="text" id="settingsWhatsapp" placeholder="Ex: (31) 99999-0000">
+        </div>
+        <div class="field">
+          <label for="settingsInstagram">Instagram</label>
+          <input type="text" id="settingsInstagram" placeholder="Ex: @sualoja3d">
+        </div>
+      </div>
+
+      <div class="field">
+        <span class="pseudo-label">Arredondamento favorito</span>
+        <label class="switch">
+          <input type="checkbox" id="settingsRoundToggle" checked>
+          <span class="switch-track"><span class="switch-thumb"></span></span>
+          <span class="switch-text" id="settingsRoundToggleText">Arredondar para .99 acima</span>
+        </label>
+      </div>
+
+      <div class="modal-actions">
+        <button id="settingsResetBtn" class="btn-secondary" type="button">Restaurar padrão</button>
+        <button id="settingsSaveBtn" class="btn-primary" type="button">Salvar</button>
+      </div>
     </div>
   </div>
 
@@ -98,6 +187,12 @@
   </div>
 
   <main class="page">
+
+    <!-- ===================== SEGMENTED CONTROL: BÁSICO / PROFISSIONAL ===================== -->
+    <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Modo da calculadora">
+      <button type="button" class="mode-switch-btn active" data-mode="basico" role="tab" aria-pressed="true">Básico</button>
+      <button type="button" class="mode-switch-btn" data-mode="profissional" role="tab" aria-pressed="false">Profissional</button>
+    </div>
 
     <!-- ===================== CARD: IMPRESSORA + MATERIAL ===================== -->
     <section class="panel">
@@ -170,6 +265,19 @@
       </div>
     </section>
 
+    <!-- ===================== CARD: CUSTOS PROFISSIONAIS (só no modo Profissional) =====================
+         Só fica visível quando o modo Profissional está ativo — usa a mesma
+         animação de expansão (.reveal) dos itens individuais logo abaixo. -->
+    <div class="reveal" id="proSection" hidden>
+      <div class="reveal-inner">
+        <section class="panel pro-panel">
+          <h2 class="panel-title"><span class="step-badge">PRO</span> Custos profissionais</h2>
+          <p class="hint">Ative os custos que fizerem sentido pro seu negócio — o que estiver desligado não entra na conta.</p>
+          <div class="pro-item-grid" id="proItemGrid"></div>
+        </section>
+      </div>
+    </div>
+
     <!-- ===================== CARD: MARGEM DE LUCRO ===================== -->
     <section class="panel">
       <h2 class="panel-title"><span class="step-dot">3</span> Margem de lucro</h2>
@@ -236,6 +344,13 @@
         </div>
       </div>
 
+      <!-- Gráfico de pizza com o breakdown dos custos — só aparece depois do
+           primeiro cálculo (não faz sentido desenhar uma pizza zerada). -->
+      <div class="readout-pie" id="readoutPie" hidden>
+        <div class="pie-chart" id="pieChart"></div>
+        <div class="pie-legend" id="pieLegend"></div>
+      </div>
+
       <button id="copyBtn" class="btn-copy" type="button" disabled>
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 4h9a2 2 0 0 1 2 2v12M6 8h9a2 2 0 0 1 2 2v10H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
         <span id="copyBtnLabel">Copiar orçamento para o WhatsApp</span>
@@ -248,13 +363,13 @@
         <span>Provérbios 16:3</span>
       </p>
 
-      <a class="footer-social" href="https://www.instagram.com/nossoprojeto3d" target="_blank" rel="noopener noreferrer" aria-label="Siga a Nosso Projeto 3D no Instagram">
+      <a class="footer-social" id="footerSocialLink" href="https://www.instagram.com/nossoprojeto3d" target="_blank" rel="noopener noreferrer" aria-label="Siga a Nosso Projeto 3D no Instagram">
         <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
           <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.7"/>
           <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
           <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor"/>
         </svg>
-        <span>@nossoprojeto3d</span>
+        <span id="footerSocialHandle">@nossoprojeto3d</span>
       </a>
 
       <span class="footer-copy">© 2026 Nosso Projeto 3D · Todos os direitos reservados</span>

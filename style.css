@@ -23,6 +23,9 @@
   --accent-grad: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
   --accent-soft: rgba(139, 92, 246, 0.16);
   --accent-glow: rgba(34, 211, 238, 0.45);
+  /* tom intermediário do gradiente violeta -> ciano, usado no gráfico de
+     pizza (fatia "Lucro") sem sair da paleta já estabelecida */
+  --accent-mid: color-mix(in srgb, var(--accent-1) 50%, var(--accent-2) 50%);
 
   /* aviso (nota de arredondamento) */
   --amber: #FBBF24;
@@ -324,6 +327,29 @@ input[type="number"]{
 
 .modal-card .btn-secondary{ margin-top: 0; }
 
+/* Variante maior do modal, usada nas Configurações da loja — tem bem
+   mais campos que o modal de instruções de instalação, então precisa
+   de mais largura e de rolagem própria em telas baixas. */
+.modal-card-lg{
+  max-width: 480px;
+  max-height: 86vh;
+  overflow-y: auto;
+}
+.modal-card-lg h3{ margin-bottom: 6px; }
+.modal-card-lg > .hint{ margin-bottom: 16px; }
+
+.modal-actions{
+  display: flex;
+  gap: 10px;
+  margin-top: 4px;
+}
+.modal-actions .btn-primary,
+.modal-actions .btn-secondary{
+  margin-top: 0;
+  width: auto;
+  flex: 1;
+}
+
 /* ===================== LAYOUT ===================== */
 .page{
   max-width: 720px;
@@ -333,6 +359,49 @@ input[type="number"]{
   flex-direction: column;
   gap: 16px;
 }
+
+/* ===================== SEGMENTED CONTROL: BÁSICO / PROFISSIONAL ===================== */
+.mode-switch{
+  display: flex;
+  gap: 4px;
+  padding: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+}
+
+.mode-switch-btn{
+  flex: 1;
+  padding: 9px 14px;
+  border: none;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background .15s ease, color .15s ease, box-shadow .15s ease;
+}
+.mode-switch-btn:hover{ color: var(--text); }
+.mode-switch-btn.active{
+  background: var(--accent-grad);
+  color: #0D0D12;
+  box-shadow: 0 6px 16px var(--accent-soft);
+}
+
+/* ===================== ANIMAÇÃO DE EXPANSÃO =====================
+   Usada tanto pela seção "Custos profissionais" (modo Profissional)
+   quanto pelo campo de valor de cada custo profissional (switch on/off).
+   Truque do grid-template-rows: 0fr -> 1fr anima a altura de "auto"
+   sem precisar calcular pixels em JS. */
+.reveal{
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows .28s ease;
+}
+.reveal.open{ grid-template-rows: 1fr; }
+.reveal-inner{ overflow: hidden; min-height: 0; }
 
 .panel{
   background: var(--surface);
@@ -361,6 +430,77 @@ input[type="number"]{
   font-weight: 700;
   display: flex; align-items: center; justify-content: center;
   flex-shrink: 0;
+}
+
+/* Badge "PRO" no título do card de custos profissionais — mesmo papel
+   visual do .step-dot numerado, mas sem número (a seção não faz parte
+   da sequência fixa 1/2/3 do fluxo Básico). */
+.step-badge{
+  padding: 0 8px;
+  height: 22px;
+  border-radius: 999px;
+  background: var(--accent-grad);
+  color: #0D0D12;
+  font-family: var(--font-mono);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.4px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+/* ===================== ITENS DE CUSTO PROFISSIONAL ===================== */
+.pro-item-grid{
+  display: grid;
+  gap: 12px;
+}
+
+.pro-item{
+  padding: 12px;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+
+/* Botões de atalho (ex.: 5% / 10% / 15% na Margem de falha) — preenchem
+   o campo ao lado com um toque, sem travar a digitação manual. */
+.chip-row{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.chip-btn{
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
+}
+.chip-btn:hover{ border-color: var(--accent-2); color: var(--text); }
+.chip-btn.active{
+  background: var(--accent-grad);
+  border-color: transparent;
+  color: #0D0D12;
+}
+
+.pro-item-head{
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pro-item-label{
+  font-size: 13.5px;
+  color: var(--text);
+  font-weight: 500;
 }
 
 .field-grid{ display: grid; gap: 14px; margin-bottom: 14px; }
@@ -599,6 +739,60 @@ input[type="number"]{
 .readout-cell-label{ font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
 .readout-cell-value{ font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--accent-2); }
 .readout-cell-sub{ font-size: 11px; color: var(--text-muted); }
+
+/* ===================== GRÁFICO DE PIZZA (breakdown de custos) ===================== */
+.readout-pie{
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.pie-chart{ flex-shrink: 0; line-height: 0; }
+
+.pie-legend{
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1;
+  min-width: 0;
+}
+
+.pie-legend-item{
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.pie-legend-swatch{
+  width: 9px; height: 9px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+
+.pie-legend-label{
+  color: var(--text-muted);
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pie-legend-value{
+  font-family: var(--font-mono);
+  color: var(--text);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+@media (max-width: 420px){
+  .readout-pie{ flex-direction: column; align-items: stretch; }
+  .pie-chart{ align-self: center; }
+}
 
 /* Botão de copiar orçamento para WhatsApp */
 .btn-copy{
