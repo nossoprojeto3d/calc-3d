@@ -816,6 +816,41 @@ input[type="number"]{
 .btn-copy:disabled{ opacity: 0.4; cursor: not-allowed; box-shadow: none; }
 .btn-copy.copied{ border-color: var(--accent-2); color: var(--accent-2); background: var(--accent-soft); }
 
+/* Botão de exportação (PDF) — secundário e discreto de propósito,
+   abaixo do botão principal de copiar pro WhatsApp (sem o destaque do gradiente). */
+.export-actions{
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.btn-ghost{
+  flex: 1;
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease;
+}
+.btn-ghost:hover{ border-color: var(--accent-2); color: var(--text); }
+.btn-ghost:disabled{ opacity: 0.4; cursor: not-allowed; border-color: var(--border); color: var(--text-muted); }
+
+.export-error{ margin-top: 8px; text-align: center; }
+
+@media (max-width: 420px){
+  .export-actions{ flex-direction: column; }
+}
+
 /* ===================== RODAPÉ ===================== */
 .site-footer{
   display: flex;

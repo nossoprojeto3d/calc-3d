@@ -10,12 +10,15 @@
 // ---------------------------------------------------------
 // DADOS: IMPRESSORAS BAMBU LAB
 // ---------------------------------------------------------
+// avgPurchasePrice/avgLifespanHours = preço médio de mercado e vida útil
+// estimada, usados pelo cálculo automático de "Desgaste da máquina" no
+// modo Profissional (ver computeAutoWearValue).
 const PRINTERS = [
-  { id: "a1-combo",   name: "Bambu Lab A1 Combo",   power: 150,  desc: "150W · Multicolor com AMS" },
-  { id: "a1-mini",    name: "Bambu Lab A1 Mini",    power: 150,  desc: "150W · Compacta, ideal para peças pequenas" },
-  { id: "p1s",        name: "Bambu Lab P1S",        power: 350,  desc: "350W · Câmara fechada, alta velocidade" },
-  { id: "p1p",        name: "Bambu Lab P1P",        power: 350,  desc: "350W · Estrutura aberta, alta velocidade" },
-  { id: "x1-carbon",  name: "Bambu Lab X1 Carbon",  power: 1000, desc: "1000W · Topo de linha, lidar ativo" },
+  { id: "a1-combo",   name: "Bambu Lab A1 Combo",   power: 150,  desc: "150W · Multicolor com AMS",                avgPurchasePrice: 4400,  avgLifespanHours: 8000 },
+  { id: "a1-mini",    name: "Bambu Lab A1 Mini",    power: 150,  desc: "150W · Compacta, ideal para peças pequenas", avgPurchasePrice: 2900,  avgLifespanHours: 8000 },
+  { id: "p1s",        name: "Bambu Lab P1S",        power: 350,  desc: "350W · Câmara fechada, alta velocidade",    avgPurchasePrice: 7500,  avgLifespanHours: 10000 },
+  { id: "p1p",        name: "Bambu Lab P1P",        power: 350,  desc: "350W · Estrutura aberta, alta velocidade",  avgPurchasePrice: 4800,  avgLifespanHours: 10000 },
+  { id: "x1-carbon",  name: "Bambu Lab X1 Carbon",  power: 1000, desc: "1000W · Topo de linha, lidar ativo",        avgPurchasePrice: 13000, avgLifespanHours: 12000 },
 ];
 
 // ---------------------------------------------------------
@@ -41,14 +44,21 @@ const MATERIALS = [
 // (filamento + energia), do mesmo jeito que a margem de lucro em %.
 // unit "laborMinutes" = minutos de preparo informados, convertidos em
 // R$ usando o valor-hora das Configurações da loja ((valor-hora ÷ 60) × minutos).
+// Se a pessoa não configurou o valor-hora, usa DEFAULT_HOURLY_RATE — o
+// campo sempre calcula sozinho, nunca fica esperando configuração.
 // O emoji é usado só na formatação do texto copiado pro WhatsApp.
 // ---------------------------------------------------------
+
+// Valor-hora usado no cálculo de "Mão de obra" quando a pessoa ainda não
+// configurou o próprio valor-hora nas Configurações da loja.
+const DEFAULT_HOURLY_RATE = 30;
+
 const PRO_COSTS = [
   { id: "wear",        label: "Desgaste da máquina", unit: "currency", placeholder: "Ex: 5,00",  emoji: "🔧",
-    hint: "Calculado a partir do preço e vida útil da impressora, configurados nas Configurações da loja. Pode editar se quiser." },
+    hint: "Calculado automaticamente a partir do preço médio de mercado e da vida útil estimada da impressora selecionada. Edite o valor acima se quiser usar outra conta." },
   { id: "labor",       label: "Mão de obra",         unit: "laborMinutes", fieldLabel: "Tempo de preparo (minutos)",
     errorText: "Informe o tempo de preparo, em minutos.", placeholder: "Ex: 15", emoji: "🧑‍🔧",
-    hint: "Calculado a partir do tempo de preparo informado e do seu valor-hora, configurado nas Configurações da loja." },
+    hint: "Pra calcular sua mão de obra direito, você precisa informar quanto vale a sua hora de trabalho. Como você ainda não fez isso, estamos usando um valor padrão de R$ 30,00 por hora: 0min × R$ 30,00 ÷ 60 = R$ 0,00. Esse valor pode estar bem diferente da sua realidade — vale a pena configurar o seu valor-hora de verdade em Configurações da loja (ícone de engrenagem, no canto superior direito da página), pra cobrar um preço justo pelo seu trabalho." },
   { id: "failure",     label: "Margem de falha",     unit: "percent",  placeholder: "Ex: 10",    emoji: "⚠️",
     hint: "Ex: % do custo total pra cobrir peças que falham ou saem com defeito. Comum entre 5% e 15%.",
     shortcuts: [5, 10, 15], shortcutsHint: "Escolha um atalho ou digite o percentual que preferir." },
@@ -99,6 +109,8 @@ const marginFixedInput  = el("marginFixed");
 const roundToggle       = el("roundToggle");
 const copyBtn           = el("copyBtn");
 const copyBtnLabel      = el("copyBtnLabel");
+const exportPdfBtn      = el("exportPdfBtn");
+const exportPdfBtnLabel = el("exportPdfBtnLabel");
 const proItemGrid       = el("proItemGrid");
 const proSection        = el("proSection");
 
@@ -200,7 +212,7 @@ function populateProCosts() {
             ${shortcutsHtml}
             ${shortcutsHintHtml}
             <p class="field-error-text" id="${fieldId}Error" hidden>${errorText}</p>
-            <p class="hint">${cost.hint}</p>
+            <p class="hint" id="${fieldId}Hint">${cost.hint}</p>
           </div>
         </div>
       </div>
@@ -266,7 +278,7 @@ const STORE_SETTINGS_KEY = "np3d_store_settings";
 function defaultStoreSettings() {
   return {
     kwhPrice: "", marginPct: "", failurePct: "",
-    printerPrice: "", printerLifespanHours: "", hourlyRate: "",
+    hourlyRate: "",
     storeName: "", city: "", whatsapp: "", instagram: "",
     roundDefault: true,
   };
@@ -342,8 +354,6 @@ function openSettingsModal() {
   el("settingsKwh").value = settings.kwhPrice;
   el("settingsMarginPct").value = settings.marginPct;
   el("settingsFailurePct").value = settings.failurePct;
-  el("settingsPrinterPrice").value = settings.printerPrice;
-  el("settingsPrinterLifespan").value = settings.printerLifespanHours;
   el("settingsHourlyRate").value = settings.hourlyRate;
   el("settingsStoreName").value = settings.storeName;
   el("settingsCity").value = settings.city;
@@ -363,8 +373,6 @@ function saveStoreSettings() {
     kwhPrice: el("settingsKwh").value.trim(),
     marginPct: el("settingsMarginPct").value.trim(),
     failurePct: el("settingsFailurePct").value.trim(),
-    printerPrice: el("settingsPrinterPrice").value.trim(),
-    printerLifespanHours: el("settingsPrinterLifespan").value.trim(),
     hourlyRate: el("settingsHourlyRate").value.trim(),
     storeName: el("settingsStoreName").value.trim(),
     city: el("settingsCity").value.trim(),
@@ -376,7 +384,7 @@ function saveStoreSettings() {
   localStorage.setItem(STORE_SETTINGS_KEY, JSON.stringify(settings));
   applyStoreSettingsToCalculator(settings, { onlyIfEmpty: true });
   applyStoreBranding(settings);
-  recalcAutoWear();
+  updateLaborHint();
   closeSettingsModal();
 }
 
@@ -384,13 +392,14 @@ function restoreStoreSettingsDefaults() {
   localStorage.removeItem(STORE_SETTINGS_KEY);
 
   [el("settingsKwh"), el("settingsMarginPct"), el("settingsFailurePct"),
-   el("settingsPrinterPrice"), el("settingsPrinterLifespan"), el("settingsHourlyRate"),
+   el("settingsHourlyRate"),
    el("settingsStoreName"), el("settingsCity"), el("settingsWhatsapp"), el("settingsInstagram")]
     .forEach((input) => { input.value = ""; });
   el("settingsRoundToggle").checked = true;
   updateSettingsRoundText();
 
   applyStoreBranding(defaultStoreSettings());
+  updateLaborHint();
   closeSettingsModal();
 }
 
@@ -413,33 +422,54 @@ function initSettingsModal() {
 
 // ---------------------------------------------------------
 // "DESGASTE DA MÁQUINA" — CÁLCULO AUTOMÁTICO
-// Se a loja configurou preço + vida útil da impressora, o campo
-// "Desgaste da máquina (R$)" é preenchido sozinho com
-// (preço ÷ vida útil em horas) × tempo total dessa impressão.
+// O valor vem embutido no catálogo PRINTERS (avgPurchasePrice /
+// avgLifespanHours de cada impressora, preço médio de mercado) — não
+// depende de nada configurado pela pessoa. O campo "Desgaste da
+// máquina (R$)" é preenchido sozinho com (preço médio ÷ vida útil em
+// horas) × tempo total dessa impressão, usando a impressora selecionada.
 // O campo continua editável: como o recálculo só roda quando a
 // impressora ou o tempo de impressão mudam, um valor digitado à mão
 // fica intocado até uma dessas duas coisas mudar de novo.
 // ---------------------------------------------------------
 function computeAutoWearValue() {
-  const settings = loadStoreSettings();
-  const price = parseFloat(settings.printerPrice) || 0;
-  const lifespan = parseFloat(settings.printerLifespanHours) || 0;
-  if (price <= 0 || lifespan <= 0) return null;
+  const printer = PRINTERS.find((p) => p.id === printerSelect.value);
+  if (!printer) return null;
 
   const hours = parseInt(printHoursInput.value, 10) || 0;
   const minutes = parseInt(printMinutesInput.value, 10) || 0;
   const totalHours = hours + minutes / 60;
   if (totalHours <= 0) return null;
 
-  return (price / lifespan) * totalHours;
+  const value = (printer.avgPurchasePrice / printer.avgLifespanHours) * totalHours;
+  return { printer, hours, minutes, value };
+}
+
+/** Monta o texto do hint do "Desgaste da máquina" com a conta de verdade
+ *  (ou o texto genérico, quando ainda não há tempo de impressão preenchido). */
+function updateWearHint(details) {
+  const hintEl = el("proWearHint");
+  if (!hintEl) return;
+
+  if (!details) {
+    hintEl.textContent = "Calculado automaticamente a partir do preço médio de mercado e da vida útil estimada da impressora selecionada. Edite o valor acima se quiser usar outra conta.";
+    return;
+  }
+
+  const { printer, hours, minutes, value } = details;
+  const timeLabel = `${hours}h${String(minutes).padStart(2, "0")}`;
+  const priceLabel = printer.avgPurchasePrice.toLocaleString("pt-BR", { maximumFractionDigits: 0 });
+  const lifespanLabel = printer.avgLifespanHours.toLocaleString("pt-BR");
+
+  hintEl.textContent = `Estimativa: R$ ${priceLabel} (preço médio da impressora) ÷ ${lifespanLabel}h (vida útil estimada) × ${timeLabel} (tempo dessa impressão) = ${brl(value)}. Edite o valor acima se quiser usar outra conta.`;
 }
 
 function recalcAutoWear() {
-  const value = computeAutoWearValue();
-  if (value === null) return;
+  const details = computeAutoWearValue();
+  updateWearHint(details);
+  if (!details) return;
 
   const input = el("proWear");
-  input.value = value.toFixed(2);
+  input.value = details.value.toFixed(2);
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
@@ -453,6 +483,39 @@ function bindAutoWearRecalc() {
   el("proWearToggle").addEventListener("change", () => {
     if (el("proWearToggle").checked) recalcAutoWear();
   });
+
+  recalcAutoWear();
+}
+
+// ---------------------------------------------------------
+// "MÃO DE OBRA" — VALOR-HORA EFETIVO E TEXTO DINÂMICO DO HINT
+// Usa o valor-hora real configurado nas Configurações da loja quando
+// existe; senão usa DEFAULT_HOURLY_RATE — o cálculo (rodado na hora de
+// "Calcular preço", (valor-hora ÷ 60) × minutos) nunca fica sem rodar.
+// ---------------------------------------------------------
+function getEffectiveHourlyRate() {
+  const configured = parseFloat(loadStoreSettings().hourlyRate) || 0;
+  return configured > 0
+    ? { rate: configured, isDefault: false }
+    : { rate: DEFAULT_HOURLY_RATE, isDefault: true };
+}
+
+function updateLaborHint() {
+  const hintEl = el("proLaborHint");
+  if (!hintEl) return;
+
+  const { rate, isDefault } = getEffectiveHourlyRate();
+  const minutes = parseFloat(el("proLabor").value) || 0;
+  const value = (rate / 60) * minutes;
+
+  hintEl.textContent = isDefault
+    ? `Pra calcular sua mão de obra direito, você precisa informar quanto vale a sua hora de trabalho. Como você ainda não fez isso, estamos usando um valor padrão de ${brl(rate)} por hora: ${minutes}min × ${brl(rate)} ÷ 60 = ${brl(value)}. Esse valor pode estar bem diferente da sua realidade — vale a pena configurar o seu valor-hora de verdade em Configurações da loja (ícone de engrenagem, no canto superior direito da página), pra cobrar um preço justo pelo seu trabalho.`
+    : `Baseado no seu valor-hora de ${brl(rate)} (configurado nas Configurações da loja): ${minutes}min × ${brl(rate)} ÷ 60 = ${brl(value)} de mão de obra.`;
+}
+
+function bindLaborHintRecalc() {
+  el("proLabor").addEventListener("input", updateLaborHint);
+  updateLaborHint();
 }
 
 /**
@@ -703,7 +766,7 @@ function calculate() {
   //    + energia), do mesmo jeito que a margem de lucro em % já funciona.
   const proCosts = [];
   let proCostsTotal = 0;
-  const hourlyRate = parseFloat(loadStoreSettings().hourlyRate) || 0;
+  const hourlyRate = getEffectiveHourlyRate().rate;
 
   if (proMode) {
     PRO_COSTS.forEach((cost) => {
@@ -753,6 +816,7 @@ function calculate() {
     filamentCost, energyCost, energyKwh, baseCost, proCosts, proCostsTotal, totalCost,
     profit, calculatedPrice, finalPrice, roundingDiff,
     shouldRound, proMode,
+    calculatedAt: new Date(),
   };
 
   lastResult = result;
@@ -786,10 +850,12 @@ function renderResult(r) {
   void valueEl.offsetWidth; // força reflow para reiniciar a animação
   valueEl.classList.add("pulse");
 
-  // habilita o botão de copiar assim que existir um resultado válido
+  // habilita o botão de copiar e o de exportação assim que existir um resultado válido
   copyBtn.disabled = false;
   copyBtn.classList.remove("copied");
   copyBtnLabel.textContent = "Copiar orçamento para o WhatsApp";
+  exportPdfBtn.disabled = false;
+  hidePdfExportError();
 }
 
 // ---------------------------------------------------------
@@ -868,6 +934,215 @@ function renderPieChart(r) {
 }
 
 // ---------------------------------------------------------
+// EXPORTAÇÃO — NOME DE ARQUIVO
+// ---------------------------------------------------------
+
+/** Normaliza um texto pra usar num nome de arquivo (sem acento, espaço vira hífen). */
+function slugify(text) {
+  const slug = (text || "")
+    .toString()
+    .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  return slug || "orcamento";
+}
+
+function exportFileBaseName(r) {
+  const dateSlug = r.calculatedAt.toISOString().slice(0, 10); // AAAA-MM-DD
+  return `orcamento-${slugify(r.jobName)}-${dateSlug}`;
+}
+
+// ---------------------------------------------------------
+// EXPORTAR PDF ESTILIZADO
+// Carrega o jsPDF via CDN só na hora do primeiro clique (lazy), pra não
+// pesar o carregamento inicial nem depender de internet pro app funcionar
+// offline — a exportação em PDF é a única parte que precisa de conexão.
+// ---------------------------------------------------------
+const JSPDF_CDN_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js";
+let jsPDFLoadPromise = null;
+
+function loadJsPDF() {
+  if (window.jspdf && window.jspdf.jsPDF) return Promise.resolve(window.jspdf.jsPDF);
+  if (jsPDFLoadPromise) return jsPDFLoadPromise;
+
+  jsPDFLoadPromise = new Promise((resolve, reject) => {
+    const script = document.createElement("script");
+    script.src = JSPDF_CDN_URL;
+    script.onload = () => {
+      if (window.jspdf && window.jspdf.jsPDF) resolve(window.jspdf.jsPDF);
+      else reject(new Error("jsPDF carregado, mas indisponível."));
+    };
+    script.onerror = () => reject(new Error("Falha ao carregar jsPDF."));
+    document.head.appendChild(script);
+  }).catch((err) => {
+    jsPDFLoadPromise = null; // permite tentar de novo (ex.: internet voltou)
+    throw err;
+  });
+
+  return jsPDFLoadPromise;
+}
+
+/** Carrega uma imagem local (ex.: logo) e devolve como dataURL, pro jsPDF poder desenhá-la. */
+function loadImageAsDataURL(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      try {
+        const canvas = document.createElement("canvas");
+        canvas.width = img.naturalWidth;
+        canvas.height = img.naturalHeight;
+        canvas.getContext("2d").drawImage(img, 0, 0);
+        resolve(canvas.toDataURL("image/png"));
+      } catch (err) {
+        reject(err);
+      }
+    };
+    img.onerror = () => reject(new Error("Falha ao carregar imagem."));
+    img.src = src;
+  });
+}
+
+function showPdfExportError() {
+  el("pdfExportError").hidden = false;
+}
+
+function hidePdfExportError() {
+  el("pdfExportError").hidden = true;
+}
+
+/** Monta o PDF estilizado com a identidade visual do projeto e dispara o download. */
+async function buildAndSavePdf(JsPDF, r) {
+  const doc = new JsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const marginX = 18;
+  let y;
+
+  // Faixa colorida no topo com o logo, no mesmo tom de acento usado no app
+  doc.setFillColor(139, 92, 246);
+  doc.rect(0, 0, pageWidth, 30, "F");
+
+  try {
+    const logoDataUrl = await loadImageAsDataURL("assets/logo.png");
+    doc.addImage(logoDataUrl, "PNG", marginX, 7, 16, 16);
+  } catch (err) {
+    // Sem problema seguir sem o logo — não impede a geração do PDF
+  }
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(15);
+  doc.text("Nosso Projeto 3D", marginX + 20, 15);
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text("Orçamento de impressão 3D", marginX + 20, 21);
+
+  y = 42;
+  doc.setTextColor(20, 20, 27);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.text(r.jobName, marginX, y, { maxWidth: pageWidth - marginX * 2 });
+
+  y += 7;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(110, 110, 122);
+  const dateLabel = r.calculatedAt.toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" });
+  doc.text(`Gerado em ${dateLabel}`, marginX, y);
+
+  y += 10;
+
+  const drawSectionTitle = (title) => {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(11.5);
+    doc.setTextColor(124, 58, 237);
+    doc.text(title.toUpperCase(), marginX, y);
+    y += 1.5;
+    doc.setDrawColor(225, 222, 238);
+    doc.line(marginX, y, pageWidth - marginX, y);
+    y += 6;
+  };
+
+  const drawRow = (label, value) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    doc.setTextColor(80, 80, 92);
+    doc.text(label, marginX, y);
+    doc.setFont("helvetica", "bold");
+    doc.setTextColor(20, 20, 27);
+    doc.text(String(value), pageWidth - marginX, y, { align: "right" });
+    y += 6.5;
+  };
+
+  drawSectionTitle("Impressora e material");
+  drawRow("Impressora", r.printerName);
+  drawRow("Material", r.materialName);
+  y += 4;
+
+  drawSectionTitle("Tempo e peso");
+  drawRow("Tempo de impressão", `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`);
+  drawRow("Peso do filamento", `${r.grams} g`);
+  y += 4;
+
+  drawSectionTitle("Breakdown de custos");
+  drawRow("Filamento", brl(r.filamentCost));
+  drawRow("Energia", brl(r.energyCost));
+  if (r.proMode) {
+    r.proCosts.forEach((c) => drawRow(c.label, brl(c.value)));
+  }
+  drawRow("Custo total", brl(r.totalCost));
+  drawRow("Lucro", brl(r.profit));
+  y += 4;
+
+  // Preço final em destaque, num cartão colorido
+  doc.setFillColor(240, 238, 252);
+  doc.roundedRect(marginX, y, pageWidth - marginX * 2, 20, 3, 3, "F");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.setTextColor(110, 110, 122);
+  doc.text("Preço final sugerido", marginX + 6, y + 8);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(18);
+  doc.setTextColor(124, 58, 237);
+  doc.text(brl(r.finalPrice), marginX + 6, y + 16);
+
+  y += 30;
+
+  // Assinatura da loja (nome/cidade/WhatsApp/Instagram) — só entra o que
+  // estiver configurado nas Configurações da loja, igual no WhatsApp.
+  const signature = buildStoreSignatureLine(loadStoreSettings()).replace(/^🏪\s*/, "");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(140, 140, 150);
+  if (signature) {
+    doc.text(signature, marginX, y);
+    y += 6;
+  }
+  doc.text("Orçamento gerado com a calculadora Nosso Projeto 3D — gratuita, feita para a comunidade Bambu Lab.", marginX, y, { maxWidth: pageWidth - marginX * 2 });
+
+  doc.save(`${exportFileBaseName(r)}.pdf`);
+}
+
+async function exportPdf() {
+  if (!lastResult) return;
+
+  hidePdfExportError();
+  exportPdfBtn.disabled = true;
+  exportPdfBtnLabel.textContent = "Gerando PDF...";
+
+  try {
+    const JsPDF = await loadJsPDF();
+    await buildAndSavePdf(JsPDF, lastResult);
+  } catch (err) {
+    showPdfExportError();
+  } finally {
+    exportPdfBtnLabel.textContent = "Exportar orçamento PDF";
+    exportPdfBtn.disabled = false;
+  }
+}
+
+// ---------------------------------------------------------
 // LIMPAR TUDO — volta a página ao estado inicial, 100% vazio
 // ---------------------------------------------------------
 function clearAll() {
@@ -929,6 +1204,8 @@ function clearAll() {
   copyBtn.disabled = true;
   copyBtn.classList.remove("copied");
   copyBtnLabel.textContent = "Copiar orçamento para o WhatsApp";
+  exportPdfBtn.disabled = true;
+  hidePdfExportError();
 
   jobNameInput.focus();
 }
@@ -1046,6 +1323,7 @@ function bindEvents() {
   el("calcBtn").addEventListener("click", calculate);
   el("clearBtn").addEventListener("click", clearAll);
   copyBtn.addEventListener("click", copyBudget);
+  exportPdfBtn.addEventListener("click", exportPdf);
 
   // Limpa o erro do campo assim que o usuário começar a corrigi-lo
   [jobNameInput, printHoursInput, printMinutesInput, printGramsInput,
@@ -1059,6 +1337,7 @@ function bindEvents() {
   bindMarginExclusivity();
   bindProCostEvents();
   bindAutoWearRecalc();
+  bindLaborHintRecalc();
 }
 
 // ---------------------------------------------------------
