@@ -338,6 +338,20 @@ input[type="number"]{
 .modal-card-lg h3{ margin-bottom: 6px; }
 .modal-card-lg > .hint{ margin-bottom: 16px; }
 
+/* Título de subseção dentro do modal de Configurações da loja (ex.: "Taxa
+   Shopee") — separa visualmente um grupo de campos relacionados, no mesmo
+   tom de acento usado no cabeçalho do painel de resultado (.readout-head). */
+.settings-subheading{
+  margin: 4px 0 8px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--accent-2);
+}
+
 .modal-actions{
   display: flex;
   gap: 10px;

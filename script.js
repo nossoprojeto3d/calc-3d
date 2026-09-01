@@ -46,6 +46,9 @@ const MATERIALS = [
 // R$ usando o valor-hora das Configurações da loja ((valor-hora ÷ 60) × minutos).
 // Se a pessoa não configurou o valor-hora, usa DEFAULT_HOURLY_RATE — o
 // campo sempre calcula sozinho, nunca fica esperando configuração.
+// "wear" e "shopee" também são "currency", mas com o valor recalculado
+// sozinho por lógica própria (recalcAutoWear / recalcAutoShopee) sempre que
+// um dado do qual dependem muda — o campo em si continua editável na mão.
 // O emoji é usado só na formatação do texto copiado pro WhatsApp.
 // ---------------------------------------------------------
 
@@ -74,8 +77,8 @@ const PRO_COSTS = [
     hint: "Ex: tinta + tempo de acabamento manual, se a peça for pintada." },
   { id: "screws",      label: "Parafusos",           unit: "currency", placeholder: "Ex: 2,00",  emoji: "🔩",
     hint: "Ex: custo dos parafusos ou fixadores usados na montagem." },
-  { id: "marketplace", label: "Marketplace",         unit: "percent",  placeholder: "Ex: 16",    emoji: "🛒",
-    hint: "Ex: taxa cobrada pela plataforma de venda (Shopee, Elo7 etc.) sobre o preço final." },
+  { id: "shopee",      label: "Taxa Shopee",         unit: "currency", placeholder: "Ex: 4,00",  emoji: "🛒",
+    hint: "Calculado automaticamente com a comissão + taxa fixa da Shopee (faixas editáveis nas Configurações da loja), ajustando o preço pra você continuar recebendo o valor desejado depois da taxa. Edite o valor acima se quiser usar outra conta." },
   { id: "shipping",    label: "Frete",               unit: "currency", placeholder: "Ex: 15,00", emoji: "🚚",
     hint: "Ex: valor do frete que você paga ou repassa ao cliente." },
   { id: "taxes",       label: "Impostos",            unit: "percent",  placeholder: "Ex: 6",     emoji: "🏛️",
@@ -247,11 +250,15 @@ function bindProCostEvents() {
         clearFieldError(input);
         syncShortcutActiveState(cost, input);
       }
+      // Mudar qualquer outro custo profissional afeta a "Base" usada pela
+      // Taxa Shopee (ver computeAutoShopeeValue) — recalcula ela também.
+      if (cost.id !== "shopee") recalcAutoShopee();
     });
 
     input.addEventListener("input", () => {
       clearFieldError(input);
       syncShortcutActiveState(cost, input);
+      if (cost.id !== "shopee") recalcAutoShopee();
     });
 
     if (cost.shortcuts) {
@@ -279,6 +286,9 @@ function defaultStoreSettings() {
   return {
     kwhPrice: "", marginPct: "", failurePct: "",
     hourlyRate: "",
+    shopeeTier1Pct: "", shopeeTier1Fixed: "",
+    shopeeTier2Pct: "", shopeeTier2Fixed: "",
+    shopeeTier3Pct: "", shopeeTier3Fixed: "",
     storeName: "", city: "", whatsapp: "", instagram: "",
     roundDefault: true,
   };
@@ -355,6 +365,12 @@ function openSettingsModal() {
   el("settingsMarginPct").value = settings.marginPct;
   el("settingsFailurePct").value = settings.failurePct;
   el("settingsHourlyRate").value = settings.hourlyRate;
+  el("settingsShopeeTier1Pct").value = settings.shopeeTier1Pct;
+  el("settingsShopeeTier1Fixed").value = settings.shopeeTier1Fixed;
+  el("settingsShopeeTier2Pct").value = settings.shopeeTier2Pct;
+  el("settingsShopeeTier2Fixed").value = settings.shopeeTier2Fixed;
+  el("settingsShopeeTier3Pct").value = settings.shopeeTier3Pct;
+  el("settingsShopeeTier3Fixed").value = settings.shopeeTier3Fixed;
   el("settingsStoreName").value = settings.storeName;
   el("settingsCity").value = settings.city;
   el("settingsWhatsapp").value = settings.whatsapp;
@@ -374,6 +390,12 @@ function saveStoreSettings() {
     marginPct: el("settingsMarginPct").value.trim(),
     failurePct: el("settingsFailurePct").value.trim(),
     hourlyRate: el("settingsHourlyRate").value.trim(),
+    shopeeTier1Pct: el("settingsShopeeTier1Pct").value.trim(),
+    shopeeTier1Fixed: el("settingsShopeeTier1Fixed").value.trim(),
+    shopeeTier2Pct: el("settingsShopeeTier2Pct").value.trim(),
+    shopeeTier2Fixed: el("settingsShopeeTier2Fixed").value.trim(),
+    shopeeTier3Pct: el("settingsShopeeTier3Pct").value.trim(),
+    shopeeTier3Fixed: el("settingsShopeeTier3Fixed").value.trim(),
     storeName: el("settingsStoreName").value.trim(),
     city: el("settingsCity").value.trim(),
     whatsapp: el("settingsWhatsapp").value.trim(),
@@ -385,6 +407,7 @@ function saveStoreSettings() {
   applyStoreSettingsToCalculator(settings, { onlyIfEmpty: true });
   applyStoreBranding(settings);
   updateLaborHint();
+  recalcAutoShopee();
   closeSettingsModal();
 }
 
@@ -393,6 +416,9 @@ function restoreStoreSettingsDefaults() {
 
   [el("settingsKwh"), el("settingsMarginPct"), el("settingsFailurePct"),
    el("settingsHourlyRate"),
+   el("settingsShopeeTier1Pct"), el("settingsShopeeTier1Fixed"),
+   el("settingsShopeeTier2Pct"), el("settingsShopeeTier2Fixed"),
+   el("settingsShopeeTier3Pct"), el("settingsShopeeTier3Fixed"),
    el("settingsStoreName"), el("settingsCity"), el("settingsWhatsapp"), el("settingsInstagram")]
     .forEach((input) => { input.value = ""; });
   el("settingsRoundToggle").checked = true;
@@ -400,6 +426,7 @@ function restoreStoreSettingsDefaults() {
 
   applyStoreBranding(defaultStoreSettings());
   updateLaborHint();
+  recalcAutoShopee();
   closeSettingsModal();
 }
 
@@ -516,6 +543,166 @@ function updateLaborHint() {
 function bindLaborHintRecalc() {
   el("proLabor").addEventListener("input", updateLaborHint);
   updateLaborHint();
+}
+
+// ---------------------------------------------------------
+// "TAXA SHOPEE" — CÁLCULO REVERSO AUTOMÁTICO
+// Diferente dos outros custos em %, a comissão da Shopee incide sobre o
+// PREÇO FINAL de venda, não sobre o custo — então o preço final e a taxa
+// dependem um do outro. Resolvemos isso com uma fórmula reversa: dada a
+// "Base" (tudo que não é a taxa Shopee — filamento + energia + demais
+// custos profissionais ativos + lucro desejado), testamos as 3 faixas de
+// comissão em ordem crescente e usamos a primeira cujo preço candidato
+// ((Base + taxa fixa da faixa) ÷ (1 − comissão da faixa)) cair dentro do
+// próprio intervalo de preço daquela faixa. A Taxa Shopee exibida é a
+// diferença entre esse preço final e a Base.
+// Os limites das faixas (R$8 e R$80) são fixos; comissão e taxa fixa de
+// cada faixa são editáveis nas Configurações da loja (em branco = padrão).
+// ---------------------------------------------------------
+const SHOPEE_TIER_RANGES = [
+  { min: 0,  max: 8,        label: "abaixo de R$ 8,00" },
+  { min: 8,  max: 80,       label: "de R$ 8,00 a R$ 79,99" },
+  { min: 80, max: Infinity, label: "a partir de R$ 80,00" },
+];
+
+const SHOPEE_DEFAULT_TIERS = [
+  { commissionPct: 50, fixedFee: 0 },
+  { commissionPct: 20, fixedFee: 4 },
+  { commissionPct: 14, fixedFee: 20 },
+];
+
+/** Lê um campo configurado (string) e devolve o número, ou o padrão se estiver vazio/inválido. */
+function resolveConfiguredNumber(rawValue, fallback) {
+  const trimmed = (rawValue || "").toString().trim();
+  if (trimmed === "") return fallback;
+  const num = parseFloat(trimmed);
+  return Number.isFinite(num) ? num : fallback;
+}
+
+/** Monta as 3 faixas efetivas (configuradas nas Configurações da loja, ou o padrão da Shopee). */
+function getEffectiveShopeeTiers() {
+  const settings = loadStoreSettings();
+  return SHOPEE_DEFAULT_TIERS.map((def, i) => ({
+    commissionPct: resolveConfiguredNumber(settings[`shopeeTier${i + 1}Pct`], def.commissionPct),
+    fixedFee: resolveConfiguredNumber(settings[`shopeeTier${i + 1}Fixed`], def.fixedFee),
+  }));
+}
+
+/** Preço candidato de uma faixa: (Base + taxa fixa) ÷ (1 − comissão). Devolve
+ *  null se a comissão configurada tornar a conta inválida (ex.: ≥ 100%). */
+function computeShopeeCandidate(base, tier) {
+  const commission = Math.min(Math.max(tier.commissionPct, 0), 99.999);
+  const denominator = 1 - commission / 100;
+  if (denominator <= 0) return null;
+  return (base + Math.max(tier.fixedFee, 0)) / denominator;
+}
+
+/** Testa as 3 faixas em ordem crescente e devolve a primeira cujo preço
+ *  candidato cai dentro do próprio intervalo — essa é a faixa correta. */
+function pickShopeeTier(base) {
+  const tiers = getEffectiveShopeeTiers();
+
+  for (let i = 0; i < tiers.length; i++) {
+    const candidate = computeShopeeCandidate(base, tiers[i]);
+    if (candidate === null) continue;
+    if (candidate >= SHOPEE_TIER_RANGES[i].min && candidate < SHOPEE_TIER_RANGES[i].max) {
+      return { tierIndex: i, tier: tiers[i], finalPrice: candidate };
+    }
+  }
+
+  // Nenhuma faixa "bateu" (configuração atípica) — usa a última faixa como
+  // respaldo, pra nunca deixar a Taxa Shopee sem um cálculo.
+  const lastIndex = tiers.length - 1;
+  const fallbackCandidate = computeShopeeCandidate(base, tiers[lastIndex]);
+  return { tierIndex: lastIndex, tier: tiers[lastIndex], finalPrice: fallbackCandidate ?? base };
+}
+
+/**
+ * Calcula a "Base" (filamento + energia + demais custos profissionais
+ * ativos + lucro desejado, excluindo a própria Taxa Shopee) e, a partir
+ * dela, a faixa e o valor da Taxa Shopee. Sempre calcula algo (mesmo que
+ * a Base ainda seja 0) — nunca fica esperando configuração.
+ */
+function computeAutoShopeeValue() {
+  const printer = PRINTERS.find((p) => p.id === printerSelect.value);
+  if (!printer) return null;
+
+  const hours = parseInt(printHoursInput.value, 10) || 0;
+  const minutes = parseInt(printMinutesInput.value, 10) || 0;
+  const totalHours = hours + minutes / 60;
+  const grams = parseFloat(printGramsInput.value) || 0;
+  const pricePerKg = parseFloat(pricePerKgInput.value) || 0;
+  const kwhPrice = parseFloat(kwhPriceInput.value) || 0;
+
+  const filamentCost = (grams / 1000) * pricePerKg;
+  const energyCost = ((printer.power / 1000) * totalHours) * kwhPrice;
+  const baseCost = filamentCost + energyCost;
+
+  const hourlyRate = getEffectiveHourlyRate().rate;
+  let otherProCostsTotal = 0;
+
+  if (isProMode()) {
+    PRO_COSTS.forEach((cost) => {
+      if (cost.id === "shopee") return;
+      const fieldId = proFieldId(cost);
+      const toggleEl = el(`${fieldId}Toggle`);
+      if (!toggleEl || !toggleEl.checked) return;
+      const rawValue = parseFloat(el(fieldId).value) || 0;
+      const value = cost.unit === "percent" ? baseCost * (rawValue / 100)
+        : cost.unit === "laborMinutes" ? (hourlyRate / 60) * rawValue
+        : rawValue;
+      otherProCostsTotal += value;
+    });
+  }
+
+  const usingFixedMargin = marginFixedInput.value.trim() !== "";
+  const profit = usingFixedMargin
+    ? parseFloat(marginFixedInput.value) || 0
+    : baseCost * ((parseFloat(marginPctInput.value) || 0) / 100);
+
+  const base = baseCost + otherProCostsTotal + profit;
+  const picked = pickShopeeTier(base);
+  const feeValue = picked.finalPrice - base;
+
+  return { base, feeValue, ...picked };
+}
+
+/** Monta o texto do hint da "Taxa Shopee" com a faixa e a conta de verdade. */
+function updateShopeeHint(details) {
+  const hintEl = el("proShopeeHint");
+  if (!hintEl) return;
+
+  if (!details) {
+    hintEl.textContent = "Calculado automaticamente com a comissão + taxa fixa da Shopee (faixas editáveis nas Configurações da loja), ajustando o preço pra você continuar recebendo o valor desejado depois da taxa. Edite o valor acima se quiser usar outra conta.";
+    return;
+  }
+
+  const { tierIndex, tier, feeValue } = details;
+  const label = SHOPEE_TIER_RANGES[tierIndex].label;
+
+  hintEl.textContent = `Faixa ${label}: ${tier.commissionPct}% + ${brl(tier.fixedFee)} fixo. Preço ajustado pra você continuar recebendo o valor desejado depois da taxa — taxa calculada: ${brl(feeValue)}. Edite o valor acima se quiser usar outra conta.`;
+}
+
+function recalcAutoShopee() {
+  const details = computeAutoShopeeValue();
+  updateShopeeHint(details);
+  if (!details) return;
+
+  const input = el("proShopee");
+  input.value = details.feeValue.toFixed(2);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function bindAutoShopeeRecalc() {
+  printerSelect.addEventListener("change", recalcAutoShopee);
+  [printHoursInput, printMinutesInput, printGramsInput, pricePerKgInput, kwhPriceInput, marginPctInput, marginFixedInput]
+    .forEach((input) => input.addEventListener("input", recalcAutoShopee));
+
+  el("proShopeeToggle").addEventListener("change", () => {
+    if (el("proShopeeToggle").checked) recalcAutoShopee();
+  });
+
+  recalcAutoShopee();
 }
 
 /**
@@ -1338,6 +1525,7 @@ function bindEvents() {
   bindProCostEvents();
   bindAutoWearRecalc();
   bindLaborHintRecalc();
+  bindAutoShopeeRecalc();
 }
 
 // ---------------------------------------------------------
