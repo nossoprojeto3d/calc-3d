@@ -517,6 +517,36 @@ input[type="number"]{
   font-weight: 500;
 }
 
+/* Aviso fixo acima do campo (ex.: ressalva da Taxa Mercado Livre sobre
+   categoria/frete grátis) — mesma classe .hint, só troca a cor pra chamar
+   mais atenção que uma dica comum. */
+.pro-item-warning{
+  color: var(--amber);
+  margin-bottom: 4px;
+}
+
+/* Linha com o campo numérico + um seletor ao lado (ex.: tipo de anúncio
+   Clássico/Premium da Taxa Mercado Livre). */
+.pro-input-row{
+  display: flex;
+  gap: 8px;
+}
+.pro-input-row input{ flex: 2; min-width: 0; }
+.pro-input-row select{ flex: 1; min-width: 0; }
+
+/* Aviso de conflito entre custos de canal de venda (ex.: Shopee + Mercado
+   Livre ligados ao mesmo tempo) — não bloqueia, só chama atenção. */
+.pro-cross-warning{
+  margin: 0 0 14px;
+  padding: 10px 12px;
+  border: 1px solid rgba(251, 191, 36, 0.35);
+  border-radius: 8px;
+  background: rgba(251, 191, 36, 0.1);
+  color: var(--amber);
+  font-size: 12.5px;
+  line-height: 1.4;
+}
+
 .field-grid{ display: grid; gap: 14px; margin-bottom: 14px; }
 .field-grid:last-child{ margin-bottom: 0; }
 .field-grid.two-cols{ grid-template-columns: 1fr 1fr; }

@@ -79,6 +79,10 @@ const PRO_COSTS = [
     hint: "Ex: custo dos parafusos ou fixadores usados na montagem." },
   { id: "shopee",      label: "Taxa Shopee",         unit: "currency", placeholder: "Ex: 4,00",  emoji: "🛒",
     hint: "Calculado automaticamente com a comissão + taxa fixa da Shopee (faixas editáveis nas Configurações da loja), ajustando o preço pra você continuar recebendo o valor desejado depois da taxa. Edite o valor acima se quiser usar outra conta." },
+  { id: "meli",        label: "Taxa Mercado Livre",  unit: "currency", placeholder: "Ex: 10,00", emoji: "🛍️",
+    adTypeSelect: true,
+    warningText: "Aproximação: não considera a categoria do produto (a comissão real varia por categoria) nem o frete grátis subsidiado em vendas acima de R$79. Vale a pena conferir a comissão exata da sua categoria no Simulador de Custos do Mercado Livre.",
+    hint: "Calculado automaticamente com a comissão do tipo de anúncio selecionado + custo fixo (valores editáveis nas Configurações da loja), ajustando o preço pra você continuar recebendo o valor desejado depois da taxa. Edite o valor acima se quiser usar outra conta." },
   { id: "shipping",    label: "Frete",               unit: "currency", placeholder: "Ex: 15,00", emoji: "🚚",
     hint: "Ex: valor do frete que você paga ou repassa ao cliente." },
   { id: "taxes",       label: "Impostos",            unit: "percent",  placeholder: "Ex: 6",     emoji: "🏛️",
@@ -197,6 +201,18 @@ function populateProCosts() {
     ` : "";
     const shortcutsHintHtml = cost.shortcutsHint ? `<p class="hint">${cost.shortcutsHint}</p>` : "";
 
+    // Aviso fixo acima do campo (ex.: ressalva da Taxa Mercado Livre) e
+    // seletor de tipo de anúncio (Clássico/Premium) ao lado do campo —
+    // ambos opcionais, só entram nos itens que tiverem essas flags.
+    const warningHtml = cost.warningText ? `<p class="hint pro-item-warning">${cost.warningText}</p>` : "";
+    const adTypeSelectHtml = cost.adTypeSelect ? `
+        <select id="${fieldId}AdType" aria-label="Tipo de anúncio">
+          <option value="classico">Clássico</option>
+          <option value="premium" selected>Premium</option>
+        </select>` : "";
+    const inputOpenTag = cost.adTypeSelect ? `<div class="pro-input-row">` : "";
+    const inputCloseTag = cost.adTypeSelect ? `</div>` : "";
+
     const item = document.createElement("div");
     item.className = "pro-item";
     item.id = `${fieldId}Item`;
@@ -211,7 +227,11 @@ function populateProCosts() {
       <div class="reveal" id="${fieldId}Body" hidden>
         <div class="reveal-inner">
           <div class="field" style="margin-top: 10px;">
+            ${warningHtml}
+            ${inputOpenTag}
             <input type="number" id="${fieldId}" min="0" step="${step}" placeholder="${cost.placeholder}" aria-label="${unitLabel}">
+            ${adTypeSelectHtml}
+            ${inputCloseTag}
             ${shortcutsHtml}
             ${shortcutsHintHtml}
             <p class="field-error-text" id="${fieldId}Error" hidden>${errorText}</p>
@@ -251,14 +271,19 @@ function bindProCostEvents() {
         syncShortcutActiveState(cost, input);
       }
       // Mudar qualquer outro custo profissional afeta a "Base" usada pela
-      // Taxa Shopee (ver computeAutoShopeeValue) — recalcula ela também.
-      if (cost.id !== "shopee") recalcAutoShopee();
+      // Taxa Shopee e pela Taxa Mercado Livre (ver computeAutoShopeeValue /
+      // computeAutoMeliValue) — recalcula as duas também. Shopee e Mercado
+      // Livre não recalculam uma à outra (evita loop mútuo entre elas —
+      // por isso o aviso pra ativar só uma por vez).
+      if (cost.id !== "shopee" && cost.id !== "meli") recalcAutoShopee();
+      if (cost.id !== "meli" && cost.id !== "shopee") recalcAutoMeli();
     });
 
     input.addEventListener("input", () => {
       clearFieldError(input);
       syncShortcutActiveState(cost, input);
-      if (cost.id !== "shopee") recalcAutoShopee();
+      if (cost.id !== "shopee" && cost.id !== "meli") recalcAutoShopee();
+      if (cost.id !== "meli" && cost.id !== "shopee") recalcAutoMeli();
     });
 
     if (cost.shortcuts) {
@@ -289,6 +314,7 @@ function defaultStoreSettings() {
     shopeeTier1Pct: "", shopeeTier1Fixed: "",
     shopeeTier2Pct: "", shopeeTier2Fixed: "",
     shopeeTier3Pct: "", shopeeTier3Fixed: "",
+    meliCommissionClassico: "", meliCommissionPremium: "", meliFixedFee: "",
     storeName: "", city: "", whatsapp: "", instagram: "",
     roundDefault: true,
   };
@@ -371,6 +397,9 @@ function openSettingsModal() {
   el("settingsShopeeTier2Fixed").value = settings.shopeeTier2Fixed;
   el("settingsShopeeTier3Pct").value = settings.shopeeTier3Pct;
   el("settingsShopeeTier3Fixed").value = settings.shopeeTier3Fixed;
+  el("settingsMeliCommissionClassico").value = settings.meliCommissionClassico;
+  el("settingsMeliCommissionPremium").value = settings.meliCommissionPremium;
+  el("settingsMeliFixedFee").value = settings.meliFixedFee;
   el("settingsStoreName").value = settings.storeName;
   el("settingsCity").value = settings.city;
   el("settingsWhatsapp").value = settings.whatsapp;
@@ -396,6 +425,9 @@ function saveStoreSettings() {
     shopeeTier2Fixed: el("settingsShopeeTier2Fixed").value.trim(),
     shopeeTier3Pct: el("settingsShopeeTier3Pct").value.trim(),
     shopeeTier3Fixed: el("settingsShopeeTier3Fixed").value.trim(),
+    meliCommissionClassico: el("settingsMeliCommissionClassico").value.trim(),
+    meliCommissionPremium: el("settingsMeliCommissionPremium").value.trim(),
+    meliFixedFee: el("settingsMeliFixedFee").value.trim(),
     storeName: el("settingsStoreName").value.trim(),
     city: el("settingsCity").value.trim(),
     whatsapp: el("settingsWhatsapp").value.trim(),
@@ -408,6 +440,7 @@ function saveStoreSettings() {
   applyStoreBranding(settings);
   updateLaborHint();
   recalcAutoShopee();
+  recalcAutoMeli();
   closeSettingsModal();
 }
 
@@ -419,6 +452,7 @@ function restoreStoreSettingsDefaults() {
    el("settingsShopeeTier1Pct"), el("settingsShopeeTier1Fixed"),
    el("settingsShopeeTier2Pct"), el("settingsShopeeTier2Fixed"),
    el("settingsShopeeTier3Pct"), el("settingsShopeeTier3Fixed"),
+   el("settingsMeliCommissionClassico"), el("settingsMeliCommissionPremium"), el("settingsMeliFixedFee"),
    el("settingsStoreName"), el("settingsCity"), el("settingsWhatsapp"), el("settingsInstagram")]
     .forEach((input) => { input.value = ""; });
   el("settingsRoundToggle").checked = true;
@@ -427,6 +461,7 @@ function restoreStoreSettingsDefaults() {
   applyStoreBranding(defaultStoreSettings());
   updateLaborHint();
   recalcAutoShopee();
+  recalcAutoMeli();
   closeSettingsModal();
 }
 
@@ -700,9 +735,179 @@ function bindAutoShopeeRecalc() {
 
   el("proShopeeToggle").addEventListener("change", () => {
     if (el("proShopeeToggle").checked) recalcAutoShopee();
+    updateCrossChannelWarning();
   });
 
   recalcAutoShopee();
+}
+
+// ---------------------------------------------------------
+// "TAXA MERCADO LIVRE" — CÁLCULO REVERSO AUTOMÁTICO
+// Mesma ideia da Taxa Shopee (a comissão incide sobre o preço final, não
+// sobre o custo), mas com só 2 faixas de preço (limite fixo: R$79) e uma
+// única comissão por vez — a do tipo de anúncio selecionado (Clássico ou
+// Premium, ao lado do campo). Abaixo de R$79 tem custo fixo somado; a
+// partir de R$79 não tem custo fixo. A Taxa Mercado Livre exibida é a
+// diferença entre o preço final encontrado e a Base.
+// Comissões e custo fixo são editáveis nas Configurações da loja.
+// ---------------------------------------------------------
+const MELI_PRICE_THRESHOLD = 79;
+
+const MELI_DEFAULT_SETTINGS = {
+  commissionClassico: 12,
+  commissionPremium: 17,
+  fixedFee: 6,
+};
+
+/** Monta as comissões/custo fixo efetivos (configurados, ou o padrão do Mercado Livre). */
+function getEffectiveMeliSettings() {
+  const settings = loadStoreSettings();
+  return {
+    commissionClassico: resolveConfiguredNumber(settings.meliCommissionClassico, MELI_DEFAULT_SETTINGS.commissionClassico),
+    commissionPremium: resolveConfiguredNumber(settings.meliCommissionPremium, MELI_DEFAULT_SETTINGS.commissionPremium),
+    fixedFee: resolveConfiguredNumber(settings.meliFixedFee, MELI_DEFAULT_SETTINGS.fixedFee),
+  };
+}
+
+/** Preço candidato: (Base + custo fixo) ÷ (1 − comissão). Devolve null se a
+ *  comissão configurada tornar a conta inválida (ex.: ≥ 100%). */
+function computeMeliCandidate(base, commissionPct, fixedFee) {
+  const commission = Math.min(Math.max(commissionPct, 0), 99.999);
+  const denominator = 1 - commission / 100;
+  if (denominator <= 0) return null;
+  return (base + Math.max(fixedFee, 0)) / denominator;
+}
+
+/** Testa a faixa "abaixo de R$79" (com custo fixo) e depois "a partir de
+ *  R$79" (sem custo fixo), usando a primeira cujo candidato cai no próprio intervalo. */
+function pickMeliTier(base, commissionPct, fixedFee) {
+  const belowCandidate = computeMeliCandidate(base, commissionPct, fixedFee);
+  if (belowCandidate !== null && belowCandidate >= 0 && belowCandidate < MELI_PRICE_THRESHOLD) {
+    return { tier: "below", finalPrice: belowCandidate, fixedFeeUsed: fixedFee };
+  }
+
+  const fromCandidate = computeMeliCandidate(base, commissionPct, 0);
+  if (fromCandidate !== null && fromCandidate >= MELI_PRICE_THRESHOLD) {
+    return { tier: "from", finalPrice: fromCandidate, fixedFeeUsed: 0 };
+  }
+
+  // Nenhuma faixa "bateu" (configuração atípica) — usa a faixa "a partir de
+  // R$79" como respaldo, pra nunca deixar a Taxa Mercado Livre sem cálculo.
+  return { tier: "from", finalPrice: fromCandidate ?? base, fixedFeeUsed: 0 };
+}
+
+/**
+ * Calcula a "Base" (igual à da Taxa Shopee, excluindo a própria Taxa
+ * Mercado Livre) e, a partir dela, a faixa e o valor da taxa. Sempre
+ * calcula algo (mesmo que a Base ainda seja 0) — nunca fica esperando
+ * configuração.
+ */
+function computeAutoMeliValue() {
+  const printer = PRINTERS.find((p) => p.id === printerSelect.value);
+  if (!printer) return null;
+
+  const hours = parseInt(printHoursInput.value, 10) || 0;
+  const minutes = parseInt(printMinutesInput.value, 10) || 0;
+  const totalHours = hours + minutes / 60;
+  const grams = parseFloat(printGramsInput.value) || 0;
+  const pricePerKg = parseFloat(pricePerKgInput.value) || 0;
+  const kwhPrice = parseFloat(kwhPriceInput.value) || 0;
+
+  const filamentCost = (grams / 1000) * pricePerKg;
+  const energyCost = ((printer.power / 1000) * totalHours) * kwhPrice;
+  const baseCost = filamentCost + energyCost;
+
+  const hourlyRate = getEffectiveHourlyRate().rate;
+  let otherProCostsTotal = 0;
+
+  if (isProMode()) {
+    PRO_COSTS.forEach((cost) => {
+      if (cost.id === "meli") return;
+      const fieldId = proFieldId(cost);
+      const toggleEl = el(`${fieldId}Toggle`);
+      if (!toggleEl || !toggleEl.checked) return;
+      const rawValue = parseFloat(el(fieldId).value) || 0;
+      const value = cost.unit === "percent" ? baseCost * (rawValue / 100)
+        : cost.unit === "laborMinutes" ? (hourlyRate / 60) * rawValue
+        : rawValue;
+      otherProCostsTotal += value;
+    });
+  }
+
+  const usingFixedMargin = marginFixedInput.value.trim() !== "";
+  const profit = usingFixedMargin
+    ? parseFloat(marginFixedInput.value) || 0
+    : baseCost * ((parseFloat(marginPctInput.value) || 0) / 100);
+
+  const base = baseCost + otherProCostsTotal + profit;
+
+  const adTypeEl = el("proMeliAdType");
+  const adType = adTypeEl && adTypeEl.value === "classico" ? "classico" : "premium";
+  const meliSettings = getEffectiveMeliSettings();
+  const commissionPct = adType === "classico" ? meliSettings.commissionClassico : meliSettings.commissionPremium;
+
+  const picked = pickMeliTier(base, commissionPct, meliSettings.fixedFee);
+  const feeValue = picked.finalPrice - base;
+
+  return { base, feeValue, adType, commissionPct, ...picked };
+}
+
+/** Monta o texto do hint da "Taxa Mercado Livre" com o tipo de anúncio, a faixa e a conta de verdade. */
+function updateMeliHint(details) {
+  const hintEl = el("proMeliHint");
+  if (!hintEl) return;
+
+  if (!details) {
+    hintEl.textContent = "Calculado automaticamente com a comissão do tipo de anúncio selecionado + custo fixo (valores editáveis nas Configurações da loja), ajustando o preço pra você continuar recebendo o valor desejado depois da taxa. Edite o valor acima se quiser usar outra conta.";
+    return;
+  }
+
+  const { tier, adType, commissionPct, fixedFeeUsed, feeValue } = details;
+  const adTypeLabel = adType === "classico" ? "Clássico" : "Premium";
+  const tierLabel = tier === "below" ? "produto abaixo de R$79" : "produto a partir de R$79";
+  const feePart = tier === "below" ? ` + ${brl(fixedFeeUsed)} fixo` : " (sem custo fixo nessa faixa)";
+
+  hintEl.textContent = `Anúncio ${adTypeLabel}, ${tierLabel}: ${commissionPct}%${feePart}. Preço ajustado pra você continuar recebendo o valor desejado depois da taxa — taxa calculada: ${brl(feeValue)}. Edite o valor acima se quiser usar outra conta.`;
+}
+
+function recalcAutoMeli() {
+  const details = computeAutoMeliValue();
+  updateMeliHint(details);
+  if (!details) return;
+
+  const input = el("proMeli");
+  input.value = details.feeValue.toFixed(2);
+  input.dispatchEvent(new Event("input", { bubbles: true }));
+}
+
+function bindAutoMeliRecalc() {
+  printerSelect.addEventListener("change", recalcAutoMeli);
+  [printHoursInput, printMinutesInput, printGramsInput, pricePerKgInput, kwhPriceInput, marginPctInput, marginFixedInput]
+    .forEach((input) => input.addEventListener("input", recalcAutoMeli));
+
+  el("proMeliAdType").addEventListener("change", recalcAutoMeli);
+
+  el("proMeliToggle").addEventListener("change", () => {
+    if (el("proMeliToggle").checked) recalcAutoMeli();
+    updateCrossChannelWarning();
+  });
+
+  recalcAutoMeli();
+}
+
+// ---------------------------------------------------------
+// AVISO: TAXA SHOPEE + TAXA MERCADO LIVRE AO MESMO TEMPO
+// É a mesma venda em um canal só — ativar as duas ao mesmo tempo não faz
+// sentido e pode distorcer o cálculo (cada uma trata a outra como um custo
+// fixo comum na sua "Base", sem recalcular uma quando a outra muda — ver
+// bindProCostEvents). Não bloqueia, só avisa.
+// ---------------------------------------------------------
+function updateCrossChannelWarning() {
+  const warningEl = el("crossChannelWarning");
+  if (!warningEl) return;
+  const shopeeOn = el("proShopeeToggle").checked;
+  const meliOn = el("proMeliToggle").checked;
+  warningEl.hidden = !(shopeeOn && meliOn);
 }
 
 /**
@@ -964,7 +1169,11 @@ function calculate() {
         : cost.unit === "laborMinutes" ? (hourlyRate / 60) * rawValue
         : rawValue;
       proCostsTotal += value;
-      proCosts.push({ ...cost, rawValue, value, hourlyRate });
+      // "Taxa Mercado Livre" também guarda o tipo de anúncio usado, pra
+      // aparecer no texto do WhatsApp e no PDF (ver buildWhatsAppText /
+      // buildAndSavePdf).
+      const extra = cost.id === "meli" ? { adType: el("proMeliAdType").value } : {};
+      proCosts.push({ ...cost, rawValue, value, hourlyRate, ...extra });
     });
   }
 
@@ -1276,7 +1485,10 @@ async function buildAndSavePdf(JsPDF, r) {
   drawRow("Filamento", brl(r.filamentCost));
   drawRow("Energia", brl(r.energyCost));
   if (r.proMode) {
-    r.proCosts.forEach((c) => drawRow(c.label, brl(c.value)));
+    r.proCosts.forEach((c) => {
+      const label = c.id === "meli" ? `${c.label} (${c.adType === "classico" ? "Clássico" : "Premium"})` : c.label;
+      drawRow(label, brl(c.value));
+    });
   }
   drawRow("Custo total", brl(r.totalCost));
   drawRow("Lucro", brl(r.profit));
@@ -1364,6 +1576,10 @@ function clearAll() {
     input.value = "";
     clearFieldError(input);
   });
+  // Volta o tipo de anúncio da Taxa Mercado Livre pro padrão (Premium) e
+  // esconde o aviso de conflito entre custos de canal de venda.
+  el("proMeliAdType").value = "premium";
+  updateCrossChannelWarning();
 
   [jobNameInput, printHoursInput, printMinutesInput, printGramsInput,
    pricePerKgInput, customNameInput, kwhPriceInput]
@@ -1409,6 +1625,7 @@ function buildWhatsAppText(r) {
   const proLines = r.proMode
     ? r.proCosts.map((c) => {
         if (c.unit === "laborMinutes") return `${c.emoji} ${c.label}: ${brl(c.value)} (${c.rawValue}min de preparo × ${brl(c.hourlyRate)}/h)`;
+        if (c.id === "meli") return `${c.emoji} ${c.label}: ${brl(c.value)} (anúncio ${c.adType === "classico" ? "Clássico" : "Premium"})`;
         return `${c.emoji} ${c.label}: ${brl(c.value)}`;
       })
     : [];
@@ -1526,6 +1743,7 @@ function bindEvents() {
   bindAutoWearRecalc();
   bindLaborHintRecalc();
   bindAutoShopeeRecalc();
+  bindAutoMeliRecalc();
 }
 
 // ---------------------------------------------------------
