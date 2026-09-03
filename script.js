@@ -14,8 +14,8 @@
 // estimada, usados pelo cálculo automático de "Desgaste da máquina" no
 // modo Profissional (ver computeAutoWearValue).
 const PRINTERS = [
-  { id: "a1-combo",   name: "Bambu Lab A1 Combo",   power: 150,  desc: "150W · Multicolor com AMS",                avgPurchasePrice: 4400,  avgLifespanHours: 8000 },
-  { id: "a1-mini",    name: "Bambu Lab A1 Mini",    power: 150,  desc: "150W · Compacta, ideal para peças pequenas", avgPurchasePrice: 2900,  avgLifespanHours: 8000 },
+  { id: "a1-combo",   name: "Bambu Lab A1 Combo",   power: 180,  desc: "180W · Multicolor com AMS",                avgPurchasePrice: 4400,  avgLifespanHours: 8000 },
+  { id: "a1-mini",    name: "Bambu Lab A1 Mini",    power: 180,  desc: "180W · Compacta, ideal para peças pequenas", avgPurchasePrice: 2900,  avgLifespanHours: 8000 },
   { id: "p1s",        name: "Bambu Lab P1S",        power: 350,  desc: "350W · Câmara fechada, alta velocidade",    avgPurchasePrice: 7500,  avgLifespanHours: 10000 },
   { id: "p1p",        name: "Bambu Lab P1P",        power: 350,  desc: "350W · Estrutura aberta, alta velocidade",  avgPurchasePrice: 4800,  avgLifespanHours: 10000 },
   { id: "x1-carbon",  name: "Bambu Lab X1 Carbon",  power: 1000, desc: "1000W · Topo de linha, lidar ativo",        avgPurchasePrice: 13000, avgLifespanHours: 12000 },
@@ -27,12 +27,12 @@ const PRINTERS = [
 // já que é a opção de personalizar um material fora da lista.
 // ---------------------------------------------------------
 const MATERIALS = [
+  { id: "pla-basic", name: "PLA Basic",  pricePerKg: 109.90 },
+  { id: "pla-matte", name: "PLA Matte",  pricePerKg: 119.90 },
+  { id: "silk-pla",  name: "Silk PLA",   pricePerKg: 129.90 },  
   { id: "abs",       name: "ABS",        pricePerKg: 99.90 },
   { id: "asa",       name: "ASA",        pricePerKg: 129.90 },
   { id: "petg-basic",name: "PETG Basic", pricePerKg: 109.90 },
-  { id: "pla-basic", name: "PLA Basic",  pricePerKg: 89.90 },
-  { id: "pla-matte", name: "PLA Matte",  pricePerKg: 99.90 },
-  { id: "silk-pla",  name: "Silk PLA",   pricePerKg: 119.90 },
   { id: "tpu-95a",   name: "TPU 95A",    pricePerKg: 149.90 },
   { id: "outro",     name: "Outro (personalizado)", pricePerKg: null },
 ];
