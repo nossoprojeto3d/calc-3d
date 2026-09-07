@@ -1741,76 +1741,14 @@ function bindEvents() {
 // ---------------------------------------------------------
 // PWA — REGISTRA O SERVICE WORKER E CONTROLA O BOTÃO "INSTALAR APP"
 // ---------------------------------------------------------
-
-// true enquanto o banner de nova versão está visível — usado pelos outros
-// banners (instalar app / projeto gratuito) pra saber que devem ceder lugar.
-let updateBannerActive = false;
-
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js")
-      .then((registration) => {
-        // Registra o listener de updatefound já aqui, antes de qualquer
-        // outro código, pra não correr o risco de perder o evento.
-        registration.addEventListener("updatefound", () => {
-          const newWorker = registration.installing;
-          if (!newWorker) return;
-
-          newWorker.addEventListener("statechange", () => {
-            // "installed" + já existe um controller = havia uma versão
-            // antiga rodando e agora tem uma nova esperando pra assumir.
-            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
-              showUpdateBanner(newWorker);
-            }
-          });
-        });
-
-        // Cobre o caso de já existir um worker esperando de uma visita
-        // anterior — o "updatefound" acima só pega atualizações futuras.
-        if (registration.waiting && navigator.serviceWorker.controller) {
-          showUpdateBanner(registration.waiting);
-        }
-
-        // Não dá pra confiar só na checagem automática do navegador (intervalo
-        // longo e às vezes nem dispara). Checa ativamente ao carregar a página
-        // e sempre que a aba voltar a ficar em foco depois de ter ficado em
-        // segundo plano.
-        registration.update();
-        document.addEventListener("visibilitychange", () => {
-          if (document.visibilityState === "visible") {
-            registration.update();
-          }
-        });
-      })
-      .catch(() => {
-        // Sem problema se falhar (ex: rodando via file:// direto do disco) —
-        // o app continua funcionando normalmente, só sem o modo offline/instalação.
-      });
-
-    let reloadedForUpdate = false;
-    navigator.serviceWorker.addEventListener("controllerchange", () => {
-      if (reloadedForUpdate) return;
-      reloadedForUpdate = true;
-      window.location.reload();
+    navigator.serviceWorker.register("service-worker.js").catch(() => {
+      // Sem problema se falhar (ex: rodando via file:// direto do disco) —
+      // o app continua funcionando normalmente, só sem o modo offline/instalação.
     });
   });
-}
-
-// Mostra o aviso de nova versão disponível. Tem prioridade sobre os banners
-// de instalar app / projeto gratuito: se algum já estiver na tela, cede lugar.
-function showUpdateBanner(newWorker) {
-  const banner = el("updateBanner");
-  if (!banner) return;
-
-  updateBannerActive = true;
-  el("installBanner").hidden = true;
-  el("freeBanner").hidden = true;
-  banner.hidden = false;
-
-  el("updateBannerBtn").addEventListener("click", () => {
-    newWorker.postMessage({ type: "SKIP_WAITING" });
-  }, { once: true });
 }
 
 function initInstallPrompt() {
@@ -1829,7 +1767,7 @@ function initInstallPrompt() {
 
   function showInstallUI() {
     installBtn.hidden = false;
-    if (!wasDismissed && !updateBannerActive) banner.hidden = false;
+    if (!wasDismissed) banner.hidden = false;
   }
 
   function hideInstallUI() {
@@ -1885,7 +1823,7 @@ function initInstallPrompt() {
 // ---------------------------------------------------------
 function initFreeBanner() {
   const seenThisSession = sessionStorage.getItem("np3d_free_banner_seen") === "1";
-  if (seenThisSession || updateBannerActive) return;
+  if (seenThisSession) return;
 
   const banner = el("freeBanner");
   banner.hidden = false;

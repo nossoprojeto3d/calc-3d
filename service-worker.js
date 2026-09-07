@@ -35,18 +35,19 @@ function isCoreRequest(request) {
   return CORE_FILE_NAMES.some((name) => pathname.endsWith(name));
 }
 
-// Ao instalar o service worker, guarda os arquivos principais em cache.
-// Não chama skipWaiting() aqui de propósito: o novo worker fica em espera
-// até a pessoa confirmar a atualização (ver script.js e o listener de
-// "message" abaixo), evitando trocar a versão em uso sem avisar.
+// Ao instalar o service worker, guarda os arquivos principais em cache e já
+// assume que essa versão nova deve ficar pronta pra assumir assim que
+// possível — a atualização acontece de forma silenciosa, sem avisar a pessoa.
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(CORE_ASSETS))
+      .then(() => self.skipWaiting())
   );
 });
 
-// Ao ativar, remove caches de versões antigas do app.
+// Ao ativar, remove caches de versões antigas do app e assume o controle das
+// abas já abertas (sem recarregar nada à força).
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches.keys()
@@ -55,14 +56,6 @@ self.addEventListener("activate", (event) => {
       ))
       .then(() => self.clients.claim())
   );
-});
-
-// Recebe o aviso da página pra assumir o controle imediatamente
-// (disparado ao clicar em "Atualizar agora" no banner de nova versão).
-self.addEventListener("message", (event) => {
-  if (event.data && event.data.type === "SKIP_WAITING") {
-    self.skipWaiting();
-  }
 });
 
 self.addEventListener("fetch", (event) => {
