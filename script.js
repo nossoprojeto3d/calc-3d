@@ -1757,6 +1757,8 @@ function registerServiceWorker() {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("service-worker.js")
       .then((registration) => {
+        // Registra o listener de updatefound já aqui, antes de qualquer
+        // outro código, pra não correr o risco de perder o evento.
         registration.addEventListener("updatefound", () => {
           const newWorker = registration.installing;
           if (!newWorker) return;
@@ -1768,6 +1770,23 @@ function registerServiceWorker() {
               showUpdateBanner(newWorker);
             }
           });
+        });
+
+        // Cobre o caso de já existir um worker esperando de uma visita
+        // anterior — o "updatefound" acima só pega atualizações futuras.
+        if (registration.waiting && navigator.serviceWorker.controller) {
+          showUpdateBanner(registration.waiting);
+        }
+
+        // Não dá pra confiar só na checagem automática do navegador (intervalo
+        // longo e às vezes nem dispara). Checa ativamente ao carregar a página
+        // e sempre que a aba voltar a ficar em foco depois de ter ficado em
+        // segundo plano.
+        registration.update();
+        document.addEventListener("visibilitychange", () => {
+          if (document.visibilityState === "visible") {
+            registration.update();
+          }
         });
       })
       .catch(() => {
