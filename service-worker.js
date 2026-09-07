@@ -3,9 +3,12 @@
    Faz cache dos arquivos principais para o app funcionar
    offline depois de instalado, e é o que "habilita" o
    navegador a oferecer a instalação como PWA.
-   Sempre que os arquivos do projeto forem atualizados, mude
-   o CACHE_NAME abaixo (ex: np3d-calc-v2) para forçar os
-   usuários a baixarem a versão nova.
+   Os arquivos centrais (index.html, script.js, style.css,
+   manifest.json) usam estratégia "rede primeiro", então eles
+   já chegam atualizados sozinhos quando a pessoa está online.
+   Mudar o CACHE_NAME (ex: np3d-calc-v2) continua sendo uma
+   segurança extra, mas não é mais a única linha de defesa
+   contra versão antiga.
    ========================================================= */
 
 const CACHE_NAME = "np3d-calc-v1";
@@ -22,12 +25,24 @@ const CORE_ASSETS = [
   "./assets/icon-512.png",
 ];
 
+// Arquivos centrais do app: sempre buscamos a versão mais nova da rede
+// primeiro, pra ninguém ficar preso numa versão antiga depois de um deploy.
+const CORE_FILE_NAMES = ["index.html", "script.js", "style.css", "manifest.json"];
+
+function isCoreRequest(request) {
+  if (request.mode === "navigate") return true;
+  const pathname = new URL(request.url).pathname;
+  return CORE_FILE_NAMES.some((name) => pathname.endsWith(name));
+}
+
 // Ao instalar o service worker, guarda os arquivos principais em cache.
+// Não chama skipWaiting() aqui de propósito: o novo worker fica em espera
+// até a pessoa confirmar a atualização (ver script.js e o listener de
+// "message" abaixo), evitando trocar a versão em uso sem avisar.
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => cache.addAll(CORE_ASSETS))
-      .then(() => self.skipWaiting())
   );
 });
 
@@ -42,11 +57,35 @@ self.addEventListener("activate", (event) => {
   );
 });
 
-// Estratégia "cache primeiro, rede como respaldo": tenta servir do
-// cache (funciona offline); se não achar, busca na rede.
+// Recebe o aviso da página pra assumir o controle imediatamente
+// (disparado ao clicar em "Atualizar agora" no banner de nova versão).
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
+});
+
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
+  if (isCoreRequest(event.request)) {
+    // Estratégia "rede primeiro": tenta buscar a versão mais recente;
+    // se conseguir, atualiza o cache e usa essa resposta. Se a rede
+    // falhar (offline), cai pro que estiver salvo em cache.
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          const responseClone = networkResponse.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // Demais arquivos estáticos (imagens, ícones): "cache primeiro, rede
+  // como respaldo" — eles raramente mudam e isso mantém o carregamento rápido.
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) return cachedResponse;
