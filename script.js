@@ -1749,14 +1749,57 @@ function bindEvents() {
 // ---------------------------------------------------------
 // PWA — REGISTRA O SERVICE WORKER E CONTROLA O BOTÃO "INSTALAR APP"
 // ---------------------------------------------------------
+
+// true enquanto o banner de nova versão está visível — usado pelos outros
+// banners (instalar app / projeto gratuito) pra saber que devem ceder lugar.
+let updateBannerActive = false;
+
 function registerServiceWorker() {
   if (!("serviceWorker" in navigator)) return;
   window.addEventListener("load", () => {
-    navigator.serviceWorker.register("service-worker.js").catch(() => {
-      // Sem problema se falhar (ex: rodando via file:// direto do disco) —
-      // o app continua funcionando normalmente, só sem o modo offline/instalação.
+    navigator.serviceWorker.register("service-worker.js")
+      .then((registration) => {
+        registration.addEventListener("updatefound", () => {
+          const newWorker = registration.installing;
+          if (!newWorker) return;
+
+          newWorker.addEventListener("statechange", () => {
+            // "installed" + já existe um controller = havia uma versão
+            // antiga rodando e agora tem uma nova esperando pra assumir.
+            if (newWorker.state === "installed" && navigator.serviceWorker.controller) {
+              showUpdateBanner(newWorker);
+            }
+          });
+        });
+      })
+      .catch(() => {
+        // Sem problema se falhar (ex: rodando via file:// direto do disco) —
+        // o app continua funcionando normalmente, só sem o modo offline/instalação.
+      });
+
+    let reloadedForUpdate = false;
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (reloadedForUpdate) return;
+      reloadedForUpdate = true;
+      window.location.reload();
     });
   });
+}
+
+// Mostra o aviso de nova versão disponível. Tem prioridade sobre os banners
+// de instalar app / projeto gratuito: se algum já estiver na tela, cede lugar.
+function showUpdateBanner(newWorker) {
+  const banner = el("updateBanner");
+  if (!banner) return;
+
+  updateBannerActive = true;
+  el("installBanner").hidden = true;
+  el("freeBanner").hidden = true;
+  banner.hidden = false;
+
+  el("updateBannerBtn").addEventListener("click", () => {
+    newWorker.postMessage({ type: "SKIP_WAITING" });
+  }, { once: true });
 }
 
 function initInstallPrompt() {
@@ -1775,7 +1818,7 @@ function initInstallPrompt() {
 
   function showInstallUI() {
     installBtn.hidden = false;
-    if (!wasDismissed) banner.hidden = false;
+    if (!wasDismissed && !updateBannerActive) banner.hidden = false;
   }
 
   function hideInstallUI() {
@@ -1831,7 +1874,7 @@ function initInstallPrompt() {
 // ---------------------------------------------------------
 function initFreeBanner() {
   const seenThisSession = sessionStorage.getItem("np3d_free_banner_seen") === "1";
-  if (seenThisSession) return;
+  if (seenThisSession || updateBannerActive) return;
 
   const banner = el("freeBanner");
   banner.hidden = false;
