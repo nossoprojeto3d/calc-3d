@@ -213,39 +213,54 @@ function populateProCosts() {
     ` : "";
     const shortcutsHintHtml = cost.shortcutsHint ? `<p class="hint">${cost.shortcutsHint}</p>` : "";
 
-    // Aviso fixo acima do campo (ex.: ressalva da Taxa Mercado Livre) e
-    // seletor de tipo de anúncio (Clássico/Premium) ao lado do campo —
-    // ambos opcionais, só entram nos itens que tiverem essas flags.
+    // Aviso fixo (ex.: ressalva da Taxa Mercado Livre) e seletor de tipo de
+    // anúncio (Clássico/Premium) — ambos opcionais, só entram nos itens que
+    // tiverem essas flags (hoje, só "meli").
     const warningHtml = cost.warningText ? `<p class="hint pro-item-warning">${cost.warningText}</p>` : "";
     const adTypeSelectHtml = cost.adTypeSelect ? `
         <select id="${fieldId}AdType" aria-label="Tipo de anúncio">
           <option value="classico">Clássico</option>
           <option value="premium" selected>Premium</option>
         </select>` : "";
-    const inputOpenTag = cost.adTypeSelect ? `<div class="pro-input-row">` : "";
-    const inputCloseTag = cost.adTypeSelect ? `</div>` : "";
 
-    // "Taxa Shopee" foge do padrão genérico de campo em R$: em vez de um
-    // valor pra digitar, mostra 4 opções de faixa (estilo cartão/rádio) e,
-    // se "Personalizado" for escolhido, dois campinhos manuais — ver
-    // renderShopeeTierOptions / selectShopeeTier / computeAutoShopeeValue.
-    // O campo em R$ de sempre continua existindo por baixo (escondido): é
-    // ele que guarda o valor calculado e mantém funcionando, sem mudança,
-    // toda a lógica que já lê esse campo (cálculo, validação, WhatsApp, PDF).
+    // "Taxa Shopee" e "Taxa Mercado Livre" fogem do padrão genérico de campo
+    // em R$: em vez de um valor pra digitar, mostram opções de faixa (estilo
+    // cartão/rádio) e, se "Personalizado" for escolhido, dois campinhos
+    // manuais — ver renderShopeeTierOptions/renderMeliTierOptions e
+    // computeAutoShopeeValue/computeAutoMeliValue. O campo em R$ de sempre
+    // continua existindo por baixo (escondido): é ele que guarda o valor
+    // calculado e mantém funcionando, sem mudança, toda a lógica que já lê
+    // esse campo (cálculo, validação, WhatsApp, PDF).
+    const customFieldsHtml = (customPctPlaceholder) => `
+            <div class="field-grid two-cols" style="margin-top: 10px;">
+              <div class="field">
+                <label for="${fieldId}CustomPct">Comissão (%)</label>
+                <input type="number" id="${fieldId}CustomPct" min="0" max="99" step="1" placeholder="${customPctPlaceholder}">
+              </div>
+              <div class="field">
+                <label for="${fieldId}CustomFixed">Valor fixo (R$)</label>
+                <input type="number" id="${fieldId}CustomFixed" min="0" step="0.01" placeholder="Ex: 4,00">
+              </div>
+            </div>
+    `;
+
     const bodyContentHtml = cost.id === "shopee" ? `
-            <div class="shopee-tier-options" id="proShopeeTierOptions"></div>
+            <div class="tier-options" id="proShopeeTierOptions"></div>
             <div class="reveal" id="proShopeeCustomFields" hidden>
               <div class="reveal-inner">
-                <div class="field-grid two-cols" style="margin-top: 10px;">
-                  <div class="field">
-                    <label for="proShopeeCustomPct">Comissão (%)</label>
-                    <input type="number" id="proShopeeCustomPct" min="0" max="99" step="1" placeholder="Ex: 20">
-                  </div>
-                  <div class="field">
-                    <label for="proShopeeCustomFixed">Valor fixo (R$)</label>
-                    <input type="number" id="proShopeeCustomFixed" min="0" step="0.01" placeholder="Ex: 4,00">
-                  </div>
-                </div>
+                ${customFieldsHtml("Ex: 20")}
+              </div>
+            </div>
+            <input type="number" id="${fieldId}" hidden aria-hidden="true" tabindex="-1">
+            <p class="field-error-text" id="${fieldId}Error" hidden>${errorText}</p>
+            <p class="hint" id="${fieldId}Hint">${cost.hint}</p>
+    ` : cost.id === "meli" ? `
+            ${warningHtml}
+            ${adTypeSelectHtml}
+            <div class="tier-options" id="proMeliTierOptions"></div>
+            <div class="reveal" id="proMeliCustomFields" hidden>
+              <div class="reveal-inner">
+                ${customFieldsHtml("Ex: 17")}
               </div>
             </div>
             <input type="number" id="${fieldId}" hidden aria-hidden="true" tabindex="-1">
@@ -253,10 +268,8 @@ function populateProCosts() {
             <p class="hint" id="${fieldId}Hint">${cost.hint}</p>
     ` : `
             ${warningHtml}
-            ${inputOpenTag}
             <input type="number" id="${fieldId}" min="0" step="${step}" placeholder="${cost.placeholder}" aria-label="${unitLabel}">
             ${adTypeSelectHtml}
-            ${inputCloseTag}
             ${shortcutsHtml}
             ${shortcutsHintHtml}
             <p class="field-error-text" id="${fieldId}Error" hidden>${errorText}</p>
@@ -780,18 +793,18 @@ function renderShopeeTierOptions() {
 
   const tiers = getEffectiveShopeeTiers();
   const presetsHtml = tiers.map((tier, i) => `
-    <button type="button" class="shopee-tier-option${shopeeSelectedTier === i ? " active" : ""}" data-tier="${i}">
+    <button type="button" class="tier-option${shopeeSelectedTier === i ? " active" : ""}" data-tier="${i}">
       ${shopeeTierOptionText(SHOPEE_TIER_OPTION_LABELS[i], tier)}
     </button>
   `).join("");
   const customHtml = `
-    <button type="button" class="shopee-tier-option${shopeeSelectedTier === "custom" ? " active" : ""}" data-tier="custom">
+    <button type="button" class="tier-option${shopeeSelectedTier === "custom" ? " active" : ""}" data-tier="custom">
       Personalizado
     </button>
   `;
 
   wrap.innerHTML = presetsHtml + customHtml;
-  wrap.querySelectorAll(".shopee-tier-option").forEach((btn) => {
+  wrap.querySelectorAll(".tier-option").forEach((btn) => {
     btn.addEventListener("click", () => {
       const value = btn.dataset.tier === "custom" ? "custom" : Number(btn.dataset.tier);
       selectShopeeTier(value);
@@ -1021,44 +1034,114 @@ function pickMeliTier(base, commissionPct, fixedFee) {
   return { tier: "from", finalPrice: fromCandidate ?? base, fixedFeeUsed: 0 };
 }
 
+// Faixa da Taxa Mercado Livre escolhida pela pessoa: "below", "from" ou
+// "custom"; null enquanto nenhuma foi escolhida ainda (mesmo padrão da
+// Taxa Shopee — ver shopeeSelectedTier).
+let meliSelectedTier = null;
+
+/** Tipo de anúncio selecionado + comissão/custo fixo efetivos pra ele
+ *  (configurados nas Configurações da loja, ou o padrão do Mercado Livre). */
+function getMeliAdTypeRate() {
+  const adTypeEl = el("proMeliAdType");
+  const adType = adTypeEl && adTypeEl.value === "classico" ? "classico" : "premium";
+  const meliSettings = getEffectiveMeliSettings();
+  const commissionPct = adType === "classico" ? meliSettings.commissionClassico : meliSettings.commissionPremium;
+  return { adType, commissionPct, fixedFee: meliSettings.fixedFee };
+}
+
+/** Comissão + taxa fixa da faixa atualmente escolhida (preset ou "Personalizado"). */
+function getSelectedMeliRate() {
+  if (meliSelectedTier === "custom") {
+    return {
+      commissionPct: parseFloat(el("proMeliCustomPct").value) || 0,
+      fixedFee: parseFloat(el("proMeliCustomFixed").value) || 0,
+    };
+  }
+  const { commissionPct, fixedFee } = getMeliAdTypeRate();
+  return { commissionPct, fixedFee: meliSelectedTier === "below" ? fixedFee : 0 };
+}
+
+/** Texto de uma opção de faixa preset da Taxa Mercado Livre. */
+function meliTierOptionText(tier, commissionPct, fixedFee) {
+  return tier === "below"
+    ? `Abaixo de R$ 79,00 — ${commissionPct}% + ${brl(fixedFee)} fixo`
+    : `A partir de R$ 79,00 — ${commissionPct}% (sem custo fixo)`;
+}
+
+/** Reconstrói as 3 opções de faixa da Taxa Mercado Livre (2 presets +
+ *  Personalizado), refletindo o tipo de anúncio e os valores configurados
+ *  nas Configurações da loja, e destacando a que estiver selecionada. */
+function renderMeliTierOptions() {
+  const wrap = el("proMeliTierOptions");
+  if (!wrap) return;
+
+  const { commissionPct, fixedFee } = getMeliAdTypeRate();
+  const presetsHtml = ["below", "from"].map((tier) => `
+    <button type="button" class="tier-option${meliSelectedTier === tier ? " active" : ""}" data-tier="${tier}">
+      ${meliTierOptionText(tier, commissionPct, fixedFee)}
+    </button>
+  `).join("");
+  const customHtml = `
+    <button type="button" class="tier-option${meliSelectedTier === "custom" ? " active" : ""}" data-tier="custom">
+      Personalizado
+    </button>
+  `;
+
+  wrap.innerHTML = presetsHtml + customHtml;
+  wrap.querySelectorAll(".tier-option").forEach((btn) => {
+    btn.addEventListener("click", () => selectMeliTier(btn.dataset.tier));
+  });
+}
+
+/** Aplica a escolha de faixa da pessoa (clique num card): passa a mandar
+ *  nessa faixa, mostra/esconde os campos de "Personalizado" e recalcula. */
+function selectMeliTier(value) {
+  meliSelectedTier = value;
+  setExpanded(el("proMeliCustomFields"), value === "custom");
+  recalcAutoMeli();
+}
+
+/**
+ * Calcula a Taxa Mercado Livre com a faixa ATUALMENTE escolhida (preset ou
+ * "Personalizado") — aplica a fórmula reversa direto com a comissão e taxa
+ * fixa dessa faixa, sem testar se o preço resultante cai dentro do
+ * intervalo. Se ainda não houver faixa escolhida (primeira vez que o switch
+ * liga), sugere automaticamente a que bate com o preço atual — só essa vez.
+ */
 function computeAutoMeliValue() {
   const baseDetails = computeMarketplaceFeeBase();
   if (!baseDetails) return null;
 
   const { base } = baseDetails;
 
-  const adTypeEl = el("proMeliAdType");
-  const adType = adTypeEl && adTypeEl.value === "classico" ? "classico" : "premium";
-  const meliSettings = getEffectiveMeliSettings();
-  const commissionPct = adType === "classico" ? meliSettings.commissionClassico : meliSettings.commissionPremium;
+  if (meliSelectedTier === null && el("proMeliToggle").checked) {
+    if (hasCalculablePrintJob()) {
+      const { commissionPct, fixedFee } = getMeliAdTypeRate();
+      meliSelectedTier = pickMeliTier(base, commissionPct, fixedFee).tier;
+    } else {
+      meliSelectedTier = "below";
+    }
+  }
 
-  const picked = pickMeliTier(base, commissionPct, meliSettings.fixedFee);
-  const feeValue = picked.finalPrice - base;
+  const rate = getSelectedMeliRate();
+  const finalPrice = computeMeliCandidate(base, rate.commissionPct, rate.fixedFee) ?? base;
+  const feeValue = finalPrice - base;
 
-  return { base, feeValue, adType, commissionPct, ...picked };
+  return { base, feeValue, tier: rate, finalPrice };
 }
 
-/** Monta o texto do hint da "Taxa Mercado Livre" com o tipo de anúncio, a faixa e a conta de verdade. */
-function updateMeliHint(details) {
+/** Mostra o texto fixo e instrutivo do hint da "Taxa Mercado Livre". */
+function updateMeliHint() {
   const hintEl = el("proMeliHint");
   if (!hintEl) return;
 
-  if (!details) {
-    hintEl.textContent = "Calculado automaticamente com a comissão do tipo de anúncio selecionado + custo fixo (valores editáveis nas Configurações da loja), ajustando o preço pra você continuar recebendo o valor desejado depois da taxa. Edite o valor acima se quiser usar outra conta.";
-    return;
-  }
-
-  const { tier, adType, commissionPct, fixedFeeUsed, feeValue } = details;
-  const adTypeLabel = adType === "classico" ? "Clássico" : "Premium";
-  const tierLabel = tier === "below" ? "produto abaixo de R$79" : "produto a partir de R$79";
-  const feePart = tier === "below" ? ` + ${brl(fixedFeeUsed)} fixo` : " (sem custo fixo nessa faixa)";
-
-  hintEl.textContent = `Anúncio ${adTypeLabel}, ${tierLabel}: ${commissionPct}%${feePart}. Preço ajustado pra você continuar recebendo o valor desejado depois da taxa — taxa calculada: ${brl(feeValue)}. Edite o valor acima se quiser usar outra conta.`;
+  hintEl.textContent = "Selecione a faixa de preço em que o valor final do seu produto se encaixa, para calcularmos a taxa do Mercado Livre automaticamente.";
 }
 
 function recalcAutoMeli() {
   const details = computeAutoMeliValue();
-  updateMeliHint(details);
+  renderMeliTierOptions();
+  updateMeliHint();
   if (!details) return;
 
   const input = el("proMeli");
@@ -1082,7 +1165,15 @@ function bindAutoMeliRecalc() {
     el(`${fieldId}Toggle`).addEventListener("change", recalcAutoMeli);
   });
 
+  // Trocar o tipo de anúncio (Clássico/Premium) atualiza a comissão usada
+  // pelas faixas preset, mas mantém a faixa (não o tipo de anúncio) que a
+  // pessoa já tinha escolhido.
   el("proMeliAdType").addEventListener("change", recalcAutoMeli);
+
+  // Campos de "Personalizado" — recalcula na hora ao editar.
+  [el("proMeliCustomPct"), el("proMeliCustomFixed")].forEach((input) => {
+    input.addEventListener("input", recalcAutoMeli);
+  });
 
   // Mutuamente exclusiva com "Taxa Shopee" — é a mesma venda em um único
   // canal, então ligar uma desliga a outra automaticamente (mesmo padrão da
@@ -1834,13 +1925,20 @@ function clearAll() {
   // Volta o tipo de anúncio da Taxa Mercado Livre pro padrão (Premium).
   el("proMeliAdType").value = "premium";
 
-  // Taxa Shopee: esquece a faixa escolhida (a próxima vez que o switch for
-  // ligado volta a sugerir automaticamente) e limpa os campos de "Personalizado".
+  // Taxa Shopee e Taxa Mercado Livre: esquecem a faixa escolhida (a próxima
+  // vez que o switch for ligado volta a sugerir automaticamente) e limpam os
+  // campos de "Personalizado".
   shopeeSelectedTier = null;
   el("proShopeeCustomPct").value = "";
   el("proShopeeCustomFixed").value = "";
   setExpanded(el("proShopeeCustomFields"), false);
   renderShopeeTierOptions();
+
+  meliSelectedTier = null;
+  el("proMeliCustomPct").value = "";
+  el("proMeliCustomFixed").value = "";
+  setExpanded(el("proMeliCustomFields"), false);
+  renderMeliTierOptions();
 
   [jobNameInput, printHoursInput, printMinutesInput, printGramsInput,
    pricePerKgInput, customNameInput, kwhPriceInput]

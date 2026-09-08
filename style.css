@@ -576,16 +576,17 @@ input[type="number"]{
   margin-bottom: 4px;
 }
 
-/* Seletor de faixa da Taxa Shopee — cartões estilo rádio (3 faixas +
-   Personalizado), mesmo espírito visual dos atalhos (.chip-btn) da Margem
-   de falha, só maiores e em coluna pra caber a descrição completa. */
-.shopee-tier-options{
+/* Seletor de faixa de taxa de marketplace (Taxa Shopee e Taxa Mercado
+   Livre) — cartões estilo rádio (faixas + Personalizado), mesmo espírito
+   visual dos atalhos (.chip-btn) da Margem de falha, só maiores e em
+   coluna pra caber a descrição completa. */
+.tier-options{
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.shopee-tier-option{
+.tier-option{
   text-align: left;
   padding: 10px 12px;
   border-radius: 8px;
@@ -597,8 +598,8 @@ input[type="number"]{
   cursor: pointer;
   transition: border-color .15s ease, color .15s ease, background .15s ease;
 }
-.shopee-tier-option:hover{ border-color: var(--accent-2); color: var(--text); }
-.shopee-tier-option.active{
+.tier-option:hover{ border-color: var(--accent-2); color: var(--text); }
+.tier-option.active{
   background: var(--accent-soft);
   border-color: var(--accent-1);
   color: var(--text);
