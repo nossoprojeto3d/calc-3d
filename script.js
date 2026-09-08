@@ -70,7 +70,7 @@ const PRO_COSTS = [
   { id: "materials",   label: "Materiais e insumos", unit: "currency", placeholder: "Ex: 5,00",  emoji: "🧲",
     hint: "Inclua aqui qualquer material extra usado na peça, além do filamento — ímã, cola, tinta, parafusos, ou qualquer outro insumo usado na montagem ou no acabamento." },
   { id: "shopee",      label: "Taxa Shopee",         unit: "currency", placeholder: "Ex: 4,00",  emoji: "🛒",
-    hint: "Calculado automaticamente com a comissão + taxa fixa da Shopee (faixas editáveis nas Configurações da loja), ajustando o preço pra você continuar recebendo o valor desejado depois da taxa. Edite o valor acima se quiser usar outra conta." },
+    hint: "Selecione a faixa de preço em que o valor final do seu produto se encaixa, para calcularmos a taxa da Shopee automaticamente." },
   { id: "meli",        label: "Taxa Mercado Livre",  unit: "currency", placeholder: "Ex: 10,00", emoji: "🛍️",
     adTypeSelect: true,
     warningText: "Aproximação: não considera a categoria do produto (a comissão real varia por categoria) nem o frete grátis subsidiado em vendas acima de R$79. Vale a pena conferir a comissão exata da sua categoria no Simulador de Custos do Mercado Livre.",
@@ -225,6 +225,44 @@ function populateProCosts() {
     const inputOpenTag = cost.adTypeSelect ? `<div class="pro-input-row">` : "";
     const inputCloseTag = cost.adTypeSelect ? `</div>` : "";
 
+    // "Taxa Shopee" foge do padrão genérico de campo em R$: em vez de um
+    // valor pra digitar, mostra 4 opções de faixa (estilo cartão/rádio) e,
+    // se "Personalizado" for escolhido, dois campinhos manuais — ver
+    // renderShopeeTierOptions / selectShopeeTier / computeAutoShopeeValue.
+    // O campo em R$ de sempre continua existindo por baixo (escondido): é
+    // ele que guarda o valor calculado e mantém funcionando, sem mudança,
+    // toda a lógica que já lê esse campo (cálculo, validação, WhatsApp, PDF).
+    const bodyContentHtml = cost.id === "shopee" ? `
+            <div class="shopee-tier-options" id="proShopeeTierOptions"></div>
+            <div class="reveal" id="proShopeeCustomFields" hidden>
+              <div class="reveal-inner">
+                <div class="field-grid two-cols" style="margin-top: 10px;">
+                  <div class="field">
+                    <label for="proShopeeCustomPct">Comissão (%)</label>
+                    <input type="number" id="proShopeeCustomPct" min="0" max="99" step="1" placeholder="Ex: 20">
+                  </div>
+                  <div class="field">
+                    <label for="proShopeeCustomFixed">Valor fixo (R$)</label>
+                    <input type="number" id="proShopeeCustomFixed" min="0" step="0.01" placeholder="Ex: 4,00">
+                  </div>
+                </div>
+              </div>
+            </div>
+            <input type="number" id="${fieldId}" hidden aria-hidden="true" tabindex="-1">
+            <p class="field-error-text" id="${fieldId}Error" hidden>${errorText}</p>
+            <p class="hint" id="${fieldId}Hint">${cost.hint}</p>
+    ` : `
+            ${warningHtml}
+            ${inputOpenTag}
+            <input type="number" id="${fieldId}" min="0" step="${step}" placeholder="${cost.placeholder}" aria-label="${unitLabel}">
+            ${adTypeSelectHtml}
+            ${inputCloseTag}
+            ${shortcutsHtml}
+            ${shortcutsHintHtml}
+            <p class="field-error-text" id="${fieldId}Error" hidden>${errorText}</p>
+            <p class="hint" id="${fieldId}Hint">${cost.hint}</p>
+    `;
+
     const item = document.createElement("div");
     item.className = "pro-item";
     item.id = `${fieldId}Item`;
@@ -239,15 +277,7 @@ function populateProCosts() {
       <div class="reveal" id="${fieldId}Body" hidden>
         <div class="reveal-inner">
           <div class="field" style="margin-top: 10px;">
-            ${warningHtml}
-            ${inputOpenTag}
-            <input type="number" id="${fieldId}" min="0" step="${step}" placeholder="${cost.placeholder}" aria-label="${unitLabel}">
-            ${adTypeSelectHtml}
-            ${inputCloseTag}
-            ${shortcutsHtml}
-            ${shortcutsHintHtml}
-            <p class="field-error-text" id="${fieldId}Error" hidden>${errorText}</p>
-            <p class="hint" id="${fieldId}Hint">${cost.hint}</p>
+            ${bodyContentHtml}
           </div>
         </div>
       </div>
@@ -658,6 +688,17 @@ const SHOPEE_TIER_RANGES = [
   { min: 80, max: Infinity, label: "a partir de R$ 80,00" },
 ];
 
+// Rótulos das 3 faixas na opção de seleção (capitalizados, sem o "de"/"a"
+// em minúsculo que fica bem no meio de uma frase mas não como título).
+const SHOPEE_TIER_OPTION_LABELS = ["Abaixo de R$ 8,00", "De R$ 8,00 a R$ 79,99", "A partir de R$ 80,00"];
+
+// Faixa de comissão da Taxa Shopee escolhida pela pessoa: 0, 1 ou 2 (índice
+// em SHOPEE_TIER_RANGES) ou "custom"; null enquanto nenhuma foi escolhida
+// ainda (nesse caso, a faixa correspondente ao preço atual é sugerida
+// automaticamente — ver computeAutoShopeeValue). Uma vez escolhida, a
+// pessoa manda: nunca trocamos essa escolha sozinhos.
+let shopeeSelectedTier = null;
+
 const SHOPEE_DEFAULT_TIERS = [
   { commissionPct: 50, fixedFee: 0 },
   { commissionPct: 20, fixedFee: 4 },
@@ -708,6 +749,62 @@ function pickShopeeTier(base) {
   const lastIndex = tiers.length - 1;
   const fallbackCandidate = computeShopeeCandidate(base, tiers[lastIndex]);
   return { tierIndex: lastIndex, tier: tiers[lastIndex], finalPrice: fallbackCandidate ?? base };
+}
+
+/** Comissão + taxa fixa da faixa atualmente escolhida (preset ou "Personalizado"). */
+function getSelectedShopeeRate() {
+  if (shopeeSelectedTier === "custom") {
+    return {
+      commissionPct: parseFloat(el("proShopeeCustomPct").value) || 0,
+      fixedFee: parseFloat(el("proShopeeCustomFixed").value) || 0,
+    };
+  }
+  const tiers = getEffectiveShopeeTiers();
+  const idx = typeof shopeeSelectedTier === "number" ? shopeeSelectedTier : 0;
+  return tiers[idx];
+}
+
+/** Texto de uma opção de faixa preset — omite o "+ fixo" quando a faixa não tem taxa fixa configurada. */
+function shopeeTierOptionText(rangeLabel, tier) {
+  return tier.fixedFee > 0
+    ? `${rangeLabel} — ${tier.commissionPct}% + ${brl(tier.fixedFee)} fixo`
+    : `${rangeLabel} — ${tier.commissionPct}% de comissão`;
+}
+
+/** Reconstrói as 4 opções de faixa da Taxa Shopee (3 presets + Personalizado),
+ *  refletindo os valores configurados nas Configurações da loja e destacando
+ *  a que estiver selecionada no momento. */
+function renderShopeeTierOptions() {
+  const wrap = el("proShopeeTierOptions");
+  if (!wrap) return;
+
+  const tiers = getEffectiveShopeeTiers();
+  const presetsHtml = tiers.map((tier, i) => `
+    <button type="button" class="shopee-tier-option${shopeeSelectedTier === i ? " active" : ""}" data-tier="${i}">
+      ${shopeeTierOptionText(SHOPEE_TIER_OPTION_LABELS[i], tier)}
+    </button>
+  `).join("");
+  const customHtml = `
+    <button type="button" class="shopee-tier-option${shopeeSelectedTier === "custom" ? " active" : ""}" data-tier="custom">
+      Personalizado
+    </button>
+  `;
+
+  wrap.innerHTML = presetsHtml + customHtml;
+  wrap.querySelectorAll(".shopee-tier-option").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const value = btn.dataset.tier === "custom" ? "custom" : Number(btn.dataset.tier);
+      selectShopeeTier(value);
+    });
+  });
+}
+
+/** Aplica a escolha de faixa da pessoa (clique num card): passa a mandar
+ *  nessa faixa, mostra/esconde os campos de "Personalizado" e recalcula. */
+function selectShopeeTier(value) {
+  shopeeSelectedTier = value;
+  setExpanded(el("proShopeeCustomFields"), value === "custom");
+  recalcAutoShopee();
 }
 
 /**
@@ -762,36 +859,67 @@ function computeMarketplaceFeeBase() {
   return { base: marginBase + profit + group2NonFeeTotal };
 }
 
+/**
+ * Calcula a Taxa Shopee com a faixa ATUALMENTE escolhida (preset ou
+ * "Personalizado") — aplica a fórmula reversa direto com a comissão e taxa
+ * fixa dessa faixa, sem testar se o preço resultante cai dentro do
+ * intervalo (a pessoa já escolheu explicitamente, não precisa validar isso).
+ * Se ainda não houver faixa escolhida (primeira vez que o switch liga),
+ * sugere automaticamente a que bate com o preço atual — só essa vez.
+ */
+/** Confere se já dá pra calcular um preço final de verdade (impressora, tempo
+ *  de impressão, peso, preço do filamento e kWh preenchidos) — usado só pra
+ *  decidir a pré-seleção inicial da faixa da Taxa Shopee. */
+function hasCalculablePrintJob() {
+  const printer = PRINTERS.find((p) => p.id === printerSelect.value);
+  if (!printer) return false;
+  if (!printHoursTest(printHoursInput.value) || !printMinutesTest(printMinutesInput.value)) return false;
+  if (Number(printHoursInput.value) === 0 && Number(printMinutesInput.value) === 0) return false;
+  if (!(parseFloat(printGramsInput.value) > 0)) return false;
+  if (!(parseFloat(pricePerKgInput.value) > 0)) return false;
+  if (!(parseFloat(kwhPriceInput.value) > 0)) return false;
+  return true;
+}
+
 function computeAutoShopeeValue() {
   const baseDetails = computeMarketplaceFeeBase();
   if (!baseDetails) return null;
 
   const { base } = baseDetails;
-  const picked = pickShopeeTier(base);
-  const feeValue = picked.finalPrice - base;
 
-  return { base, feeValue, ...picked };
+  // Ainda não escolheu nenhuma faixa: se já der pra calcular um preço final
+  // de verdade, sugere a faixa correspondente; senão, pré-seleciona a
+  // primeira faixa como padrão. Só decide isso de vez quando o switch da
+  // Taxa Shopee já está ligado (senão um recálculo de fundo — ex.: ao
+  // carregar a página, ainda com os campos vazios — travaria a faixa 0 pra
+  // sempre antes da pessoa sequer ativar o custo). Depois de decidido, a
+  // escolha da pessoa manda.
+  if (shopeeSelectedTier === null && el("proShopeeToggle").checked) {
+    shopeeSelectedTier = hasCalculablePrintJob() ? pickShopeeTier(base).tierIndex : 0;
+  }
+
+  const rate = getSelectedShopeeRate();
+  const finalPrice = computeShopeeCandidate(base, rate) ?? base;
+  const feeValue = finalPrice - base;
+
+  return { base, feeValue, tier: rate, finalPrice };
 }
 
-/** Monta o texto do hint da "Taxa Shopee" com a faixa e a conta de verdade. */
-function updateShopeeHint(details) {
+/** Mostra o texto fixo e instrutivo do hint da "Taxa Shopee". */
+function updateShopeeHint() {
   const hintEl = el("proShopeeHint");
   if (!hintEl) return;
 
-  if (!details) {
-    hintEl.textContent = "Calculado automaticamente com a comissão + taxa fixa da Shopee (faixas editáveis nas Configurações da loja), ajustando o preço pra você continuar recebendo o valor desejado depois da taxa. Edite o valor acima se quiser usar outra conta.";
-    return;
-  }
-
-  const { tierIndex, tier, feeValue } = details;
-  const label = SHOPEE_TIER_RANGES[tierIndex].label;
-
-  hintEl.textContent = `Faixa ${label}: ${tier.commissionPct}% + ${brl(tier.fixedFee)} fixo. Preço ajustado pra você continuar recebendo o valor desejado depois da taxa — taxa calculada: ${brl(feeValue)}. Edite o valor acima se quiser usar outra conta.`;
+  // Texto fixo e instrutivo — não muda com a faixa selecionada nem com a
+  // conta calculada (o valor da taxa em R$ já aparece na própria opção
+  // selecionada e no resumo/breakdown).
+  hintEl.textContent = "Selecione a faixa de preço em que o valor final do seu produto se encaixa, para calcularmos a taxa da Shopee automaticamente.";
 }
 
 function recalcAutoShopee() {
   const details = computeAutoShopeeValue();
-  updateShopeeHint(details);
+  renderShopeeTierOptions();
+  updateShopeeHint();
   if (!details) return;
 
   const input = el("proShopee");
@@ -828,6 +956,11 @@ function bindAutoShopeeRecalc() {
       showQuickToast('Taxa Mercado Livre desativada — você só pode usar uma taxa de marketplace por vez.');
     }
     recalcAutoShopee();
+  });
+
+  // Campos de "Personalizado" — recalcula na hora ao editar.
+  [el("proShopeeCustomPct"), el("proShopeeCustomFixed")].forEach((input) => {
+    input.addEventListener("input", recalcAutoShopee);
   });
 
   recalcAutoShopee();
@@ -1700,6 +1833,14 @@ function clearAll() {
   });
   // Volta o tipo de anúncio da Taxa Mercado Livre pro padrão (Premium).
   el("proMeliAdType").value = "premium";
+
+  // Taxa Shopee: esquece a faixa escolhida (a próxima vez que o switch for
+  // ligado volta a sugerir automaticamente) e limpa os campos de "Personalizado".
+  shopeeSelectedTier = null;
+  el("proShopeeCustomPct").value = "";
+  el("proShopeeCustomFixed").value = "";
+  setExpanded(el("proShopeeCustomFields"), false);
+  renderShopeeTierOptions();
 
   [jobNameInput, printHoursInput, printMinutesInput, printGramsInput,
    pricePerKgInput, customNameInput, kwhPriceInput]
