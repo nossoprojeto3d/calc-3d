@@ -292,10 +292,11 @@
         </div>
         <div class="field">
           <label for="printMinutes">Tempo de impressão — minutos</label>
-          <input type="number" id="printMinutes" min="1" max="59" step="1" inputmode="numeric" placeholder="Ex: 30">
-          <p class="field-error-text" id="printMinutesError" hidden>Informe os minutos — inteiro, entre 1 e 59 (60min = 1h).</p>
+          <input type="number" id="printMinutes" min="0" max="59" step="1" inputmode="numeric" placeholder="Ex: 30">
+          <p class="field-error-text" id="printMinutesError" hidden>Informe os minutos — inteiro, entre 0 e 59 (60min = 1h).</p>
         </div>
       </div>
+      <p class="field-error-text" id="printTimeError" hidden>O tempo de impressão não pode ser zero. Preencha horas, minutos, ou os dois.</p>
 
       <div class="field-grid two-cols">
         <div class="field">

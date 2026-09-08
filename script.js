@@ -1061,6 +1061,18 @@ function clearMarginError() {
   el("marginError").hidden = true;
 }
 
+function showPrintTimeError() {
+  printHoursInput.classList.add("invalid");
+  printMinutesInput.classList.add("invalid");
+  el("printTimeError").hidden = false;
+}
+
+function clearPrintTimeError() {
+  printHoursInput.classList.remove("invalid");
+  printMinutesInput.classList.remove("invalid");
+  el("printTimeError").hidden = true;
+}
+
 // ---------------------------------------------------------
 // VALIDAÇÃO DE CAMPOS OBRIGATÓRIOS
 // ---------------------------------------------------------
@@ -1091,13 +1103,19 @@ function clearFieldError(inputEl) {
  * o próprio elemento (para poder rolar a tela até ele). Se tudo
  * estiver válido, retorna null.
  */
+// Horas pode ser 0 e minutos pode ser 0, cada um individualmente — a
+// validação de que os dois juntos não podem ser 0 ao mesmo tempo é feita
+// à parte, em validateAll (ver printTimeIsZero).
+const printHoursTest = (v) => v !== "" && Number.isInteger(Number(v)) && Number(v) >= 0;
+const printMinutesTest = (v) => v !== "" && Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 59;
+
 function validateAll() {
   const isCustomMaterial = materialSelect.value === "outro";
 
   const rules = [
     { input: jobNameInput, test: (v) => v.trim().length > 0 },
-    { input: printHoursInput, test: (v) => v !== "" && Number.isInteger(Number(v)) && Number(v) >= 0 },
-    { input: printMinutesInput, test: (v) => v !== "" && Number.isInteger(Number(v)) && Number(v) > 0 && Number(v) <= 59 },
+    { input: printHoursInput, test: printHoursTest },
+    { input: printMinutesInput, test: printMinutesTest },
     { input: printGramsInput, test: (v) => v !== "" && Number(v) > 0 },
     { input: pricePerKgInput, test: (v) => v !== "" && Number(v) > 0 },
     { input: kwhPriceInput, test: (v) => v !== "" && Number(v) > 0 },
@@ -1128,6 +1146,20 @@ function validateAll() {
       if (!firstInvalid) firstInvalid = input;
     }
   });
+
+  // Tempo de impressão total: horas e minutos podem ser 0 cada um
+  // individualmente, mas nunca os dois ao mesmo tempo. Só verifica isso
+  // quando os dois campos já são individualmente válidos (senão "" viraria
+  // 0 na comparação e disparar essa mensagem por engano).
+  const printTimeIsZero = printHoursTest(printHoursInput.value) && printMinutesTest(printMinutesInput.value)
+    && Number(printHoursInput.value) === 0 && Number(printMinutesInput.value) === 0;
+
+  if (printTimeIsZero) {
+    showPrintTimeError();
+    if (!firstInvalid) firstInvalid = printHoursInput;
+  } else {
+    clearPrintTimeError();
+  }
 
   // Margem de lucro: exatamente um dos dois campos (% ou valor fixo) precisa estar preenchido
   const pctVal = marginPctInput.value.trim();
@@ -1778,6 +1810,10 @@ function bindEvents() {
   [jobNameInput, printHoursInput, printMinutesInput, printGramsInput,
    pricePerKgInput, kwhPriceInput].forEach((input) => {
     input.addEventListener("input", () => clearFieldError(input));
+  });
+
+  [printHoursInput, printMinutesInput].forEach((input) => {
+    input.addEventListener("input", clearPrintTimeError);
   });
 
   enforceIntegerInput(printHoursInput);
