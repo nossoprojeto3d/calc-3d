@@ -81,6 +81,11 @@ const PRO_COSTS = [
     hint: "Ex: % de imposto sobre o preço final (MEI, Simples Nacional etc.)." },
 ];
 
+// Custos profissionais que entram na base da margem de lucro (geram lucro
+// proporcional, igual filamento e energia). Os demais (Shopee, Mercado Livre,
+// Frete, Impostos) são só repassados ao preço final, sem gerar margem.
+const GROUP1_PRO_COST_IDS = ["wear", "labor", "failure", "packaging", "materials"];
+
 /** Gera o id-base dos elementos de um custo profissional (ex.: "wear" -> "proWear"). */
 function proFieldId(cost) {
   return `pro${cost.id.charAt(0).toUpperCase()}${cost.id.slice(1)}`;
@@ -405,7 +410,46 @@ function closeSettingsModal() {
   el("settingsModalOverlay").hidden = true;
 }
 
+// Campos de comissão (%) das Configurações da loja — não podem ser 100%
+// ou mais (a conta reversa da taxa de marketplace quebra nesse caso).
+const COMMISSION_SETTINGS_FIELD_IDS = [
+  "settingsShopeeTier1Pct",
+  "settingsShopeeTier2Pct",
+  "settingsShopeeTier3Pct",
+  "settingsMeliCommissionClassico",
+  "settingsMeliCommissionPremium",
+];
+
+/** Valida os campos de comissão (%): vazio é válido (usa o padrão), mas um
+ *  valor preenchido precisa ser menor que 100. Retorna o primeiro campo
+ *  inválido (pra focar nele) ou null se todos estiverem OK. */
+function validateStoreSettingsCommissions() {
+  let firstInvalid = null;
+
+  COMMISSION_SETTINGS_FIELD_IDS.forEach((fieldId) => {
+    const input = el(fieldId);
+    const raw = input.value.trim();
+    const valid = raw === "" || Number(raw) < 100;
+
+    if (valid) {
+      clearFieldError(input);
+    } else {
+      showFieldError(input);
+      if (!firstInvalid) firstInvalid = input;
+    }
+  });
+
+  return firstInvalid;
+}
+
 function saveStoreSettings() {
+  const firstInvalid = validateStoreSettingsCommissions();
+  if (firstInvalid) {
+    firstInvalid.focus({ preventScroll: true });
+    firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
+    return;
+  }
+
   const settings = {
     kwhPrice: el("settingsKwh").value.trim(),
     marginPct: el("settingsMarginPct").value.trim(),
@@ -447,6 +491,7 @@ function restoreStoreSettingsDefaults() {
    el("settingsMeliCommissionClassico"), el("settingsMeliCommissionPremium"), el("settingsMeliFixedFee"),
    el("settingsStoreName"), el("settingsCity"), el("settingsWhatsapp"), el("settingsInstagram")]
     .forEach((input) => { input.value = ""; });
+  COMMISSION_SETTINGS_FIELD_IDS.forEach((fieldId) => clearFieldError(el(fieldId)));
   el("settingsRoundToggle").checked = true;
   updateSettingsRoundText();
 
@@ -462,6 +507,11 @@ function initSettingsModal() {
   el("settingsSaveBtn").addEventListener("click", saveStoreSettings);
   el("settingsResetBtn").addEventListener("click", restoreStoreSettingsDefaults);
   el("settingsRoundToggle").addEventListener("change", updateSettingsRoundText);
+
+  // limpa o erro da comissão assim que a pessoa começar a corrigir o valor
+  COMMISSION_SETTINGS_FIELD_IDS.forEach((fieldId) => {
+    el(fieldId).addEventListener("input", () => clearFieldError(el(fieldId)));
+  });
 
   // fecha ao clicar fora do card, igual a maioria dos modais por aí
   el("settingsModalOverlay").addEventListener("click", (event) => {
@@ -645,12 +695,15 @@ function pickShopeeTier(base) {
 }
 
 /**
- * Calcula a "Base" (filamento + energia + demais custos profissionais
- * ativos + lucro desejado, excluindo a própria Taxa Shopee) e, a partir
- * dela, a faixa e o valor da Taxa Shopee. Sempre calcula algo (mesmo que
- * a Base ainda seja 0) — nunca fica esperando configuração.
+ * Calcula a "Base" comum às fórmulas reversas de Taxa Shopee e Taxa Mercado
+ * Livre: custo material + custos profissionais do GRUPO 1 + lucro (incidindo
+ * só sobre esses) + custos do GRUPO 2 que não são taxa de marketplace (frete
+ * e impostos). Nunca inclui a própria Taxa Shopee nem a Taxa Mercado Livre —
+ * cada uma é calculada em cima dessa mesma Base, sem depender da outra.
+ * Sempre calcula algo (mesmo que a Base ainda seja 0) — nunca fica esperando
+ * configuração.
  */
-function computeAutoShopeeValue() {
+function computeMarketplaceFeeBase() {
   const printer = PRINTERS.find((p) => p.id === printerSelect.value);
   if (!printer) return null;
 
@@ -666,11 +719,12 @@ function computeAutoShopeeValue() {
   const baseCost = filamentCost + energyCost;
 
   const hourlyRate = getEffectiveHourlyRate().rate;
-  let otherProCostsTotal = 0;
+  let group1Total = 0;
+  let group2NonFeeTotal = 0; // frete + impostos (nunca shopee/meli)
 
   if (isProMode()) {
     PRO_COSTS.forEach((cost) => {
-      if (cost.id === "shopee") return;
+      if (cost.id === "shopee" || cost.id === "meli") return;
       const fieldId = proFieldId(cost);
       const toggleEl = el(`${fieldId}Toggle`);
       if (!toggleEl || !toggleEl.checked) return;
@@ -678,16 +732,25 @@ function computeAutoShopeeValue() {
       const value = cost.unit === "percent" ? baseCost * (rawValue / 100)
         : cost.unit === "laborMinutes" ? (hourlyRate / 60) * rawValue
         : rawValue;
-      otherProCostsTotal += value;
+      if (GROUP1_PRO_COST_IDS.includes(cost.id)) group1Total += value;
+      else group2NonFeeTotal += value;
     });
   }
 
+  const marginBase = baseCost + group1Total;
   const usingFixedMargin = marginFixedInput.value.trim() !== "";
   const profit = usingFixedMargin
     ? parseFloat(marginFixedInput.value) || 0
-    : baseCost * ((parseFloat(marginPctInput.value) || 0) / 100);
+    : marginBase * ((parseFloat(marginPctInput.value) || 0) / 100);
 
-  const base = baseCost + otherProCostsTotal + profit;
+  return { base: marginBase + profit + group2NonFeeTotal };
+}
+
+function computeAutoShopeeValue() {
+  const baseDetails = computeMarketplaceFeeBase();
+  if (!baseDetails) return null;
+
+  const { base } = baseDetails;
   const picked = pickShopeeTier(base);
   const feeValue = picked.finalPrice - base;
 
@@ -724,6 +787,17 @@ function bindAutoShopeeRecalc() {
   printerSelect.addEventListener("change", recalcAutoShopee);
   [printHoursInput, printMinutesInput, printGramsInput, pricePerKgInput, kwhPriceInput, marginPctInput, marginFixedInput]
     .forEach((input) => input.addEventListener("input", recalcAutoShopee));
+
+  // A "Base" (ver computeMarketplaceFeeBase) também depende de todos os
+  // demais custos profissionais — precisa recalcular sempre que o campo ou o
+  // switch de qualquer um deles mudar. Não escuta "shopee" (é o próprio
+  // campo) nem "meli" (a Base nunca inclui a taxa de marketplace da outra).
+  PRO_COSTS.forEach((cost) => {
+    if (cost.id === "shopee" || cost.id === "meli") return;
+    const fieldId = proFieldId(cost);
+    el(fieldId).addEventListener("input", recalcAutoShopee);
+    el(`${fieldId}Toggle`).addEventListener("change", recalcAutoShopee);
+  });
 
   el("proShopeeToggle").addEventListener("change", () => {
     if (el("proShopeeToggle").checked) recalcAutoShopee();
@@ -788,50 +862,11 @@ function pickMeliTier(base, commissionPct, fixedFee) {
   return { tier: "from", finalPrice: fromCandidate ?? base, fixedFeeUsed: 0 };
 }
 
-/**
- * Calcula a "Base" (igual à da Taxa Shopee, excluindo a própria Taxa
- * Mercado Livre) e, a partir dela, a faixa e o valor da taxa. Sempre
- * calcula algo (mesmo que a Base ainda seja 0) — nunca fica esperando
- * configuração.
- */
 function computeAutoMeliValue() {
-  const printer = PRINTERS.find((p) => p.id === printerSelect.value);
-  if (!printer) return null;
+  const baseDetails = computeMarketplaceFeeBase();
+  if (!baseDetails) return null;
 
-  const hours = parseInt(printHoursInput.value, 10) || 0;
-  const minutes = parseInt(printMinutesInput.value, 10) || 0;
-  const totalHours = hours + minutes / 60;
-  const grams = parseFloat(printGramsInput.value) || 0;
-  const pricePerKg = parseFloat(pricePerKgInput.value) || 0;
-  const kwhPrice = parseFloat(kwhPriceInput.value) || 0;
-
-  const filamentCost = (grams / 1000) * pricePerKg;
-  const energyCost = ((printer.power / 1000) * totalHours) * kwhPrice;
-  const baseCost = filamentCost + energyCost;
-
-  const hourlyRate = getEffectiveHourlyRate().rate;
-  let otherProCostsTotal = 0;
-
-  if (isProMode()) {
-    PRO_COSTS.forEach((cost) => {
-      if (cost.id === "meli") return;
-      const fieldId = proFieldId(cost);
-      const toggleEl = el(`${fieldId}Toggle`);
-      if (!toggleEl || !toggleEl.checked) return;
-      const rawValue = parseFloat(el(fieldId).value) || 0;
-      const value = cost.unit === "percent" ? baseCost * (rawValue / 100)
-        : cost.unit === "laborMinutes" ? (hourlyRate / 60) * rawValue
-        : rawValue;
-      otherProCostsTotal += value;
-    });
-  }
-
-  const usingFixedMargin = marginFixedInput.value.trim() !== "";
-  const profit = usingFixedMargin
-    ? parseFloat(marginFixedInput.value) || 0
-    : baseCost * ((parseFloat(marginPctInput.value) || 0) / 100);
-
-  const base = baseCost + otherProCostsTotal + profit;
+  const { base } = baseDetails;
 
   const adTypeEl = el("proMeliAdType");
   const adType = adTypeEl && adTypeEl.value === "classico" ? "classico" : "premium";
@@ -876,6 +911,17 @@ function bindAutoMeliRecalc() {
   printerSelect.addEventListener("change", recalcAutoMeli);
   [printHoursInput, printMinutesInput, printGramsInput, pricePerKgInput, kwhPriceInput, marginPctInput, marginFixedInput]
     .forEach((input) => input.addEventListener("input", recalcAutoMeli));
+
+  // A "Base" (ver computeMarketplaceFeeBase) também depende de todos os
+  // demais custos profissionais — precisa recalcular sempre que o campo ou o
+  // switch de qualquer um deles mudar. Não escuta "meli" (é o próprio campo)
+  // nem "shopee" (a Base nunca inclui a taxa de marketplace da outra).
+  PRO_COSTS.forEach((cost) => {
+    if (cost.id === "meli" || cost.id === "shopee") return;
+    const fieldId = proFieldId(cost);
+    el(fieldId).addEventListener("input", recalcAutoMeli);
+    el(`${fieldId}Toggle`).addEventListener("change", recalcAutoMeli);
+  });
 
   el("proMeliAdType").addEventListener("change", recalcAutoMeli);
 
@@ -1139,17 +1185,20 @@ function calculate() {
   // 3) Custo de energia = energia consumida (kWh) * valor do kWh
   const energyCost = energyKwh * kwhPrice;
 
-  // 4) Custo base = filamento + energia. É a mesma base usada pela margem
-  //    de lucro em % (item 6) e, agora, pelos custos profissionais em %
-  //    (item 5) — nenhum dos dois incide em cascata sobre o outro.
+  // 4) Custo material = filamento + energia.
   const baseCost = filamentCost + energyCost;
 
-  // 5) Custos profissionais (só no modo Profissional): cada item com o
-  //    switch ligado entra na soma — os informados em R$ somam direto ao
-  //    custo base, os informados em % incidem sobre o custo base (filamento
-  //    + energia), do mesmo jeito que a margem de lucro em % já funciona.
+  // 5) Custos profissionais (só no modo Profissional): cada item com o switch
+  //    ligado entra na soma — os informados em R$ somam direto, os informados
+  //    em % incidem sobre o custo material (filamento + energia), cada um com
+  //    sua própria lógica interna, inalterada. Separamos o total do GRUPO 1
+  //    (desgaste, mão de obra, margem de falha, embalagem, materiais e
+  //    insumos) porque só ele entra na base da margem de lucro — o GRUPO 2
+  //    (taxa Shopee, taxa Mercado Livre, frete, impostos) é só repassado ao
+  //    preço final, sem gerar lucro proporcional.
   const proCosts = [];
   let proCostsTotal = 0;
+  let group1ProCostsTotal = 0;
   const hourlyRate = getEffectiveHourlyRate().rate;
 
   if (proMode) {
@@ -1161,6 +1210,7 @@ function calculate() {
         : cost.unit === "laborMinutes" ? (hourlyRate / 60) * rawValue
         : rawValue;
       proCostsTotal += value;
+      if (GROUP1_PRO_COST_IDS.includes(cost.id)) group1ProCostsTotal += value;
       // "Taxa Mercado Livre" também guarda o tipo de anúncio usado, pra
       // aparecer no texto do WhatsApp e no PDF (ver buildWhatsAppText /
       // buildAndSavePdf).
@@ -1169,26 +1219,29 @@ function calculate() {
     });
   }
 
-  // 6) Custo total da peça = custo base + custos profissionais ativos
+  // 6) Base da margem = custo material + custos profissionais do GRUPO 1.
+  const marginBase = baseCost + group1ProCostsTotal;
+
+  // 7) Custo total da peça = custo material + custos profissionais ativos
   //    (no modo Básico, proCostsTotal é sempre 0 — custo total = custo base,
   //    exatamente como antes desta versão)
   const totalCost = baseCost + proCostsTotal;
 
-  // 7) Lucro: se o usuário informou um valor fixo, o lucro é esse valor direto.
-  //    Caso contrário, o lucro é a porcentagem informada sobre o custo base
-  //    (filamento + energia) — igual já funcionava antes dos custos profissionais.
+  // 8) Lucro: se o usuário informou um valor fixo, o lucro é esse valor direto.
+  //    Caso contrário, o lucro é a porcentagem informada sobre a base da
+  //    margem (custo material + GRUPO 1) — o GRUPO 2 nunca gera lucro.
   const usingFixedMargin = marginFixedInput.value.trim() !== "";
   const profit = usingFixedMargin
     ? parseFloat(marginFixedInput.value) || 0
-    : baseCost * ((parseFloat(marginPctInput.value) || 0) / 100);
+    : marginBase * ((parseFloat(marginPctInput.value) || 0) / 100);
 
-  // 8) Preço calculado (sem arredondar) = custo total (com profissionais) + lucro
+  // 9) Preço calculado (sem arredondar) = custo total (com profissionais) + lucro
   const calculatedPrice = totalCost + profit;
 
-  // 9) Preço final = aplica arredondamento inteligente, se ativado
+  // 10) Preço final = aplica arredondamento inteligente, se ativado
   const finalPrice = shouldRound ? smartRoundUp(calculatedPrice) : calculatedPrice;
 
-  // 10) Diferença adicionada pelo arredondamento
+  // 11) Diferença adicionada pelo arredondamento
   const roundingDiff = finalPrice - calculatedPrice;
 
   const selectedMaterial = MATERIALS.find((m) => m.id === materialSelect.value);
