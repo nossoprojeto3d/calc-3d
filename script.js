@@ -86,6 +86,21 @@ const PRO_COSTS = [
 // Frete, Impostos) são só repassados ao preço final, sem gerar margem.
 const GROUP1_PRO_COST_IDS = ["wear", "labor", "failure", "packaging", "materials"];
 
+// Cor fixa de cada custo profissional no gráfico de pizza — uma por tipo,
+// sempre a mesma (ver os tokens --pro-* em style.css), diferente das cores
+// de Filamento/Energia/Lucro.
+const PRO_COST_PIE_COLORS = {
+  wear: "var(--pro-wear)",
+  labor: "var(--pro-labor)",
+  failure: "var(--pro-failure)",
+  packaging: "var(--pro-packaging)",
+  materials: "var(--pro-materials)",
+  shopee: "var(--pro-shopee)",
+  meli: "var(--pro-meli)",
+  shipping: "var(--pro-shipping)",
+  taxes: "var(--pro-taxes)",
+};
+
 /** Gera o id-base dos elementos de um custo profissional (ex.: "wear" -> "proWear"). */
 function proFieldId(cost) {
   return `pro${cost.id.charAt(0).toUpperCase()}${cost.id.slice(1)}`;
@@ -270,8 +285,9 @@ function bindProCostEvents() {
       // Mudar qualquer outro custo profissional afeta a "Base" usada pela
       // Taxa Shopee e pela Taxa Mercado Livre (ver computeAutoShopeeValue /
       // computeAutoMeliValue) — recalcula as duas também. Shopee e Mercado
-      // Livre não recalculam uma à outra (evita loop mútuo entre elas —
-      // por isso o aviso pra ativar só uma por vez).
+      // Livre não recalculam uma à outra (a Base de cada uma sempre exclui a
+      // outra) e, além disso, são mutuamente exclusivas — ligar uma desliga a
+      // outra automaticamente (ver bindAutoShopeeRecalc / bindAutoMeliRecalc).
       if (cost.id !== "shopee" && cost.id !== "meli") recalcAutoShopee();
       if (cost.id !== "meli" && cost.id !== "shopee") recalcAutoMeli();
     });
@@ -799,9 +815,19 @@ function bindAutoShopeeRecalc() {
     el(`${fieldId}Toggle`).addEventListener("change", recalcAutoShopee);
   });
 
+  // Mutuamente exclusiva com "Taxa Mercado Livre" — é a mesma venda em um
+  // único canal, então ligar uma desliga a outra automaticamente (mesmo
+  // padrão da margem de lucro em % x valor fixo).
   el("proShopeeToggle").addEventListener("change", () => {
-    if (el("proShopeeToggle").checked) recalcAutoShopee();
-    updateCrossChannelWarning();
+    if (!el("proShopeeToggle").checked) return;
+
+    const meliToggle = el("proMeliToggle");
+    if (meliToggle.checked) {
+      meliToggle.checked = false;
+      meliToggle.dispatchEvent(new Event("change", { bubbles: true }));
+      showQuickToast('Taxa Mercado Livre desativada — você só pode usar uma taxa de marketplace por vez.');
+    }
+    recalcAutoShopee();
   });
 
   recalcAutoShopee();
@@ -925,27 +951,44 @@ function bindAutoMeliRecalc() {
 
   el("proMeliAdType").addEventListener("change", recalcAutoMeli);
 
+  // Mutuamente exclusiva com "Taxa Shopee" — é a mesma venda em um único
+  // canal, então ligar uma desliga a outra automaticamente (mesmo padrão da
+  // margem de lucro em % x valor fixo).
   el("proMeliToggle").addEventListener("change", () => {
-    if (el("proMeliToggle").checked) recalcAutoMeli();
-    updateCrossChannelWarning();
+    if (!el("proMeliToggle").checked) return;
+
+    const shopeeToggle = el("proShopeeToggle");
+    if (shopeeToggle.checked) {
+      shopeeToggle.checked = false;
+      shopeeToggle.dispatchEvent(new Event("change", { bubbles: true }));
+      showQuickToast('Taxa Shopee desativada — você só pode usar uma taxa de marketplace por vez.');
+    }
+    recalcAutoMeli();
   });
 
   recalcAutoMeli();
 }
 
 // ---------------------------------------------------------
-// AVISO: TAXA SHOPEE + TAXA MERCADO LIVRE AO MESMO TEMPO
-// É a mesma venda em um canal só — ativar as duas ao mesmo tempo não faz
-// sentido e pode distorcer o cálculo (cada uma trata a outra como um custo
-// fixo comum na sua "Base", sem recalcular uma quando a outra muda — ver
-// bindProCostEvents). Não bloqueia, só avisa.
+// TOAST RÁPIDO — feedback temporário e discreto (ex.: aviso de que uma taxa
+// de marketplace foi desativada automaticamente). Some sozinho, sem exigir
+// clique nem travar a tela.
 // ---------------------------------------------------------
-function updateCrossChannelWarning() {
-  const warningEl = el("crossChannelWarning");
-  if (!warningEl) return;
-  const shopeeOn = el("proShopeeToggle").checked;
-  const meliOn = el("proMeliToggle").checked;
-  warningEl.hidden = !(shopeeOn && meliOn);
+let quickToastTimer = null;
+
+function showQuickToast(message) {
+  const toastEl = el("quickToast");
+  if (!toastEl) return;
+
+  el("quickToastText").textContent = message;
+  toastEl.hidden = false;
+  void toastEl.offsetWidth; // força reflow pra reiniciar a animação de entrada
+  toastEl.style.animation = "none";
+  void toastEl.offsetWidth;
+  toastEl.style.animation = "";
+
+  clearTimeout(quickToastTimer);
+  quickToastTimer = setTimeout(() => { toastEl.hidden = true; }, 3500);
 }
 
 /**
@@ -1333,8 +1376,8 @@ function renderResult(r) {
 
 // ---------------------------------------------------------
 // GRÁFICO DE PIZZA — breakdown visual dos custos (SVG puro, sem lib)
-// Fatias: Filamento, Energia, Custos profissionais (agrupados em uma
-// só fatia — mais legível que 12 fatias individuais) e Lucro.
+// Fatias: Filamento, Energia, cada custo profissional ativo individualmente
+// (uma fatia por item, com nome e valor próprios) e Lucro.
 // ---------------------------------------------------------
 function buildPieSlices(r) {
   const slices = [
@@ -1342,8 +1385,10 @@ function buildPieSlices(r) {
     { label: "Energia", value: r.energyCost, color: "var(--accent-2)" },
   ];
 
-  if (r.proMode && r.proCostsTotal > 0) {
-    slices.push({ label: "Custos profissionais", value: r.proCostsTotal, color: "var(--amber)" });
+  if (r.proMode) {
+    r.proCosts.forEach((cost) => {
+      slices.push({ label: cost.label, value: cost.value, color: PRO_COST_PIE_COLORS[cost.id] });
+    });
   }
 
   slices.push({ label: "Lucro", value: r.profit, color: "var(--accent-mid)" });
@@ -1653,10 +1698,8 @@ function clearAll() {
     input.value = "";
     clearFieldError(input);
   });
-  // Volta o tipo de anúncio da Taxa Mercado Livre pro padrão (Premium) e
-  // esconde o aviso de conflito entre custos de canal de venda.
+  // Volta o tipo de anúncio da Taxa Mercado Livre pro padrão (Premium).
   el("proMeliAdType").value = "premium";
-  updateCrossChannelWarning();
 
   [jobNameInput, printHoursInput, printMinutesInput, printGramsInput,
    pricePerKgInput, customNameInput, kwhPriceInput]

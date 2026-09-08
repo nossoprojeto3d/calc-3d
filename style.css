@@ -34,6 +34,20 @@
   --error: #F0596B;
   --error-soft: rgba(240, 89, 107, 0.12);
 
+  /* Cores fixas do gráfico de pizza pra cada custo profissional — uma por
+     tipo, sempre a mesma, diferentes das cores de Filamento/Energia/Lucro
+     acima. Escolhidas e validadas (contraste + daltonismo) pra se manterem
+     distinguíveis entre si mesmo com muitas fatias ativas ao mesmo tempo. */
+  --pro-wear: #e66767;
+  --pro-labor: #17a317;
+  --pro-failure: #BB6BB5;
+  --pro-packaging: #c98500;
+  --pro-materials: #d55181;
+  --pro-shopee: #7E9128;
+  --pro-meli: #A82D5C;
+  --pro-shipping: #d95926;
+  --pro-taxes: #8B4E1A;
+
   --font-display: 'Space Grotesk', 'Segoe UI', sans-serif;
   --font-body: 'Inter', 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', 'Courier New', monospace;
@@ -55,6 +69,16 @@
   --accent-grad: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
   --accent-soft: rgba(124, 58, 237, 0.10);
   --accent-glow: rgba(14, 165, 196, 0.30);
+
+  --pro-wear: #e34948;
+  --pro-labor: #008300;
+  --pro-failure: #9C3D8E;
+  --pro-packaging: #eda100;
+  --pro-materials: #e87ba4;
+  --pro-shopee: #6B7A1E;
+  --pro-meli: #C2185B;
+  --pro-shipping: #eb6834;
+  --pro-taxes: #8B4513;
 
   --shadow: 0 10px 24px rgba(30, 20, 50, 0.10);
 }
@@ -281,6 +305,33 @@ input[type="number"]{
 @media (max-width: 520px){
   .free-banner{ bottom: 10px; }
   .btn-follow{ align-self: stretch; }
+}
+
+/* ===================== TOAST RÁPIDO ===================== */
+/* Feedback temporário e discreto (ex.: "Taxa X desativada..."). Aparece
+   sozinho por alguns segundos e some sem precisar de clique — ver
+   showQuickToast em script.js. */
+.quick-toast{
+  position: fixed;
+  left: 50%;
+  bottom: 24px;
+  transform: translateX(-50%);
+  z-index: 90;
+  max-width: calc(100% - 32px);
+  padding: 10px 16px;
+  background: var(--surface);
+  border: 1px solid var(--accent-1);
+  border-radius: 10px;
+  box-shadow: var(--shadow);
+  color: var(--text);
+  font-size: 13px;
+  text-align: center;
+  animation: quickToastIn .25s ease;
+}
+
+@keyframes quickToastIn{
+  from{ opacity: 0; transform: translateX(-50%) translateY(8px); }
+  to{ opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 /* Margem superior do conteúdo principal quando o banner aparece,
@@ -533,19 +584,6 @@ input[type="number"]{
 }
 .pro-input-row input{ flex: 2; min-width: 0; }
 .pro-input-row select{ flex: 1; min-width: 0; }
-
-/* Aviso de conflito entre custos de canal de venda (ex.: Shopee + Mercado
-   Livre ligados ao mesmo tempo) — não bloqueia, só chama atenção. */
-.pro-cross-warning{
-  margin: 0 0 14px;
-  padding: 10px 12px;
-  border: 1px solid rgba(251, 191, 36, 0.35);
-  border-radius: 8px;
-  background: rgba(251, 191, 36, 0.1);
-  color: var(--amber);
-  font-size: 12.5px;
-  line-height: 1.4;
-}
 
 .field-grid{ display: grid; gap: 14px; margin-bottom: 14px; }
 .field-grid:last-child{ margin-bottom: 0; }
