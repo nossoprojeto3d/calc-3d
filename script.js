@@ -136,6 +136,12 @@ const proSection        = el("proSection");
 // Guarda o último resultado calculado com sucesso, usado pelo botão "Copiar"
 let lastResult = null;
 
+// true assim que validateAll() passar sem nenhum campo inválido pela
+// primeira vez (clique no botão ou checagem silenciosa automática — ver
+// attemptAutoCalculate). Volta pra false se algum campo obrigatório for
+// esvaziado ou ficar inválido de novo.
+let formularioValidado = false;
+
 // Modo atual da calculadora: "basico" (padrão, fluxo inalterado) ou "profissional"
 let currentMode = "basico";
 const isProMode = () => currentMode === "profissional";
@@ -1376,7 +1382,13 @@ function clearFieldError(inputEl) {
 const printHoursTest = (v) => v !== "" && Number.isInteger(Number(v)) && Number(v) >= 0;
 const printMinutesTest = (v) => v !== "" && Number.isInteger(Number(v)) && Number(v) >= 0 && Number(v) <= 59;
 
-function validateAll() {
+/**
+ * Passe { silent: true } pra checar a validade sem nenhum efeito visual
+ * (sem destacar campos em vermelho, sem mostrar mensagem de erro) — usado
+ * pela checagem automática de recálculo ao vivo (ver attemptAutoCalculate).
+ * Em ambos os modos, atualiza formularioValidado com o resultado.
+ */
+function validateAll({ silent = false } = {}) {
   const isCustomMaterial = materialSelect.value === "outro";
 
   const rules = [
@@ -1407,9 +1419,9 @@ function validateAll() {
   rules.forEach(({ input, test }) => {
     const valid = test(input.value);
     if (valid) {
-      clearFieldError(input);
+      if (!silent) clearFieldError(input);
     } else {
-      showFieldError(input);
+      if (!silent) showFieldError(input);
       if (!firstInvalid) firstInvalid = input;
     }
   });
@@ -1422,10 +1434,10 @@ function validateAll() {
     && Number(printHoursInput.value) === 0 && Number(printMinutesInput.value) === 0;
 
   if (printTimeIsZero) {
-    showPrintTimeError();
+    if (!silent) showPrintTimeError();
     if (!firstInvalid) firstInvalid = printHoursInput;
   } else {
-    clearPrintTimeError();
+    if (!silent) clearPrintTimeError();
   }
 
   // Margem de lucro: exatamente um dos dois campos (% ou valor fixo) precisa estar preenchido
@@ -1434,12 +1446,13 @@ function validateAll() {
   const marginValid = (pctVal !== "" && Number(pctVal) >= 0) || (fixedVal !== "" && Number(fixedVal) >= 0);
 
   if (marginValid) {
-    clearMarginError();
+    if (!silent) clearMarginError();
   } else {
-    showMarginError();
+    if (!silent) showMarginError();
     if (!firstInvalid) firstInvalid = marginPctInput;
   }
 
+  formularioValidado = !firstInvalid;
   return firstInvalid;
 }
 
@@ -1561,6 +1574,48 @@ function calculate() {
 
   lastResult = result;
   renderResult(result);
+}
+
+// ---------------------------------------------------------
+// RECÁLCULO AO VIVO — depois que o formulário estiver todo válido pela
+// primeira vez (clique em "Calcular preço" ou aqui, silenciosamente), o
+// resultado passa a se atualizar sozinho sempre que um campo relevante
+// mudar, sem precisar clicar no botão de novo.
+// ---------------------------------------------------------
+let autoCalculateTimer = null;
+
+/** Checa a validade em modo silencioso (sem destacar nada) e, se estiver
+ *  tudo certo, chama calculate() de verdade — mesmo cálculo e mesma
+ *  animação de sempre. Se não estiver tudo certo, não faz nada visível. */
+function attemptAutoCalculate() {
+  const firstInvalid = validateAll({ silent: true });
+  if (!firstInvalid) calculate();
+}
+
+function scheduleAutoCalculate() {
+  clearTimeout(autoCalculateTimer);
+  autoCalculateTimer = setTimeout(attemptAutoCalculate, 400);
+}
+
+/** Liga o recálculo automático (debounced) aos mesmos campos que já
+ *  alimentam o cálculo final: impressora, material, tempo, peso, preço do
+ *  filamento, kWh, arredondamento, margem de lucro, e todos os campos e
+ *  switches de custos profissionais (incluindo o campo escondido da Taxa
+ *  Shopee/Mercado Livre, que já recebe um "input" sempre que a faixa
+ *  escolhida, o tipo de anúncio ou os campos de "Personalizado" mudam). */
+function bindAutoCalculate() {
+  printerSelect.addEventListener("change", scheduleAutoCalculate);
+  materialSelect.addEventListener("change", scheduleAutoCalculate);
+  roundToggle.addEventListener("change", scheduleAutoCalculate);
+
+  [printHoursInput, printMinutesInput, printGramsInput, pricePerKgInput, kwhPriceInput, marginPctInput, marginFixedInput]
+    .forEach((input) => input.addEventListener("input", scheduleAutoCalculate));
+
+  PRO_COSTS.forEach((cost) => {
+    const fieldId = proFieldId(cost);
+    el(fieldId).addEventListener("input", scheduleAutoCalculate);
+    el(`${fieldId}Toggle`).addEventListener("change", scheduleAutoCalculate);
+  });
 }
 
 // ---------------------------------------------------------
@@ -1969,6 +2024,11 @@ function clearAll() {
   exportPdfBtn.disabled = true;
   hidePdfExportError();
 
+  // Formulário volta a ficar incompleto — o recálculo automático ao vivo só
+  // liga de novo depois de validar tudo uma próxima vez.
+  clearTimeout(autoCalculateTimer);
+  formularioValidado = false;
+
   jobNameInput.focus();
 }
 
@@ -2107,6 +2167,7 @@ function bindEvents() {
   bindLaborHintRecalc();
   bindAutoShopeeRecalc();
   bindAutoMeliRecalc();
+  bindAutoCalculate();
 }
 
 // ---------------------------------------------------------
