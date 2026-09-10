@@ -373,10 +373,6 @@ function defaultStoreSettings() {
   return {
     kwhPrice: "", marginPct: "", failurePct: "",
     hourlyRate: "",
-    shopeeTier1Pct: "", shopeeTier1Fixed: "",
-    shopeeTier2Pct: "", shopeeTier2Fixed: "",
-    shopeeTier3Pct: "", shopeeTier3Fixed: "",
-    meliCommissionClassico: "", meliCommissionPremium: "", meliFixedFee: "",
     storeName: "", city: "", whatsapp: "", instagram: "",
     roundDefault: true,
   };
@@ -453,15 +449,6 @@ function openSettingsModal() {
   el("settingsMarginPct").value = settings.marginPct;
   el("settingsFailurePct").value = settings.failurePct;
   el("settingsHourlyRate").value = settings.hourlyRate;
-  el("settingsShopeeTier1Pct").value = settings.shopeeTier1Pct;
-  el("settingsShopeeTier1Fixed").value = settings.shopeeTier1Fixed;
-  el("settingsShopeeTier2Pct").value = settings.shopeeTier2Pct;
-  el("settingsShopeeTier2Fixed").value = settings.shopeeTier2Fixed;
-  el("settingsShopeeTier3Pct").value = settings.shopeeTier3Pct;
-  el("settingsShopeeTier3Fixed").value = settings.shopeeTier3Fixed;
-  el("settingsMeliCommissionClassico").value = settings.meliCommissionClassico;
-  el("settingsMeliCommissionPremium").value = settings.meliCommissionPremium;
-  el("settingsMeliFixedFee").value = settings.meliFixedFee;
   el("settingsStoreName").value = settings.storeName;
   el("settingsCity").value = settings.city;
   el("settingsWhatsapp").value = settings.whatsapp;
@@ -475,60 +462,12 @@ function closeSettingsModal() {
   el("settingsModalOverlay").hidden = true;
 }
 
-// Campos de comissão (%) das Configurações da loja — não podem ser 100%
-// ou mais (a conta reversa da taxa de marketplace quebra nesse caso).
-const COMMISSION_SETTINGS_FIELD_IDS = [
-  "settingsShopeeTier1Pct",
-  "settingsShopeeTier2Pct",
-  "settingsShopeeTier3Pct",
-  "settingsMeliCommissionClassico",
-  "settingsMeliCommissionPremium",
-];
-
-/** Valida os campos de comissão (%): vazio é válido (usa o padrão), mas um
- *  valor preenchido precisa ser menor que 100. Retorna o primeiro campo
- *  inválido (pra focar nele) ou null se todos estiverem OK. */
-function validateStoreSettingsCommissions() {
-  let firstInvalid = null;
-
-  COMMISSION_SETTINGS_FIELD_IDS.forEach((fieldId) => {
-    const input = el(fieldId);
-    const raw = input.value.trim();
-    const valid = raw === "" || Number(raw) < 100;
-
-    if (valid) {
-      clearFieldError(input);
-    } else {
-      showFieldError(input);
-      if (!firstInvalid) firstInvalid = input;
-    }
-  });
-
-  return firstInvalid;
-}
-
 function saveStoreSettings() {
-  const firstInvalid = validateStoreSettingsCommissions();
-  if (firstInvalid) {
-    firstInvalid.focus({ preventScroll: true });
-    firstInvalid.scrollIntoView({ behavior: "smooth", block: "center" });
-    return;
-  }
-
   const settings = {
     kwhPrice: el("settingsKwh").value.trim(),
     marginPct: el("settingsMarginPct").value.trim(),
     failurePct: el("settingsFailurePct").value.trim(),
     hourlyRate: el("settingsHourlyRate").value.trim(),
-    shopeeTier1Pct: el("settingsShopeeTier1Pct").value.trim(),
-    shopeeTier1Fixed: el("settingsShopeeTier1Fixed").value.trim(),
-    shopeeTier2Pct: el("settingsShopeeTier2Pct").value.trim(),
-    shopeeTier2Fixed: el("settingsShopeeTier2Fixed").value.trim(),
-    shopeeTier3Pct: el("settingsShopeeTier3Pct").value.trim(),
-    shopeeTier3Fixed: el("settingsShopeeTier3Fixed").value.trim(),
-    meliCommissionClassico: el("settingsMeliCommissionClassico").value.trim(),
-    meliCommissionPremium: el("settingsMeliCommissionPremium").value.trim(),
-    meliFixedFee: el("settingsMeliFixedFee").value.trim(),
     storeName: el("settingsStoreName").value.trim(),
     city: el("settingsCity").value.trim(),
     whatsapp: el("settingsWhatsapp").value.trim(),
@@ -550,13 +489,8 @@ function restoreStoreSettingsDefaults() {
 
   [el("settingsKwh"), el("settingsMarginPct"), el("settingsFailurePct"),
    el("settingsHourlyRate"),
-   el("settingsShopeeTier1Pct"), el("settingsShopeeTier1Fixed"),
-   el("settingsShopeeTier2Pct"), el("settingsShopeeTier2Fixed"),
-   el("settingsShopeeTier3Pct"), el("settingsShopeeTier3Fixed"),
-   el("settingsMeliCommissionClassico"), el("settingsMeliCommissionPremium"), el("settingsMeliFixedFee"),
    el("settingsStoreName"), el("settingsCity"), el("settingsWhatsapp"), el("settingsInstagram")]
     .forEach((input) => { input.value = ""; });
-  COMMISSION_SETTINGS_FIELD_IDS.forEach((fieldId) => clearFieldError(el(fieldId)));
   el("settingsRoundToggle").checked = true;
   updateSettingsRoundText();
 
@@ -572,11 +506,6 @@ function initSettingsModal() {
   el("settingsSaveBtn").addEventListener("click", saveStoreSettings);
   el("settingsResetBtn").addEventListener("click", restoreStoreSettingsDefaults);
   el("settingsRoundToggle").addEventListener("change", updateSettingsRoundText);
-
-  // limpa o erro da comissão assim que a pessoa começar a corrigir o valor
-  COMMISSION_SETTINGS_FIELD_IDS.forEach((fieldId) => {
-    el(fieldId).addEventListener("input", () => clearFieldError(el(fieldId)));
-  });
 
   // fecha ao clicar fora do card, igual a maioria dos modais por aí
   el("settingsModalOverlay").addEventListener("click", (event) => {
@@ -724,21 +653,10 @@ const SHOPEE_DEFAULT_TIERS = [
   { commissionPct: 14, fixedFee: 20 },
 ];
 
-/** Lê um campo configurado (string) e devolve o número, ou o padrão se estiver vazio/inválido. */
-function resolveConfiguredNumber(rawValue, fallback) {
-  const trimmed = (rawValue || "").toString().trim();
-  if (trimmed === "") return fallback;
-  const num = parseFloat(trimmed);
-  return Number.isFinite(num) ? num : fallback;
-}
-
-/** Monta as 3 faixas efetivas (configuradas nas Configurações da loja, ou o padrão da Shopee). */
+/** As 3 faixas da Shopee — sempre os valores padrão fixos (a Taxa Shopee só
+ *  se ajusta manualmente pela opção "Personalizado" no próprio campo). */
 function getEffectiveShopeeTiers() {
-  const settings = loadStoreSettings();
-  return SHOPEE_DEFAULT_TIERS.map((def, i) => ({
-    commissionPct: resolveConfiguredNumber(settings[`shopeeTier${i + 1}Pct`], def.commissionPct),
-    fixedFee: resolveConfiguredNumber(settings[`shopeeTier${i + 1}Fixed`], def.fixedFee),
-  }));
+  return SHOPEE_DEFAULT_TIERS.map((def) => ({ ...def }));
 }
 
 /** Preço candidato de uma faixa: (Base + taxa fixa) ÷ (1 − comissão). Devolve
@@ -1003,14 +921,10 @@ const MELI_DEFAULT_SETTINGS = {
   fixedFee: 6,
 };
 
-/** Monta as comissões/custo fixo efetivos (configurados, ou o padrão do Mercado Livre). */
+/** Comissões/custo fixo do Mercado Livre — sempre os valores padrão fixos (a
+ *  Taxa Mercado Livre só se ajusta manualmente pela opção "Personalizado"). */
 function getEffectiveMeliSettings() {
-  const settings = loadStoreSettings();
-  return {
-    commissionClassico: resolveConfiguredNumber(settings.meliCommissionClassico, MELI_DEFAULT_SETTINGS.commissionClassico),
-    commissionPremium: resolveConfiguredNumber(settings.meliCommissionPremium, MELI_DEFAULT_SETTINGS.commissionPremium),
-    fixedFee: resolveConfiguredNumber(settings.meliFixedFee, MELI_DEFAULT_SETTINGS.fixedFee),
-  };
+  return { ...MELI_DEFAULT_SETTINGS };
 }
 
 /** Preço candidato: (Base + custo fixo) ÷ (1 − comissão). Devolve null se a
