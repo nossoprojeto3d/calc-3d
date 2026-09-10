@@ -198,8 +198,11 @@
 
         <div class="field">
           <label for="materialSelect">Material</label>
-          <select id="materialSelect"></select>
+          <select id="materialSelect">
+            <option value="" disabled selected>Selecione um material</option>
+          </select>
           <p class="hint" id="materialHint">—</p>
+          <p class="field-error-text" id="materialSelectError" hidden>Selecione um material.</p>
         </div>
       </div>
 

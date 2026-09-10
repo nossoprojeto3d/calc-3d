@@ -1178,6 +1178,15 @@ function updatePrinterHint() {
  */
 function syncMaterialUI(prefillPrice) {
   const material = MATERIALS.find((m) => m.id === materialSelect.value);
+
+  // Nenhum material selecionado ainda (placeholder) — hint em branco, sem
+  // mexer no campo "Preço do filamento".
+  if (!material) {
+    customWrap.hidden = true;
+    materialHint.textContent = "";
+    return;
+  }
+
   const isCustom = material.id === "outro";
 
   customWrap.hidden = !isCustom;
@@ -1307,6 +1316,7 @@ function validateAll({ silent = false } = {}) {
 
   const rules = [
     { input: jobNameInput, test: (v) => v.trim().length > 0 },
+    { input: materialSelect, test: (v) => v !== "" },
     { input: printHoursInput, test: printHoursTest },
     { input: printMinutesInput, test: printMinutesTest },
     { input: printGramsInput, test: (v) => v !== "" && Number(v) > 0 },
@@ -1862,7 +1872,7 @@ async function exportPdf() {
 function clearAll() {
   jobNameInput.value = "";
   printerSelect.selectedIndex = 0;
-  materialSelect.selectedIndex = 0;
+  materialSelect.value = "";
   updatePrinterHint();
   syncMaterialUI(false);
 
@@ -2048,6 +2058,7 @@ function bindEvents() {
   printerSelect.addEventListener("change", updatePrinterHint);
 
   materialSelect.addEventListener("change", () => syncMaterialUI(true));
+  materialSelect.addEventListener("change", () => clearFieldError(materialSelect));
 
   customNameInput.addEventListener("input", () => clearFieldError(customNameInput));
 
