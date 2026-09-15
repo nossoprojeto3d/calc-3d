@@ -16,9 +16,15 @@
 const PRINTERS = [
   { id: "a1-combo",   name: "Bambu Lab A1 Combo",   power: 180,  desc: "180W · Multicolor com AMS",                avgPurchasePrice: 4400,  avgLifespanHours: 8000 },
   { id: "a1-mini",    name: "Bambu Lab A1 Mini",    power: 180,  desc: "180W · Compacta, ideal para peças pequenas", avgPurchasePrice: 2900,  avgLifespanHours: 8000 },
-  { id: "p1s",        name: "Bambu Lab P1S",        power: 350,  desc: "350W · Câmara fechada, alta velocidade",    avgPurchasePrice: 7500,  avgLifespanHours: 10000 },
+  { id: "a2l",        name: "Bambu Lab A2L",        power: 1000, desc: "1000W · Grande formato, estrutura aberta com kit de corte opcional", avgPurchasePrice: 5500,  avgLifespanHours: 8500 },
   { id: "p1p",        name: "Bambu Lab P1P",        power: 350,  desc: "350W · Estrutura aberta, alta velocidade",  avgPurchasePrice: 4800,  avgLifespanHours: 10000 },
+  { id: "p1s",        name: "Bambu Lab P1S",        power: 350,  desc: "350W · Câmara fechada, alta velocidade",    avgPurchasePrice: 7500,  avgLifespanHours: 10000 },
+  { id: "p2s",        name: "Bambu Lab P2S",        power: 350,  desc: "350W · Sucessora da P1S, extrusora servo e detecção de falhas por IA", avgPurchasePrice: 6500,  avgLifespanHours: 10000 },
   { id: "x1-carbon",  name: "Bambu Lab X1 Carbon",  power: 1000, desc: "1000W · Topo de linha, lidar ativo",        avgPurchasePrice: 13000, avgLifespanHours: 12000 },
+  { id: "x2d",        name: "Bambu Lab X2D",        power: 1000, desc: "1000W · Sucessora da X1 Carbon, dupla extrusora e câmara aquecida", avgPurchasePrice: 8500,  avgLifespanHours: 12000 },
+  { id: "h2s",        name: "Bambu Lab H2S",        power: 1000, desc: "1000W · Grande formato, bico único, linha profissional H", avgPurchasePrice: 15000, avgLifespanHours: 12000 },
+  { id: "h2d",        name: "Bambu Lab H2D",        power: 1000, desc: "1000W · Dupla extrusora, plataforma de manufatura pessoal, corte e gravação opcionais", avgPurchasePrice: 22500, avgLifespanHours: 13000 },
+  { id: "h2c",        name: "Bambu Lab H2C",        power: 1000, desc: "1000W · Topo de linha, 6 bicos intercambiáveis (sistema Vortek)", avgPurchasePrice: 29000, avgLifespanHours: 13000 },
 ];
 
 // ---------------------------------------------------------
