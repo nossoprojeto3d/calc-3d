@@ -372,7 +372,7 @@ const STORE_SETTINGS_KEY = "np3d_store_settings";
 function defaultStoreSettings() {
   return {
     kwhPrice: "", marginPct: "", failurePct: "",
-    hourlyRate: "",
+    hourlyRate: "", defaultPrinter: "",
     storeName: "", city: "", whatsapp: "", instagram: "",
     roundDefault: true,
   };
@@ -405,6 +405,14 @@ function applyStoreSettingsToCalculator(settings, { onlyIfEmpty = false } = {}) 
   setIfAllowed(kwhPriceInput, settings.kwhPrice);
   setIfAllowed(marginPctInput, settings.marginPct);
   setIfAllowed(el("proFailure"), settings.failurePct);
+
+  // Impressora padrão: só se aplica na carga da página e em "Limpar tudo"
+  // (onlyIfEmpty=false) — nunca troca a impressora de um orçamento em
+  // andamento quando as Configurações da loja são salvas no meio dele.
+  if (!onlyIfEmpty && settings.defaultPrinter && PRINTERS.some((p) => p.id === settings.defaultPrinter)) {
+    printerSelect.value = settings.defaultPrinter;
+    printerSelect.dispatchEvent(new Event("change", { bubbles: true }));
+  }
 
   roundToggle.checked = settings.roundDefault !== false;
   roundToggle.dispatchEvent(new Event("change", { bubbles: true }));
@@ -449,6 +457,7 @@ function openSettingsModal() {
   el("settingsMarginPct").value = settings.marginPct;
   el("settingsFailurePct").value = settings.failurePct;
   el("settingsHourlyRate").value = settings.hourlyRate;
+  el("settingsDefaultPrinter").value = settings.defaultPrinter;
   el("settingsStoreName").value = settings.storeName;
   el("settingsCity").value = settings.city;
   el("settingsWhatsapp").value = settings.whatsapp;
@@ -468,6 +477,7 @@ function saveStoreSettings() {
     marginPct: el("settingsMarginPct").value.trim(),
     failurePct: el("settingsFailurePct").value.trim(),
     hourlyRate: el("settingsHourlyRate").value.trim(),
+    defaultPrinter: el("settingsDefaultPrinter").value.trim(),
     storeName: el("settingsStoreName").value.trim(),
     city: el("settingsCity").value.trim(),
     whatsapp: el("settingsWhatsapp").value.trim(),
@@ -488,7 +498,7 @@ function restoreStoreSettingsDefaults() {
   localStorage.removeItem(STORE_SETTINGS_KEY);
 
   [el("settingsKwh"), el("settingsMarginPct"), el("settingsFailurePct"),
-   el("settingsHourlyRate"),
+   el("settingsHourlyRate"), el("settingsDefaultPrinter"),
    el("settingsStoreName"), el("settingsCity"), el("settingsWhatsapp"), el("settingsInstagram")]
     .forEach((input) => { input.value = ""; });
   el("settingsRoundToggle").checked = true;
@@ -1140,11 +1150,18 @@ function showQuickToast(message) {
  * arrays PRINTERS / MATERIALS acima.
  */
 function populateSelects() {
+  const settingsDefaultPrinterSelect = el("settingsDefaultPrinter");
+
   PRINTERS.forEach((p) => {
     const opt = document.createElement("option");
     opt.value = p.id;
     opt.textContent = p.name;
     printerSelect.appendChild(opt);
+
+    const settingsOpt = document.createElement("option");
+    settingsOpt.value = p.id;
+    settingsOpt.textContent = p.name;
+    settingsDefaultPrinterSelect.appendChild(settingsOpt);
   });
 
   MATERIALS.forEach((m) => {
