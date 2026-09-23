@@ -2211,15 +2211,16 @@ function initInstallPrompt() {
 
 // ---------------------------------------------------------
 // POPUP "PROJETO GRATUITO" — aparece logo depois do primeiro
-// preço calculado (e não ao abrir a página, pra primeira tela ficar
-// limpa). Usa sessionStorage de propósito: fechando o X, ele some só
-// enquanto essa aba/sessão estiver aberta e volta numa próxima visita.
+// "Calcular preço" (e não ao abrir a página, pra primeira tela ficar
+// limpa), no máximo 1x por semana: a data em que foi mostrado fica no
+// localStorage e ele só volta depois de FREE_POPUP_INTERVAL_MS.
 // ---------------------------------------------------------
+const FREE_POPUP_KEY = "np3d_free_popup_last_shown";
+const FREE_POPUP_INTERVAL_MS = 7 * 24 * 60 * 60 * 1000; // 7 dias
 let freeBannerScheduled = false;
 
 function closeFreeBanner() {
   el("freeBanner").hidden = true;
-  sessionStorage.setItem("np3d_free_banner_seen", "1");
 }
 
 function initFreeBanner() {
@@ -2239,9 +2240,17 @@ function initFreeBanner() {
 function showFreeBanner() {
   if (freeBannerScheduled) return;
   freeBannerScheduled = true;
-  if (sessionStorage.getItem("np3d_free_banner_seen") === "1") return;
+
+  const lastShown = Number(localStorage.getItem(FREE_POPUP_KEY)) || 0;
+  if (Date.now() - lastShown < FREE_POPUP_INTERVAL_MS) return;
+
   // pequeno atraso pra pessoa ver o preço antes do aviso surgir
-  setTimeout(() => { el("freeBanner").hidden = false; }, 1500);
+  setTimeout(() => {
+    el("freeBanner").hidden = false;
+    // conta a partir de quando apareceu — mesmo sem fechar (ex.: recarregou
+    // a página), só volta daqui a uma semana
+    localStorage.setItem(FREE_POPUP_KEY, String(Date.now()));
+  }, 1500);
 }
 
 // ---------------------------------------------------------
