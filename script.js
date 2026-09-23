@@ -103,7 +103,7 @@ const PRO_COSTS = [
     errorText: "Informe o tempo de preparo, em minutos.", placeholder: "Ex: 15", emoji: "🧑‍🔧",
     hint: "Pra calcular sua mão de obra direito, você precisa informar quanto vale a sua hora de trabalho. Como você ainda não fez isso, estamos usando um valor padrão de R$ 30,00 por hora: 0min × R$ 30,00 ÷ 60 = R$ 0,00. Esse valor pode estar bem diferente da sua realidade — vale a pena configurar o seu valor-hora de verdade em Configurações da loja (ícone de engrenagem, no canto superior direito da página), pra cobrar um preço justo pelo seu trabalho." },
   { id: "failure",     label: "Margem de falha",     unit: "percent",  placeholder: "Ex: 10",    emoji: "⚠️",
-    hint: "Ex: % do custo total pra cobrir peças que falham ou saem com defeito. Comum entre 5% e 15%.",
+    hint: "% sobre o custo do material (filamento + energia) pra cobrir peças que falham ou saem com defeito. Comum entre 5% e 15%.",
     shortcuts: [5, 10, 15], shortcutsHint: "Escolha um atalho ou digite o percentual que preferir." },
   { id: "packaging",   label: "Embalagem",           unit: "currency", placeholder: "Ex: 3,00",  emoji: "🎁",
     hint: "Inclua tudo que você gasta pra embalar o produto — caixa, plástico bolha, fita, etiqueta, sacola, ou qualquer material de embalagem, seja pra envio ou entrega presencial." },
@@ -118,7 +118,7 @@ const PRO_COSTS = [
   { id: "shipping",    label: "Frete",               unit: "currency", placeholder: "Ex: 15,00", emoji: "🚚",
     hint: "Ex: valor do frete que você paga ou repassa ao cliente." },
   { id: "taxes",       label: "Impostos",            unit: "percent",  placeholder: "Ex: 6",     emoji: "🏛️",
-    hint: "Ex: % de imposto sobre o preço final (MEI, Simples Nacional etc.)." },
+    hint: "% sobre o preço final de venda (MEI, Simples Nacional etc.) — o imposto já sai embutido no preço sugerido." },
 ];
 
 // Custos profissionais que entram na base da margem de lucro (geram lucro
@@ -311,11 +311,11 @@ function populateProCosts() {
             <div class="field-grid two-cols" style="margin-top: 10px;">
               <div class="field">
                 <label for="${fieldId}CustomPct">Comissão (%)</label>
-                <input type="number" id="${fieldId}CustomPct" min="0" max="99" step="1" placeholder="${customPctPlaceholder}">
+                <input type="text" id="${fieldId}CustomPct" inputmode="decimal" data-decimal autocomplete="off" placeholder="${customPctPlaceholder}">
               </div>
               <div class="field">
                 <label for="${fieldId}CustomFixed">Valor fixo (R$)</label>
-                <input type="number" id="${fieldId}CustomFixed" min="0" step="0.01" placeholder="Ex: 4,00">
+                <input type="text" id="${fieldId}CustomFixed" inputmode="decimal" data-decimal autocomplete="off" placeholder="Ex: 4,00">
               </div>
             </div>
     `;
@@ -347,7 +347,7 @@ function populateProCosts() {
             ${cost.fieldLabel ? `<label for="${fieldId}">${cost.fieldLabel}</label>` : ""}
             <div class="input-wrap">
               ${unitSuffix === "R$" ? `<span class="input-affix">R$</span>` : ""}
-              <input type="number" id="${fieldId}" min="0" step="${step}" inputmode="decimal" placeholder="${cost.placeholder.replace(/^Ex:\s*/, "")}" aria-label="${unitLabel}">
+              <input type="text" id="${fieldId}" inputmode="decimal" data-decimal autocomplete="off" placeholder="${cost.placeholder.replace(/^Ex:\s*/, "")}" aria-label="${unitLabel}">
               ${unitSuffix !== "R$" ? `<span class="input-affix">${unitSuffix}</span>` : ""}
             </div>
             ${adTypeSelectHtml}
@@ -768,20 +768,20 @@ function getEffectiveShopeeTiers() {
 
 /** Preço candidato de uma faixa: (Base + taxa fixa) ÷ (1 − comissão). Devolve
  *  null se a comissão configurada tornar a conta inválida (ex.: ≥ 100%). */
-function computeShopeeCandidate(base, tier) {
+function computeShopeeCandidate(base, tier, taxRate = 0) {
   const commission = Math.min(Math.max(tier.commissionPct, 0), 99.999);
-  const denominator = 1 - commission / 100;
-  if (denominator <= 0) return null;
+  const denominator = 1 - commission / 100 - taxRate;
+  if (denominator <= 0.01) return null;
   return (base + Math.max(tier.fixedFee, 0)) / denominator;
 }
 
 /** Testa as 3 faixas em ordem crescente e devolve a primeira cujo preço
  *  candidato cai dentro do próprio intervalo — essa é a faixa correta. */
-function pickShopeeTier(base) {
+function pickShopeeTier(base, taxRate = 0) {
   const tiers = getEffectiveShopeeTiers();
 
   for (let i = 0; i < tiers.length; i++) {
-    const candidate = computeShopeeCandidate(base, tiers[i]);
+    const candidate = computeShopeeCandidate(base, tiers[i], taxRate);
     if (candidate === null) continue;
     if (candidate >= SHOPEE_TIER_RANGES[i].min && candidate < SHOPEE_TIER_RANGES[i].max) {
       return { tierIndex: i, tier: tiers[i], finalPrice: candidate };
@@ -791,7 +791,7 @@ function pickShopeeTier(base) {
   // Nenhuma faixa "bateu" (configuração atípica) — usa a última faixa como
   // respaldo, pra nunca deixar a Taxa Shopee sem um cálculo.
   const lastIndex = tiers.length - 1;
-  const fallbackCandidate = computeShopeeCandidate(base, tiers[lastIndex]);
+  const fallbackCandidate = computeShopeeCandidate(base, tiers[lastIndex], taxRate);
   return { tierIndex: lastIndex, tier: tiers[lastIndex], finalPrice: fallbackCandidate ?? base };
 }
 
@@ -860,6 +860,16 @@ function selectShopeeTier(value) {
  * Sempre calcula algo (mesmo que a Base ainda seja 0) — nunca fica esperando
  * configuração.
  */
+/** Alíquota de imposto (0–0,99) quando "Impostos" está ligado no modo
+ *  Profissional. Imposto incide sobre o PREÇO FINAL de venda — por isso
+ *  entra no denominador das fórmulas (preço = base ÷ (1 − comissão − imposto)),
+ *  do mesmo jeito que a comissão dos marketplaces. */
+function getTaxRate() {
+  if (!isProMode() || !el("proTaxesToggle").checked) return 0;
+  const pct = parseFloat(el("proTaxes").value) || 0;
+  return Math.min(Math.max(pct, 0), 99) / 100;
+}
+
 function computeMarketplaceFeeBase() {
   const printer = getSelectedPrinter();
   if (!printer) return null;
@@ -877,11 +887,11 @@ function computeMarketplaceFeeBase() {
 
   const hourlyRate = getEffectiveHourlyRate().rate;
   let group1Total = 0;
-  let group2NonFeeTotal = 0; // frete + impostos (nunca shopee/meli)
+  let group2NonFeeTotal = 0; // frete (nunca shopee/meli; impostos vão pelo taxRate)
 
   if (isProMode()) {
     PRO_COSTS.forEach((cost) => {
-      if (cost.id === "shopee" || cost.id === "meli") return;
+      if (cost.id === "shopee" || cost.id === "meli" || cost.id === "taxes") return;
       const fieldId = proFieldId(cost);
       const toggleEl = el(`${fieldId}Toggle`);
       if (!toggleEl || !toggleEl.checked) return;
@@ -900,7 +910,7 @@ function computeMarketplaceFeeBase() {
     ? parseFloat(marginFixedInput.value) || 0
     : marginBase * ((parseFloat(marginPctInput.value) || 0) / 100);
 
-  return { base: marginBase + profit + group2NonFeeTotal };
+  return { base: marginBase + profit + group2NonFeeTotal, taxRate: getTaxRate() };
 }
 
 /**
@@ -929,7 +939,7 @@ function computeAutoShopeeValue() {
   const baseDetails = computeMarketplaceFeeBase();
   if (!baseDetails) return null;
 
-  const { base } = baseDetails;
+  const { base, taxRate } = baseDetails;
 
   // Ainda não escolheu nenhuma faixa: se já der pra calcular um preço final
   // de verdade, sugere a faixa correspondente; senão, pré-seleciona a
@@ -939,12 +949,13 @@ function computeAutoShopeeValue() {
   // sempre antes da pessoa sequer ativar o custo). Depois de decidido, a
   // escolha da pessoa manda.
   if (shopeeSelectedTier === null && el("proShopeeToggle").checked) {
-    shopeeSelectedTier = hasCalculablePrintJob() ? pickShopeeTier(base).tierIndex : 0;
+    shopeeSelectedTier = hasCalculablePrintJob() ? pickShopeeTier(base, taxRate).tierIndex : 0;
   }
 
   const rate = getSelectedShopeeRate();
-  const finalPrice = computeShopeeCandidate(base, rate) ?? base;
-  const feeValue = finalPrice - base;
+  const finalPrice = computeShopeeCandidate(base, rate, taxRate) ?? base;
+  // preço = base + taxa + imposto → a taxa é o que sobra tirando o imposto
+  const feeValue = Math.max(finalPrice - base - finalPrice * taxRate, 0);
 
   return { base, feeValue, tier: rate, finalPrice };
 }
@@ -1036,22 +1047,22 @@ function getEffectiveMeliSettings() {
 
 /** Preço candidato: (Base + custo fixo) ÷ (1 − comissão). Devolve null se a
  *  comissão configurada tornar a conta inválida (ex.: ≥ 100%). */
-function computeMeliCandidate(base, commissionPct, fixedFee) {
+function computeMeliCandidate(base, commissionPct, fixedFee, taxRate = 0) {
   const commission = Math.min(Math.max(commissionPct, 0), 99.999);
-  const denominator = 1 - commission / 100;
-  if (denominator <= 0) return null;
+  const denominator = 1 - commission / 100 - taxRate;
+  if (denominator <= 0.01) return null;
   return (base + Math.max(fixedFee, 0)) / denominator;
 }
 
 /** Testa a faixa "abaixo de R$79" (com custo fixo) e depois "a partir de
  *  R$79" (sem custo fixo), usando a primeira cujo candidato cai no próprio intervalo. */
-function pickMeliTier(base, commissionPct, fixedFee) {
-  const belowCandidate = computeMeliCandidate(base, commissionPct, fixedFee);
+function pickMeliTier(base, commissionPct, fixedFee, taxRate = 0) {
+  const belowCandidate = computeMeliCandidate(base, commissionPct, fixedFee, taxRate);
   if (belowCandidate !== null && belowCandidate >= 0 && belowCandidate < MELI_PRICE_THRESHOLD) {
     return { tier: "below", finalPrice: belowCandidate, fixedFeeUsed: fixedFee };
   }
 
-  const fromCandidate = computeMeliCandidate(base, commissionPct, 0);
+  const fromCandidate = computeMeliCandidate(base, commissionPct, 0, taxRate);
   if (fromCandidate !== null && fromCandidate >= MELI_PRICE_THRESHOLD) {
     return { tier: "from", finalPrice: fromCandidate, fixedFeeUsed: 0 };
   }
@@ -1139,20 +1150,20 @@ function computeAutoMeliValue() {
   const baseDetails = computeMarketplaceFeeBase();
   if (!baseDetails) return null;
 
-  const { base } = baseDetails;
+  const { base, taxRate } = baseDetails;
 
   if (meliSelectedTier === null && el("proMeliToggle").checked) {
     if (hasCalculablePrintJob()) {
       const { commissionPct, fixedFee } = getMeliAdTypeRate();
-      meliSelectedTier = pickMeliTier(base, commissionPct, fixedFee).tier;
+      meliSelectedTier = pickMeliTier(base, commissionPct, fixedFee, taxRate).tier;
     } else {
       meliSelectedTier = "below";
     }
   }
 
   const rate = getSelectedMeliRate();
-  const finalPrice = computeMeliCandidate(base, rate.commissionPct, rate.fixedFee) ?? base;
-  const feeValue = finalPrice - base;
+  const finalPrice = computeMeliCandidate(base, rate.commissionPct, rate.fixedFee, taxRate) ?? base;
+  const feeValue = Math.max(finalPrice - base - finalPrice * taxRate, 0);
 
   return { base, feeValue, tier: rate, finalPrice };
 }
@@ -1358,6 +1369,28 @@ function syncMaterialUI(prefillPrice) {
 }
 
 // ---------------------------------------------------------
+// CAMPOS DE VALOR (data-decimal) — aceitam vírgula
+// São type="text" com teclado decimal: no Brasil o teclado do celular
+// mostra a vírgula, que um <input type="number"> rejeitaria em silêncio
+// (o campo ficava vazio). A vírgula vira ponto na hora e sobra só um
+// separador — o resto do código continua lendo com parseFloat/Number.
+// ---------------------------------------------------------
+function sanitizeDecimal(raw) {
+  let value = String(raw).replace(/,/g, ".").replace(/[^\d.]/g, "");
+  const dot = value.indexOf(".");
+  if (dot >= 0) value = value.slice(0, dot + 1) + value.slice(dot + 1).replace(/\./g, "");
+  return value;
+}
+
+// Fase de captura: normaliza antes de qualquer outro listener ler o valor.
+document.addEventListener("input", (event) => {
+  const input = event.target;
+  if (!(input instanceof HTMLInputElement) || !input.hasAttribute("data-decimal")) return;
+  const clean = sanitizeDecimal(input.value);
+  if (clean !== input.value) input.value = clean;
+}, true);
+
+// ---------------------------------------------------------
 // FORÇAR NÚMEROS INTEIROS (horas e minutos)
 // Remove qualquer caractere que não seja dígito conforme o
 // usuário digita, garantindo que nunca haja valor quebrado.
@@ -1539,6 +1572,9 @@ function validateAll({ silent = false } = {}) {
 // Ex.: 6,78  -> 6,99   |   14,00 -> 14,99   |   9,99 -> 9,99
 // ---------------------------------------------------------
 function smartRoundUp(value) {
+  // arredonda pros centavos antes: 10.990000000000002 (erro de ponto
+  // flutuante) não pode virar 11,99
+  value = Math.round(value * 100) / 100;
   const floorValue = Math.floor(value);
   const candidate = floorValue + 0.99;
   return value > candidate ? floorValue + 1 + 0.99 : candidate;
@@ -1594,6 +1630,7 @@ function calculate() {
     PRO_COSTS.forEach((cost) => {
       const fieldId = proFieldId(cost);
       if (!el(`${fieldId}Toggle`).checked) return;
+      if (cost.id === "taxes") return; // calculado no fim, sobre o preço final
       const rawValue = parseFloat(el(fieldId).value) || 0;
       const value = cost.unit === "percent" ? baseCost * (rawValue / 100)
         : cost.unit === "laborMinutes" ? (hourlyRate / 60) * rawValue
@@ -1614,7 +1651,7 @@ function calculate() {
   // 7) Custo total da peça = custo material + custos profissionais ativos
   //    (no modo Básico, proCostsTotal é sempre 0 — custo total = custo base,
   //    exatamente como antes desta versão)
-  const totalCost = baseCost + proCostsTotal;
+  let totalCost = baseCost + proCostsTotal;
 
   // 8) Lucro: se o usuário informou um valor fixo, o lucro é esse valor direto.
   //    Caso contrário, o lucro é a porcentagem informada sobre a base da
@@ -1624,13 +1661,27 @@ function calculate() {
     ? parseFloat(marginFixedInput.value) || 0
     : marginBase * ((parseFloat(marginPctInput.value) || 0) / 100);
 
-  // 9) Preço calculado (sem arredondar) = custo total (com profissionais) + lucro
+  // 9) Impostos (modo Profissional): % sobre o PREÇO FINAL de venda.
+  //    preço = (tudo o mais) ÷ (1 − alíquota) → imposto = preço − (tudo o mais).
+  //    Taxa Shopee/Mercado Livre já foram calculadas com esse mesmo imposto
+  //    no denominador, então os valores fecham.
+  const taxRate = proMode ? getTaxRate() : 0;
+  if (taxRate > 0) {
+    const taxesCost = PRO_COSTS.find((c) => c.id === "taxes");
+    const beforeTaxes = totalCost + profit;
+    const taxValue = beforeTaxes / (1 - taxRate) - beforeTaxes;
+    proCosts.push({ ...taxesCost, rawValue: taxRate * 100, value: taxValue, hourlyRate });
+    proCostsTotal += taxValue;
+    totalCost += taxValue;
+  }
+
+  // 10) Preço calculado (sem arredondar) = custo total (com profissionais) + lucro
   const calculatedPrice = totalCost + profit;
 
-  // 10) Preço final = aplica arredondamento inteligente, se ativado
+  // 11) Preço final = aplica arredondamento inteligente, se ativado
   const finalPrice = shouldRound ? smartRoundUp(calculatedPrice) : calculatedPrice;
 
-  // 11) Diferença adicionada pelo arredondamento
+  // 12) Diferença adicionada pelo arredondamento
   const roundingDiff = finalPrice - calculatedPrice;
 
   const selectedMaterial = MATERIALS.find((m) => m.id === materialSelect.value);
@@ -1695,6 +1746,9 @@ function scheduleAutoCalculate() {
 function bindAutoCalculate() {
   printerSelect.addEventListener("change", scheduleAutoCalculate);
   materialSelect.addEventListener("change", scheduleAutoCalculate);
+  // nome da peça e do material personalizado aparecem no painel e no texto
+  // do WhatsApp — atualizam o orçamento também
+  [jobNameInput, customNameInput].forEach((input) => input.addEventListener("input", scheduleAutoCalculate));
   roundToggle.addEventListener("change", scheduleAutoCalculate);
 
   [printHoursInput, printMinutesInput, printGramsInput, pricePerKgInput, kwhPriceInput, marginPctInput, marginFixedInput]
@@ -1851,6 +1905,9 @@ function exportFileBaseName(r) {
 // offline — a exportação em PDF é a única parte que precisa de conexão.
 // ---------------------------------------------------------
 const JSPDF_CDN_URL = "https://cdnjs.cloudflare.com/ajax/libs/jspdf/4.2.1/jspdf.umd.min.js";
+// Integridade (SRI) oficial do cdnjs pra esse arquivo: o navegador só executa
+// o script se ele for exatamente esse — protege contra CDN adulterado.
+const JSPDF_SRI = "sha512-plOdviVmws4Y3JAvbnpfKb2hVxKM1lCwsi3vmElYRj+tiDLffZ4FVUj5a8vyKJ9pIgl8JCAHEJ4D1iUKBecswg==";
 let jsPDFLoadPromise = null;
 
 function loadJsPDF() {
@@ -1860,6 +1917,9 @@ function loadJsPDF() {
   jsPDFLoadPromise = new Promise((resolve, reject) => {
     const script = document.createElement("script");
     script.src = JSPDF_CDN_URL;
+    script.integrity = JSPDF_SRI;
+    script.crossOrigin = "anonymous";
+    script.referrerPolicy = "no-referrer";
     script.onload = () => {
       if (window.jspdf && window.jspdf.jsPDF) resolve(window.jspdf.jsPDF);
       else reject(new Error("jsPDF carregado, mas indisponível."));
@@ -1932,9 +1992,10 @@ async function buildAndSavePdf(JsPDF, r) {
   doc.setTextColor(20, 20, 27);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.text(r.jobName, marginX, y, { maxWidth: pageWidth - marginX * 2 });
+  const titleLines = doc.splitTextToSize(r.jobName, pageWidth - marginX * 2);
+  doc.text(titleLines, marginX, y);
 
-  y += 7;
+  y += 7 * titleLines.length;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   doc.setTextColor(110, 110, 122);
@@ -1972,7 +2033,7 @@ async function buildAndSavePdf(JsPDF, r) {
 
   drawSectionTitle("Tempo e peso");
   drawRow("Tempo de impressão", `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`);
-  drawRow("Peso do filamento", `${r.grams} g`);
+  drawRow("Peso do filamento", `${r.grams.toLocaleString("pt-BR")} g`);
   y += 4;
 
   drawSectionTitle("Breakdown de custos");
@@ -2099,6 +2160,7 @@ function clearAll() {
   // "Limpar tudo" começa um orçamento novo, não desliga os padrões salvos.
   applyStoreSettingsToCalculator(loadStoreSettings());
 
+  syncMarginChips();
   resetReadout();
 
   // Formulário volta a ficar incompleto — o recálculo automático ao vivo só
@@ -2166,7 +2228,7 @@ function buildWhatsAppText(r) {
     `⏱️ Tempo de impressão: ${timeLabel}`,
     ``,
     `*Custos*`,
-    `🧵 Filamento: ${brl(r.filamentCost)} (${r.grams} g utilizados)`,
+    `🧵 Filamento: ${brl(r.filamentCost)} (${r.grams.toLocaleString("pt-BR")} g utilizados)`,
     `⚡ Energia: ${brl(r.energyCost)} (${r.energyKwh.toFixed(2).replace(".", ",")} kWh consumidos)`,
     ...proLines,
     `📦 Custo total: ${brl(r.totalCost)}`,
@@ -2214,6 +2276,12 @@ async function copyBudget() {
 // ---------------------------------------------------------
 // TEMA CLARO / ESCURO
 // ---------------------------------------------------------
+// Aplica o tema salvo já na leitura do script (antes da primeira pintura),
+// pra quem usa o tema claro não ver a página "piscar" escura.
+try {
+  if (localStorage.getItem("np3d_theme") === "light") document.documentElement.setAttribute("data-theme", "light");
+} catch (err) { /* sem problema */ }
+
 function initTheme() {
   const saved = localStorage.getItem("np3d_theme");
   if (saved === "light") applyTheme("light");
@@ -2826,9 +2894,14 @@ function initInstallPrompt() {
     // e o banner direto, e ao clicar exibimos o passo a passo manual.
     showInstallUI();
     const openInstructions = () => { modalOverlay.hidden = false; };
+    const closeInstructions = () => { modalOverlay.hidden = true; };
     installBtn.addEventListener("click", openInstructions);
     bannerBtn.addEventListener("click", openInstructions);
-    el("closeInstallModal").addEventListener("click", () => { modalOverlay.hidden = true; });
+    el("closeInstallModal").addEventListener("click", closeInstructions);
+    modalOverlay.addEventListener("click", (event) => { if (event.target === modalOverlay) closeInstructions(); });
+    document.addEventListener("keydown", (event) => {
+      if (event.key === "Escape" && !modalOverlay.hidden) closeInstructions();
+    });
     return;
   }
 

@@ -1,105 +1,78 @@
-# Nosso Projeto 3D — Calculadora (V1 Básica)
+# Nosso Projeto 3D — Calculadora
 
-Calculadora de precificação para impressão 3D, feita para a comunidade **Bambu Lab**.
-Essa é a **V1**, com o fluxo básico de orçamento — impressora, material, tempo,
-filamento, energia e margem de lucro — pronta para validação antes da versão
-completa (histórico, modo profissional, importação de `.3MF`, PDF, dashboard e PWA).
+Calculadora gratuita de preço para impressão 3D (filamento): material, energia,
+desgaste da máquina, mão de obra, embalagem, taxas da Shopee e do Mercado Livre,
+frete, impostos e lucro. Gera o orçamento pronto para o WhatsApp e em PDF.
 
-100% HTML + CSS + JavaScript puro. Sem build, sem dependências, sem servidor
-— funciona abrindo o `index.html` direto no navegador ou publicado no GitHub Pages.
+Publicada em **https://nossoprojeto3d.github.io/calc-3d/**, com a mesma identidade
+visual do [site](https://nossoprojeto3d.github.io/site/) e do
+[catálogo](https://nossoprojeto3d.github.io/catalogo/).
+
+HTML + CSS + JavaScript puro: sem build, sem dependências e sem servidor.
 
 ---
 
-## Estrutura do projeto
+## Estrutura
 
 ```
-calc-bambu-v1/
-├── index.html          → estrutura da página
-├── style.css           → identidade visual (paleta, tipografia, componentes)
-├── script.js           → lógica de cálculo, impressoras/materiais e interações
-├── manifest.json        → configuração do app instalável (PWA)
-├── service-worker.js    → cache offline e habilita o botão "instalar"
-├── assets/
-│   ├── logo.png          → logo usada no cabeçalho
-│   ├── favicon.png       → ícone da aba do navegador
-│   ├── icon-192.png      → ícone do app instalado (Android/desktop)
-│   └── icon-512.png      → ícone do app instalado (tela cheia/splash)
-└── README.md            → este arquivo
+calc-3d/
+├── index.html          → estrutura da página e modais
+├── style.css           → identidade visual (tokens de cor, tipografia, componentes)
+├── script.js           → dados, cálculo, histórico, WhatsApp/PDF e interações
+├── manifest.json       → app instalável (PWA)
+├── service-worker.js   → cache offline (rede primeiro para os arquivos do app)
+└── assets/             → logo, favicon e ícones do app
 ```
 
-Os dados de impressoras e materiais Bambu Lab ficam no topo do `script.js`,
-nos arrays `PRINTERS` e `MATERIALS` — dá pra editar preços, adicionar ou
-remover itens direto ali, sem precisar mexer no resto do código.
+### Onde editar os dados
 
----
+No topo do `script.js`:
 
-## Instalar como aplicativo (PWA)
+- `PRINTERS`: impressoras agrupadas por marca. `power` é a potência (W) usada no
+  cálculo de energia; `avgPurchasePrice` e `avgLifespanHours` alimentam o cálculo
+  automático de desgaste. Os valores são médias aproximadas de mercado.
+- `MATERIALS`: filamentos agrupados por tipo, com o preço médio por kg (R$).
+  O "Outro" fica sempre por último.
+- `PRO_COSTS`: custos do modo Profissional (textos de ajuda, atalhos e unidades).
+- `SHOPEE_DEFAULT_TIERS` / `MELI_DEFAULT_SETTINGS`: comissões e taxas fixas dos
+  marketplaces. Confira as regras atuais de cada um antes de alterar.
 
-O site tem um botão de instalar no cabeçalho (ícone de seta pra baixo).
+## Como o preço é calculado
 
-- **Android / Chrome / Edge**: o botão aparece sozinho quando o navegador
-  detecta que o app pode ser instalado. Basta tocar nele.
-- **iPhone / iPad (Safari)**: a Apple não permite instalar direto por um
-  botão — ao tocar, aparece um passo a passo explicando como usar o
-  "Compartilhar → Adicionar à Tela de Início".
+1. **Filamento** = gramas ÷ 1000 × preço por kg
+2. **Energia** = potência (W) ÷ 1000 × horas × valor do kWh
+3. **Custos do negócio** (modo Profissional): desgaste, mão de obra, margem de
+   falha (% sobre filamento + energia), embalagem e insumos entram na base do lucro.
+   O frete é só repassado, sem gerar lucro.
+4. **Lucro** = % sobre a base acima, ou um valor fixo
+5. **Impostos e taxas de marketplace** incidem sobre o **preço final**:
+   `preço = (custos + lucro + taxa fixa) ÷ (1 − comissão − imposto)`
+6. **Arredondamento** opcional para o próximo ",99"
 
-⚠️ **Importante**: isso só funciona quando o site está publicado com HTTPS
-(como acontece automaticamente no GitHub Pages). Abrindo o `index.html`
-direto do computador (`file://`), o navegador não oferece a opção de
-instalar — é só pra isso que existe o passo de publicação abaixo.
+## O que fica salvo no aparelho (localStorage)
 
----
+Nada é enviado para servidor nenhum. Ficam salvos no navegador de quem usa:
+os orçamentos em "Meus orçamentos", as Configurações da loja, o tema, o modo
+(Básico/Profissional) e a potência da "Outra impressora". Cada vez que a página
+é aberta, a calculadora começa com um cálculo novo.
 
-## Rodando localmente
+## Segurança
 
-Não precisa de nada instalado. Basta baixar os 3 arquivos (mantendo eles na
-mesma pasta) e dar duplo clique no `index.html`. Ele abre no seu navegador
-padrão e funciona offline.
+- Content Security Policy no `index.html`: só roda script do próprio site, do
+  cdnjs (gerador de PDF) e das estatísticas da Cloudflare.
+- O jsPDF é carregado só no primeiro clique em "PDF", com verificação de
+  integridade (SRI). **Ao trocar a versão do jsPDF, atualize `JSPDF_SRI`** no
+  `script.js` (o hash oficial está em cdnjs.com).
+- Todo texto digitado que aparece na tela ou no histórico passa por escape.
 
----
+## Publicar uma atualização
 
-## Publicando no GitHub Pages (deixa o link online pra compartilhar)
+Basta enviar as alterações para a branch `main`: o GitHub Pages publica sozinho
+em 1 ou 2 minutos. O service worker busca os arquivos do app na rede primeiro,
+então quem já usa recebe a versão nova sem precisar limpar o cache. Ao mudar
+ícones ou imagens, troque o `CACHE_NAME` no `service-worker.js`.
 
-### 1. Criar o repositório
-1. Acesse [github.com](https://github.com) e faça login (ou crie uma conta gratuita).
-2. Clique no botão **+** no canto superior direito → **New repository**.
-3. Dê um nome, por exemplo `calc-bambu` (pode ser qualquer nome, sem espaços).
-4. Deixe como **Public** (obrigatório para o GitHub Pages gratuito funcionar).
-5. Clique em **Create repository**.
+## Versões salvas (tags do Git)
 
-### 2. Subir os arquivos
-1. Na página do repositório recém-criado, clique em **uploading an existing file**
-   (ou **Add file → Upload files**).
-2. Arraste os arquivos `index.html`, `style.css`, `script.js` e `README.md`
-   para a área de upload.
-3. Role até o final da página e clique em **Commit changes**.
-
-### 3. Ativar o GitHub Pages
-1. No repositório, vá em **Settings** (aba no topo).
-2. No menu lateral, clique em **Pages**.
-3. Em **Branch**, selecione `main` e a pasta `/ (root)`, depois clique **Save**.
-4. Aguarde 1 a 2 minutos — o GitHub vai gerar o link automaticamente.
-
-### 4. Pegar o link e compartilhar
-Ainda na tela **Settings → Pages**, vai aparecer uma mensagem verde do tipo:
-
-```
-Your site is live at https://SEU-USUARIO.github.io/calc-bambu/
-```
-
-Esse é o link final. Copie e compartilhe com quem quiser — qualquer pessoa
-que abrir esse endereço vai ver a calculadora funcionando, sem precisar
-instalar nada. Toda vez que você subir uma atualização de arquivo no
-repositório, o mesmo link já reflete a nova versão automaticamente
-(pode levar 1-2 minutos para atualizar).
-
----
-
-## Roadmap (V2 — ainda não incluído nesta versão)
-
-- Modo profissional (desgaste de máquina, mão de obra, embalagem, impostos etc.)
-- Histórico de orçamentos e exportação em CSV
-- Importação automática de arquivos `.3MF`
-- Geração de PDF do orçamento
-- Dashboard financeiro
-- Instalação como app (PWA) com funcionamento offline completo
+- `estavel-2026-09-23`: V1, paleta violeta/ciano original
+- `backup-tons-dourados`: V2, preto e dourado

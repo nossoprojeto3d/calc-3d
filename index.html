@@ -10,6 +10,10 @@
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#0E0B07">
 <meta name="color-scheme" content="dark light">
+<!-- Política de segurança: só roda script do próprio site, do cdnjs (gerador
+     de PDF, com SRI) e das estatísticas da Cloudflare; fontes só do Google. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdnjs.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob:; connect-src 'self' https://cloudflareinsights.com; manifest-src 'self'; worker-src 'self'; object-src 'none'; base-uri 'self'; form-action 'none'">
+<meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -113,7 +117,7 @@
               <label for="kwhPrice">Valor do kWh da sua energia</label>
               <div class="input-wrap">
                 <span class="input-affix">R$</span>
-                <input type="number" id="kwhPrice" min="0" step="0.01" inputmode="decimal" placeholder="0,85">
+                <input type="text" id="kwhPrice" inputmode="decimal" data-decimal autocomplete="off" placeholder="0,85">
                 <span class="input-affix">/kWh</span>
               </div>
               <p class="hint">Está na sua conta de luz. Média no Brasil: R$ 0,85.</p>
@@ -138,7 +142,7 @@
                   <label for="customPrinterPrice">Quanto ela custou <span class="optional">opcional</span></label>
                   <div class="input-wrap">
                     <span class="input-affix">R$</span>
-                    <input type="number" id="customPrinterPrice" min="0" step="1" inputmode="decimal" placeholder="3.000">
+                    <input type="text" id="customPrinterPrice" inputmode="decimal" data-decimal autocomplete="off" placeholder="3.000">
                   </div>
                   <p class="hint">Usado no cálculo do desgaste da máquina (modo Profissional).</p>
                 </div>
@@ -160,7 +164,7 @@
               <label for="pricePerKg">Preço do filamento</label>
               <div class="input-wrap">
                 <span class="input-affix">R$</span>
-                <input type="number" id="pricePerKg" min="0" step="0.01" inputmode="decimal" placeholder="109,90">
+                <input type="text" id="pricePerKg" inputmode="decimal" data-decimal autocomplete="off" placeholder="109,90">
                 <span class="input-affix">/kg</span>
               </div>
               <p class="hint">Preenchido com a média do mercado — ajuste pro que você pagou.</p>
@@ -212,7 +216,7 @@
           <div class="field">
             <label for="printGrams">Peso do filamento usado</label>
             <div class="input-wrap">
-              <input type="number" id="printGrams" min="0" step="1" inputmode="decimal" placeholder="45">
+              <input type="text" id="printGrams" inputmode="decimal" data-decimal autocomplete="off" placeholder="45">
               <span class="input-affix">g</span>
             </div>
             <p class="hint" id="gramsHint">Também está no fatiador.</p>
@@ -256,7 +260,7 @@
             <div class="field">
               <label for="marginPct">Margem personalizada</label>
               <div class="input-wrap">
-                <input type="number" id="marginPct" min="0" step="1" inputmode="decimal" placeholder="100">
+                <input type="text" id="marginPct" inputmode="decimal" data-decimal autocomplete="off" placeholder="100">
                 <span class="input-affix">%</span>
               </div>
             </div>
@@ -264,7 +268,7 @@
               <label for="marginFixed">Ou um valor fixo</label>
               <div class="input-wrap">
                 <span class="input-affix">R$</span>
-                <input type="number" id="marginFixed" min="0" step="0.01" inputmode="decimal" placeholder="15,00">
+                <input type="text" id="marginFixed" inputmode="decimal" data-decimal autocomplete="off" placeholder="15,00">
               </div>
             </div>
           </div>
@@ -482,13 +486,13 @@
           <label for="settingsKwh">Valor do kWh</label>
           <div class="input-wrap">
             <span class="input-affix">R$</span>
-            <input type="number" id="settingsKwh" min="0" step="0.01" inputmode="decimal" placeholder="0,85">
+            <input type="text" id="settingsKwh" inputmode="decimal" data-decimal autocomplete="off" placeholder="0,85">
           </div>
         </div>
         <div class="field">
           <label for="settingsMarginPct">Margem de lucro</label>
           <div class="input-wrap">
-            <input type="number" id="settingsMarginPct" min="0" step="1" inputmode="decimal" placeholder="100">
+            <input type="text" id="settingsMarginPct" inputmode="decimal" data-decimal autocomplete="off" placeholder="100">
             <span class="input-affix">%</span>
           </div>
         </div>
@@ -499,14 +503,14 @@
           <label for="settingsHourlyRate">Seu valor-hora</label>
           <div class="input-wrap">
             <span class="input-affix">R$</span>
-            <input type="number" id="settingsHourlyRate" min="0" step="0.01" inputmode="decimal" placeholder="25,00">
+            <input type="text" id="settingsHourlyRate" inputmode="decimal" data-decimal autocomplete="off" placeholder="25,00">
           </div>
           <p class="hint">Calcula a “Mão de obra” do modo Profissional.</p>
         </div>
         <div class="field">
           <label for="settingsFailurePct">Margem de falha</label>
           <div class="input-wrap">
-            <input type="number" id="settingsFailurePct" min="0" step="1" inputmode="decimal" placeholder="10">
+            <input type="text" id="settingsFailurePct" inputmode="decimal" data-decimal autocomplete="off" placeholder="10">
             <span class="input-affix">%</span>
           </div>
           <p class="hint">Usada quando “Margem de falha” estiver ligada.</p>

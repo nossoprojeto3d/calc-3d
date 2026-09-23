@@ -11,7 +11,7 @@
    contra versão antiga.
    ========================================================= */
 
-const CACHE_NAME = "np3d-calc-v3";
+const CACHE_NAME = "np3d-calc-v3.1";
 
 const CORE_ASSETS = [
   "./",
@@ -31,8 +31,10 @@ const CORE_FILE_NAMES = ["index.html", "script.js", "style.css", "manifest.json"
 
 function isCoreRequest(request) {
   if (request.mode === "navigate") return true;
-  const pathname = new URL(request.url).pathname;
-  return CORE_FILE_NAMES.some((name) => pathname.endsWith(name));
+  const url = new URL(request.url);
+  // só arquivos do próprio app (nunca de outros sites, ex.: CDN/estatísticas)
+  if (url.origin !== self.location.origin) return false;
+  return CORE_FILE_NAMES.some((name) => url.pathname.endsWith(name));
 }
 
 // Ao instalar o service worker, guarda os arquivos principais em cache e já
@@ -68,11 +70,16 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
-          const responseClone = networkResponse.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          // só guarda respostas boas — nunca uma página de erro (404/500)
+          if (networkResponse.ok) {
+            const responseClone = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          }
           return networkResponse;
         })
-        .catch(() => caches.match(event.request))
+        // offline: ignora "?utm=..." e afins; se for navegação, cai no index
+        .catch(() => caches.match(event.request, { ignoreSearch: true })
+          .then((cached) => cached || (event.request.mode === "navigate" ? caches.match("./index.html") : undefined)))
     );
     return;
   }
