@@ -2106,7 +2106,6 @@ function clearAll() {
   clearTimeout(autoCalculateTimer);
   formularioValidado = false;
 
-  clearDraft();
   updateStickyBar();
   el("calcForm").scrollIntoView({ behavior: "smooth", block: "start" });
 }
@@ -2342,8 +2341,7 @@ function bindCustomPrinter() {
 
 // ---------------------------------------------------------
 // ESTADO DO FORMULÁRIO — captura/restaura tudo o que foi preenchido.
-// Base de "Meus orçamentos" (reabrir um orçamento salvo) e do rascunho
-// automático (nada se perde ao fechar/recarregar a página).
+// Base de "Meus orçamentos" (reabrir um orçamento salvo).
 // ---------------------------------------------------------
 function captureFormState() {
   const values = {};
@@ -2418,48 +2416,10 @@ function restoreFormState(state) {
   restoringState = false;
 }
 
-// ---------------------------------------------------------
-// RASCUNHO AUTOMÁTICO — o formulário sobrevive a fechar/recarregar a página
-// ---------------------------------------------------------
-const DRAFT_KEY = "np3d_draft";
-let draftTimer = null;
-
-function saveDraft() {
-  if (restoringState) return;
-  clearTimeout(draftTimer);
-  draftTimer = setTimeout(() => {
-    try {
-      localStorage.setItem(DRAFT_KEY, JSON.stringify({ state: captureFormState(), budgetId: currentBudgetId }));
-    } catch (err) { /* sem problema */ }
-  }, 500);
-}
-
-function clearDraft() {
-  clearTimeout(draftTimer);
-  try { localStorage.removeItem(DRAFT_KEY); } catch (err) { /* sem problema */ }
-}
-
-function restoreDraft() {
-  let draft = null;
-  try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch (err) { draft = null; }
-  if (!draft || !draft.state) return;
-
-  restoreFormState(draft.state);
-  if (draft.budgetId && loadHistory().some((b) => b.id === draft.budgetId)) {
-    currentBudgetId = draft.budgetId;
-    if (lastResult) el("saveBtnLabel").textContent = "Salvo";
-  }
-}
-
-function bindDraftAutosave() {
-  const form = el("calcForm");
-  form.addEventListener("input", saveDraft);
-  form.addEventListener("change", saveDraft);
-  // chips e faixas de marketplace são botões — também contam como edição
-  form.addEventListener("click", (event) => {
-    if (event.target.closest(".chip-btn, .tier-option, .mode-switch-btn")) saveDraft();
-  });
-}
+// Rascunho antigo (versões anteriores guardavam o formulário entre visitas).
+// Hoje cada vez que a calculadora abre é um cálculo novo — só limpa o que
+// tiver sobrado no aparelho.
+const LEGACY_DRAFT_KEY = "np3d_draft";
 
 // ---------------------------------------------------------
 // MEUS ORÇAMENTOS — histórico salvo no aparelho (localStorage)
@@ -2516,7 +2476,6 @@ function saveCurrentBudget({ silent = false } = {}) {
 
   currentBudgetId = entry.id;
   el("saveBtnLabel").textContent = "Salvo";
-  saveDraft();
   if (!silent) showQuickToast(isNew ? "Salvo em Meus orçamentos." : "Orçamento atualizado.");
 }
 
@@ -2602,7 +2561,6 @@ function openSavedBudget(id) {
   restoreFormState(entry.state);
   currentBudgetId = entry.id;
   if (lastResult) el("saveBtnLabel").textContent = "Salvo";
-  saveDraft();
   closeHistory();
   showQuickToast(`“${entry.name}” aberto — edite à vontade.`);
   el("calcForm").scrollIntoView({ behavior: "smooth", block: "start" });
@@ -2622,7 +2580,6 @@ function deleteSavedBudget(id) {
 function forgetCurrentBudget() {
   currentBudgetId = null;
   if (lastResult) el("saveBtnLabel").textContent = "Salvar";
-  saveDraft();
 }
 
 // "Limpar tudo" apaga na hora, sem confirmação — mas guarda a lista por
@@ -2656,7 +2613,6 @@ function undoClearHistory() {
   if (previousId && lastResult) {
     currentBudgetId = previousId;
     el("saveBtnLabel").textContent = "Salvo";
-    saveDraft();
   }
   renderHistory();
 }
@@ -2711,7 +2667,6 @@ function fillExample() {
     shopeeTier: shopeeSelectedTier,
     meliTier: meliSelectedTier,
   });
-  saveDraft();
   showQuickToast("Exemplo preenchido — troque pelos dados da sua peça.");
   if (lastResult) revealReadout();
 }
@@ -2958,8 +2913,7 @@ document.addEventListener("DOMContentLoaded", () => {
   initInstallPrompt();
   initFreeBanner();
   initHistory();
-  restoreDraft();
-  bindDraftAutosave();
+  try { localStorage.removeItem(LEGACY_DRAFT_KEY); } catch (err) { /* sem problema */ }
   initStickyBar();
   if (!lastResult) setReadoutLive(false);
 });
