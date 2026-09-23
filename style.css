@@ -9,6 +9,9 @@
    ========================================================= */
 
 :root{
+  /* avisa o navegador que a página é escura — sem isso, webviews (ex.:
+     navegador do Instagram) pintam de branco a área do "puxar" da rolagem */
+  color-scheme: dark;
   --bg: #101014;
   --surface: #17171E;
   --surface-2: #1F1F28;
@@ -62,6 +65,7 @@
 }
 
 [data-theme="light"]{
+  color-scheme: light;
   --bg: #F5F3EE;
   --surface: #FFFFFF;
   --surface-2: #FAF8F3;
@@ -105,6 +109,9 @@ html, body{
   color: var(--text);
   font-family: var(--font-body);
   -webkit-font-smoothing: antialiased;
+  /* sem o "elástico" ao puxar além do topo/fim da página (mostrava faixa
+     branca no iOS) — de quebra evita recarregar e perder o que foi digitado */
+  overscroll-behavior-y: none;
 }
 
 /* Remove as setinhas nativas de incremento/decremento dos campos numéricos */

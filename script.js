@@ -2072,6 +2072,10 @@ function applyTheme(theme) {
     el("iconSun").style.display = "none";
   }
   localStorage.setItem("np3d_theme", theme);
+
+  // barra do navegador/sistema acompanha o fundo do tema
+  const themeColor = document.querySelector('meta[name="theme-color"]');
+  if (themeColor) themeColor.setAttribute("content", theme === "light" ? "#F5F3EE" : "#101014");
 }
 
 // ---------------------------------------------------------
