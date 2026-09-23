@@ -62,7 +62,7 @@ const CUSTOM_PRINTER_STORAGE_KEY = "np3d_custom_printer";
 const MATERIALS = [
   { id: "pla-basic",   group: "PLA",        name: "PLA Basic",   pricePerKg: 109.90 },
   { id: "pla-matte",   group: "PLA",        name: "PLA Matte",   pricePerKg: 119.90 },
-  { id: "silk-pla",    group: "PLA",        name: "Silk PLA",    pricePerKg: 129.90 },
+  { id: "silk-pla",    group: "PLA",        name: "PLA Silk",    pricePerKg: 129.90 },
   { id: "pla-cf",      group: "PLA",        name: "PLA-CF (fibra de carbono)", pricePerKg: 179.90 },
   { id: "petg-basic",  group: "Engenharia", name: "PETG Basic",  pricePerKg: 109.90 },
   { id: "petg-cf",     group: "Engenharia", name: "PETG-CF",     pricePerKg: 169.90 },
