@@ -158,19 +158,28 @@
     </button>
   </div>
 
-  <!-- ===================== BANNER: PROJETO GRATUITO + INSTAGRAM ===================== -->
-  <!-- Aparece discreto depois do primeiro preço calculado; fechado, some até a próxima sessão -->
-  <div class="free-banner" id="freeBanner" hidden>
-    <span class="free-banner-icon" aria-hidden="true">
-      <svg viewBox="0 0 24 24" width="16" height="16"><path d="M12 20.3s-7.4-4.5-9.1-9.2C1.8 8 3.7 4.6 7.1 4.6c2 0 3.6 1.1 4.9 2.9 1.3-1.8 2.9-2.9 4.9-2.9 3.4 0 5.3 3.4 4.2 6.5-1.7 4.7-9.1 9.2-9.1 9.2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
-    </span>
-    <p class="free-banner-text">
-      Projeto 100% gratuito pra comunidade Bambu Lab.
-      <a class="banner-link" href="https://www.instagram.com/nossoprojeto3d" target="_blank" rel="noopener noreferrer">Siga @nossoprojeto3d</a>
-    </p>
-    <button id="closeFreeBanner" class="banner-close" type="button" aria-label="Fechar aviso">
-      <svg viewBox="0 0 24 24" width="14" height="14"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-    </button>
+  <!-- ===================== POPUP: PROJETO GRATUITO + INSTAGRAM ===================== -->
+  <!-- Aparece depois do primeiro preço calculado; fechado, some até a próxima sessão -->
+  <div class="modal-overlay" id="freeBanner" hidden>
+    <div class="modal-card free-popup" role="dialog" aria-modal="true" aria-labelledby="freePopupTitle">
+      <button id="closeFreeBanner" class="modal-close free-popup-close" type="button" aria-label="Fechar">
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      </button>
+      <span class="free-popup-icon" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 20.3s-7.4-4.5-9.1-9.2C1.8 8 3.7 4.6 7.1 4.6c2 0 3.6 1.1 4.9 2.9 1.3-1.8 2.9-2.9 4.9-2.9 3.4 0 5.3 3.4 4.2 6.5-1.7 4.7-9.1 9.2-9.1 9.2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
+      </span>
+      <h3 id="freePopupTitle">Gostou da calculadora?</h3>
+      <p class="free-popup-text">Ela é 100% gratuita, feita com carinho pra comunidade Bambu Lab. Se quiser apoiar, siga a gente no Instagram.</p>
+      <a id="freePopupFollow" class="btn-follow" href="https://www.instagram.com/nossoprojeto3d" target="_blank" rel="noopener noreferrer">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+          <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+          <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor"/>
+        </svg>
+        Seguir @nossoprojeto3d
+      </a>
+      <button id="freePopupLater" class="free-popup-later" type="button">Agora não</button>
+    </div>
   </div>
 
   <!-- ===================== TOAST RÁPIDO (feedback temporário, some sozinho) ===================== -->

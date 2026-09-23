@@ -1527,7 +1527,6 @@ function calculate() {
 
   lastResult = result;
   renderResult(result);
-  showFreeBanner();
 }
 
 // ---------------------------------------------------------
@@ -2102,7 +2101,12 @@ function bindEvents() {
       : "Sem arredondamento";
   });
 
-  el("calcBtn").addEventListener("click", calculate);
+  el("calcBtn").addEventListener("click", () => {
+    calculate();
+    // popup de apoio só no clique explícito (nunca no recálculo ao vivo,
+    // pra não interromper quem está digitando) e só se deu um preço
+    if (lastResult) showFreeBanner();
+  });
   el("clearBtn").addEventListener("click", clearAll);
   copyBtn.addEventListener("click", copyBudget);
   exportPdfBtn.addEventListener("click", exportPdf);
@@ -2206,17 +2210,29 @@ function initInstallPrompt() {
 }
 
 // ---------------------------------------------------------
-// BANNER "PROJETO GRATUITO" — aparece discreto logo depois do primeiro
+// POPUP "PROJETO GRATUITO" — aparece logo depois do primeiro
 // preço calculado (e não ao abrir a página, pra primeira tela ficar
 // limpa). Usa sessionStorage de propósito: fechando o X, ele some só
 // enquanto essa aba/sessão estiver aberta e volta numa próxima visita.
 // ---------------------------------------------------------
 let freeBannerScheduled = false;
 
+function closeFreeBanner() {
+  el("freeBanner").hidden = true;
+  sessionStorage.setItem("np3d_free_banner_seen", "1");
+}
+
 function initFreeBanner() {
-  el("closeFreeBanner").addEventListener("click", () => {
-    el("freeBanner").hidden = true;
-    sessionStorage.setItem("np3d_free_banner_seen", "1");
+  const overlay = el("freeBanner");
+  el("closeFreeBanner").addEventListener("click", closeFreeBanner);
+  el("freePopupLater").addEventListener("click", closeFreeBanner);
+  // o link abre o Instagram em outra aba; aqui só tira o popup do caminho
+  el("freePopupFollow").addEventListener("click", closeFreeBanner);
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeFreeBanner();
+  });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !overlay.hidden) closeFreeBanner();
   });
 }
 

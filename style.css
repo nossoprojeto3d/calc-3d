@@ -233,42 +233,69 @@ input[type="number"]{
 }
 .banner-close:hover{ color: var(--text); background: var(--gold-soft); }
 
-/* ===================== BANNER: PROJETO GRATUITO + INSTAGRAM ===================== */
-/* Aviso pequeno no rodapé da tela, só depois do primeiro cálculo — ver
-   showFreeBanner em script.js. */
-.free-banner{
-  position: fixed;
-  left: 50%;
-  bottom: 14px;
-  transform: translateX(-50%);
-  width: max-content;
-  max-width: calc(100% - 24px);
-  z-index: 60;
+/* ===================== POPUP: PROJETO GRATUITO + INSTAGRAM ===================== */
+/* Pequeno popup central (reusa .modal-overlay/.modal-card), só depois do
+   primeiro cálculo — ver showFreeBanner em script.js. */
+.free-popup{
+  position: relative;
+  max-width: 320px;
+  text-align: center;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 8px;
-  padding: 6px 6px 6px 14px;
-  background: var(--surface);
+  animation: freePopupIn .3s ease;
+}
+@keyframes freePopupIn{
+  from{ opacity: 0; transform: translateY(10px) scale(.98); }
+  to{ opacity: 1; transform: none; }
+}
+.free-popup-close{ position: absolute; top: 12px; right: 12px; margin: 0; }
+
+.free-popup-icon{
+  width: 46px; height: 46px;
+  margin: 4px 0 12px;
   border: 1px solid var(--gold-line);
-  border-radius: 12px;
-  box-shadow: var(--shadow);
-  box-sizing: border-box;
-  font-size: 12.5px;
-  animation: freeBannerIn .35s ease;
+  border-radius: 50%;
+  color: var(--gold);
+  display: flex; align-items: center; justify-content: center;
 }
-
-@keyframes freeBannerIn{
-  from{ opacity: 0; transform: translateX(-50%) translateY(12px); }
-  to{ opacity: 1; transform: translateX(-50%) translateY(0); }
-}
-
-.free-banner-icon{ color: var(--gold); line-height: 0; flex-shrink: 0; }
-.free-banner-text{
-  margin: 0;
+.free-popup h3{ margin: 0 0 8px; }
+.free-popup-text{
+  margin: 0 0 18px;
+  font-size: 13.5px;
+  line-height: 1.5;
   color: var(--text-muted);
-  line-height: 1.4;
 }
-.free-banner-text .banner-link{ padding: 2px 4px; margin-left: -2px; }
+
+.btn-follow{
+  width: 100%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 11px 16px;
+  border-radius: 10px;
+  background: var(--gold-fill);
+  color: var(--on-gold);
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: 14px;
+  text-decoration: none;
+  transition: filter .12s ease;
+}
+.btn-follow:hover{ filter: brightness(1.08); }
+
+.free-popup-later{
+  margin-top: 6px;
+  padding: 8px 12px;
+  border: none;
+  background: transparent;
+  color: var(--text-muted);
+  font-family: var(--font-body);
+  font-size: 13px;
+  cursor: pointer;
+}
+.free-popup-later:hover{ color: var(--text); }
 
 /* ===================== TOAST RÁPIDO ===================== */
 /* Feedback temporário e discreto (ex.: "Taxa X desativada..."). Aparece
