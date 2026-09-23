@@ -24,6 +24,9 @@
   --gold-soft: rgba(212, 175, 90, 0.10);
   --gold-fill: var(--gold);  /* preenchimento de botões/estados ativos */
   --gold-metal: linear-gradient(120deg, #9E7A30 0%, #E9CD84 38%, #F7E7B4 50%, #C99A3E 72%, #E3C271 100%);
+  /* mesma sensação metálica, mas de cima pra baixo — em texto, todos os
+     caracteres pegam o mesmo reflexo (usado no preço final) */
+  --gold-metal-v: linear-gradient(180deg, #F7E7B4 0%, #E3C271 45%, #C99A3E 75%, #E9CD84 100%);
   --on-gold: #0D0D12;
 
   /* gráfico de pizza: Filamento em ouro, Energia em cinza quente, Lucro em
@@ -74,6 +77,7 @@
   --gold-soft: rgba(176, 130, 40, 0.09);
   --gold-fill: #C9A04A;  /* mais vivo que --gold; o texto escuro garante contraste */
   --gold-metal: linear-gradient(120deg, #8A6420 0%, #C9A04A 40%, #E6C77E 52%, #A97F2C 75%, #C49A45 100%);
+  --gold-metal-v: linear-gradient(180deg, #B08632 0%, #9A7224 50%, #7E5B18 80%, #9A7224 100%);
 
   --pie-energy: #A39E93;
   --pie-profit: #2A2620;
@@ -813,12 +817,18 @@ input[type="number"]{
   margin-bottom: 18px;
 }
 .readout-label{ font-size: 12.5px; color: var(--text-muted); }
+/* Preço final: fonte display com números tabulares (a vírgula não ocupa uma
+   "célula" inteira como na mono) e o brilho metálico em faixa vertical,
+   ajustado só à largura do texto — assim "R$" e o valor ficam no mesmo tom. */
 .readout-value{
-  font-family: var(--font-mono);
-  font-size: clamp(32px, 8vw, 44px);
+  align-self: flex-start;
+  font-family: var(--font-display);
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(34px, 8.5vw, 48px);
   font-weight: 700;
-  letter-spacing: 0.5px;
-  background: var(--gold-metal);
+  line-height: 1.1;
+  letter-spacing: -0.5px;
+  background: var(--gold-metal-v);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
