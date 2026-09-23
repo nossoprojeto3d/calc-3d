@@ -400,7 +400,37 @@ input[type="number"]{
   max-height: 86vh;
   overflow-y: auto;
 }
-.modal-card-lg h3{ margin-bottom: 6px; }
+/* Cabeçalho do modal com título + botão fechar. No modal grande (que rola)
+   ele fica grudado no topo, então o "x" está sempre à mão. */
+.modal-head{
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.modal-head h3{ margin: 0; }
+.modal-card-lg .modal-head{
+  position: sticky;
+  top: -22px;
+  z-index: 2;
+  margin: -22px -22px 6px;
+  padding: 22px 22px 8px;
+  background: var(--surface);
+}
+
+.modal-close{
+  flex-shrink: 0;
+  width: 32px; height: 32px;
+  margin: -6px -6px 0 0;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-muted);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: color .15s ease, background .15s ease;
+}
+.modal-close:hover{ color: var(--gold); background: var(--gold-soft); }
 .modal-card-lg > .hint{ margin-bottom: 16px; }
 
 /* Título de subseção dentro do modal de Configurações da loja (ex.: "Taxa

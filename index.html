@@ -70,8 +70,13 @@
        acima. Todos os campos são opcionais; ao salvar viram os valores padrão
        da calculadora (aplicados automaticamente nos campos correspondentes). -->
   <div class="modal-overlay" id="settingsModalOverlay" hidden>
-    <div class="modal-card modal-card-lg">
-      <h3>Configurações da loja</h3>
+    <div class="modal-card modal-card-lg" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-head">
+        <h3 id="settingsTitle">Configurações da loja</h3>
+        <button id="closeSettingsBtn" class="modal-close" type="button" aria-label="Fechar configurações">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
       <p class="hint">Preencha o que fizer sentido pro seu negócio — tudo aqui é opcional e só vira padrão depois de salvar.</p>
 
       <div class="field-grid two-cols">

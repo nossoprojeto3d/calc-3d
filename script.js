@@ -522,6 +522,12 @@ function initSettingsModal() {
   el("settingsSaveBtn").addEventListener("click", saveStoreSettings);
   el("settingsResetBtn").addEventListener("click", restoreStoreSettingsDefaults);
   el("settingsRoundToggle").addEventListener("change", updateSettingsRoundText);
+  el("closeSettingsBtn").addEventListener("click", closeSettingsModal);
+
+  // Esc também fecha (sem salvar), como o "x" e o clique fora
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !el("settingsModalOverlay").hidden) closeSettingsModal();
+  });
 
   // fecha ao clicar fora do card, igual a maioria dos modais por aí
   el("settingsModalOverlay").addEventListener("click", (event) => {
