@@ -2542,6 +2542,17 @@ function renderHistory() {
     : list;
 
   const listEl = el("historyList");
+  el("historyFooter").hidden = !list.length;
+
+  if (!list.length && clearedHistoryBackup) {
+    listEl.innerHTML = `
+      <div class="history-empty">
+        <strong>Tudo apagado</strong>
+        ${clearedHistoryBackup.list.length} orçamento${clearedHistoryBackup.list.length > 1 ? "s" : ""} removido${clearedHistoryBackup.list.length > 1 ? "s" : ""}.
+        <button type="button" class="history-undo" id="historyUndoBtn">Desfazer</button>
+      </div>`;
+    return;
+  }
   if (!list.length) {
     listEl.innerHTML = `
       <div class="history-empty">
@@ -2580,6 +2591,9 @@ function openHistory() {
 
 function closeHistory() {
   el("historyModalOverlay").hidden = true;
+  // fechou a lista: o "Desfazer" do "Limpar tudo" não volta mais
+  clearedHistoryBackup = null;
+  clearTimeout(clearedHistoryTimer);
 }
 
 function openSavedBudget(id) {
@@ -2598,12 +2612,50 @@ function deleteSavedBudget(id) {
   const list = loadHistory();
   const entry = list.find((b) => b.id === id);
   if (!entry) return;
-  if (!window.confirm(`Excluir “${entry.name}” dos seus orçamentos?`)) return;
 
   storeHistory(list.filter((b) => b.id !== id));
-  if (currentBudgetId === id) {
-    currentBudgetId = null;
-    if (lastResult) el("saveBtnLabel").textContent = "Salvar";
+  if (currentBudgetId === id) forgetCurrentBudget();
+  renderHistory();
+}
+
+/** O orçamento aberto deixou de existir em "Meus orçamentos" — volta a ser um orçamento novo, não salvo. */
+function forgetCurrentBudget() {
+  currentBudgetId = null;
+  if (lastResult) el("saveBtnLabel").textContent = "Salvar";
+  saveDraft();
+}
+
+// "Limpar tudo" apaga na hora, sem confirmação — mas guarda a lista por
+// alguns segundos pra dar pra desfazer um toque sem querer.
+let clearedHistoryBackup = null;
+let clearedHistoryTimer = null;
+
+function clearAllHistory() {
+  const list = loadHistory();
+  if (!list.length) return;
+
+  clearedHistoryBackup = { list, currentBudgetId };
+  storeHistory([]);
+  if (currentBudgetId) forgetCurrentBudget();
+  renderHistory();
+
+  clearTimeout(clearedHistoryTimer);
+  clearedHistoryTimer = setTimeout(() => {
+    clearedHistoryBackup = null;
+    if (!el("historyModalOverlay").hidden) renderHistory();
+  }, 8000);
+}
+
+function undoClearHistory() {
+  if (!clearedHistoryBackup) return;
+  const { list, currentBudgetId: previousId } = clearedHistoryBackup;
+  clearedHistoryBackup = null;
+  clearTimeout(clearedHistoryTimer);
+
+  storeHistory(list);
+  if (previousId && lastResult) {
+    currentBudgetId = previousId;
+    el("saveBtnLabel").textContent = "Salvo";
     saveDraft();
   }
   renderHistory();
@@ -2614,7 +2666,10 @@ function initHistory() {
   el("closeHistoryBtn").addEventListener("click", closeHistory);
   el("historySearch").addEventListener("input", renderHistory);
 
+  el("historyClearBtn").addEventListener("click", clearAllHistory);
+
   el("historyList").addEventListener("click", (event) => {
+    if (event.target.closest("#historyUndoBtn")) { undoClearHistory(); return; }
     const openBtn = event.target.closest(".history-open");
     const deleteBtn = event.target.closest(".history-delete");
     if (openBtn) openSavedBudget(openBtn.dataset.id);

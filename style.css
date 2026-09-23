@@ -1175,6 +1175,41 @@ input[type="number"]{ -moz-appearance: textfield; appearance: textfield; }
 }
 .history-delete:hover{ color: var(--error); background: var(--error-soft); }
 
+.history-footer{
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+.history-clear{
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 13px;
+  cursor: pointer;
+}
+.history-clear:hover{ color: var(--error); background: var(--error-soft); }
+
+.history-undo{
+  display: block;
+  margin: 14px auto 0;
+  padding: 9px 18px;
+  border: 1px solid var(--gold-line);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--gold);
+  font-weight: 600;
+  font-size: 14px;
+  cursor: pointer;
+}
+.history-undo:hover{ background: var(--gold-soft); }
+
 .history-empty{
   padding: 28px 12px;
   text-align: center;
