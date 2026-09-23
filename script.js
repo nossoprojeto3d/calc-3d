@@ -1607,8 +1607,8 @@ function renderResult(r) {
 // ---------------------------------------------------------
 function buildPieSlices(r) {
   const slices = [
-    { label: "Filamento", value: r.filamentCost, color: "var(--accent-1)" },
-    { label: "Energia", value: r.energyCost, color: "var(--accent-2)" },
+    { label: "Filamento", value: r.filamentCost, color: "var(--pie-filament)" },
+    { label: "Energia", value: r.energyCost, color: "var(--pie-energy)" },
   ];
 
   if (r.proMode) {
@@ -1617,7 +1617,7 @@ function buildPieSlices(r) {
     });
   }
 
-  slices.push({ label: "Lucro", value: r.profit, color: "var(--accent-mid)" });
+  slices.push({ label: "Lucro", value: r.profit, color: "var(--pie-profit)" });
 
   return slices.filter((s) => s.value > 0);
 }

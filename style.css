@@ -1,9 +1,9 @@
 /* =========================================================
    NOSSO PROJETO 3D — V1 BÁSICA
    Token system:
-   - Paleta da marca: gradiente dourado (ouro velho -> champanhe),
-     usada de forma consistente em toda a interface, incluindo
-     o preço final
+   - Paleta da marca (V2): preto + ouro, no mesmo espírito do logo —
+     ouro sólido e linhas finas no dia a dia; o brilho metálico fica
+     reservado para o botão principal e o preço final
    - Tipografia: Space Grotesk (display) / Inter (corpo) / JetBrains Mono (leitura numérica)
    - Elemento de assinatura: painel "readout" no estilo tela LCD de impressora
    ========================================================= */
@@ -16,19 +16,24 @@
   --text: #F1F1F6;
   --text-muted: #8D8DA0;
 
-  /* acento da marca (gradiente dourado: ouro velho -> champanhe) usado em toda a interface,
-     inclusive no preço final */
-  --accent-1: #C9962B;
-  --accent-2: #F2D27A;
-  --accent-grad: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
-  --accent-soft: rgba(201, 150, 43, 0.16);
-  --accent-glow: rgba(242, 210, 122, 0.35);
-  /* tom intermediário do gradiente dourado, usado no gráfico de
-     pizza (fatia "Lucro") sem sair da paleta já estabelecida */
-  --accent-mid: color-mix(in srgb, var(--accent-1) 50%, var(--accent-2) 50%);
+  /* ouro da marca: --gold é o tom sólido (textos, bordas, estados ativos);
+     --gold-line é a linha fina/hover; --gold-soft é o fundo de destaque;
+     --gold-metal é o brilho metálico do logo, só no CTA e no preço final */
+  --gold: #D4AF5A;
+  --gold-line: rgba(212, 175, 90, 0.45);
+  --gold-soft: rgba(212, 175, 90, 0.10);
+  --gold-fill: var(--gold);  /* preenchimento de botões/estados ativos */
+  --gold-metal: linear-gradient(120deg, #9E7A30 0%, #E9CD84 38%, #F7E7B4 50%, #C99A3E 72%, #E3C271 100%);
+  --on-gold: #0D0D12;
+
+  /* gráfico de pizza: Filamento em ouro, Energia em cinza quente, Lucro em
+     marfim — três tons bem distintos sem sair do preto + ouro */
+  --pie-filament: var(--gold);
+  --pie-energy: #6F6A60;
+  --pie-profit: #EDE6D6;
 
   /* aviso (nota de arredondamento) */
-  --amber: #FBBF24;
+  --amber: #F0A04B;
 
   /* erro de validação */
   --error: #F0596B;
@@ -64,11 +69,15 @@
   --text: #14141B;
   --text-muted: #67677A;
 
-  --accent-1: #B07D1A;
-  --accent-2: #8A5F0E;
-  --accent-grad: linear-gradient(135deg, var(--accent-1) 0%, var(--accent-2) 100%);
-  --accent-soft: rgba(176, 125, 26, 0.12);
-  --accent-glow: rgba(176, 125, 26, 0.30);
+  --gold: #8F6A1C;
+  --gold-line: rgba(143, 106, 28, 0.45);
+  --gold-soft: rgba(176, 130, 40, 0.09);
+  --gold-fill: #C9A04A;  /* mais vivo que --gold; o texto escuro garante contraste */
+  --gold-metal: linear-gradient(120deg, #8A6420 0%, #C9A04A 40%, #E6C77E 52%, #A97F2C 75%, #C49A45 100%);
+
+  --pie-energy: #A39E93;
+  --pie-profit: #2A2620;
+  --amber: #B45F06;
 
   --pro-wear: #e34948;
   --pro-labor: #008300;
@@ -133,7 +142,6 @@ input[type="number"]{
 .brand-mark img{
   width: 100%; height: 100%;
   object-fit: contain;
-  filter: drop-shadow(0 2px 8px var(--accent-glow));
 }
 
 .brand-text{ display: flex; flex-direction: column; justify-content: center; line-height: 1.25; min-width: 0; }
@@ -157,12 +165,12 @@ input[type="number"]{
   cursor: pointer;
   transition: border-color .15s ease, transform .15s ease;
 }
-.icon-btn:hover{ border-color: var(--accent-2); transform: translateY(-1px); }
+.icon-btn:hover{ border-color: var(--gold-line); transform: translateY(-1px); }
 
-/* Botão de instalar o app: recebe um leve destaque no gradiente da marca */
+/* Botão de instalar o app: leve destaque em ouro */
 #installBtn{
-  border-color: var(--accent-1);
-  color: var(--accent-2);
+  border-color: var(--gold-line);
+  color: var(--gold);
 }
 
 /* ===================== BANNER: INSTALAR APP ===================== */
@@ -176,10 +184,9 @@ input[type="number"]{
   max-width: 720px;
   margin: 16px auto 0;
   padding: 14px 42px 14px 14px;
-  background: var(--accent-soft);
-  border: 1px solid var(--accent-1);
+  background: var(--gold-soft);
+  border: 1px solid var(--gold-line);
   border-radius: 12px;
-  box-shadow: 0 6px 20px -10px var(--accent-glow);
   box-sizing: border-box;
 }
 
@@ -211,8 +218,8 @@ input[type="number"]{
   padding: 9px 16px;
   border: none;
   border-radius: 9px;
-  background: var(--accent-grad);
-  color: #0D0D12;
+  background: var(--gold-fill);
+  color: var(--on-gold);
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 13px;
@@ -220,7 +227,7 @@ input[type="number"]{
   white-space: nowrap;
   transition: transform .12s ease, box-shadow .12s ease;
 }
-.btn-install:hover{ transform: translateY(-1px); box-shadow: 0 8px 18px var(--accent-glow); }
+.btn-install:hover{ transform: translateY(-1px); filter: brightness(1.08); }
 
 @media (max-width: 520px){
   .install-banner{ padding: 14px 42px 14px 14px; }
@@ -258,10 +265,10 @@ input[type="number"]{
   flex-direction: column;
   gap: 12px;
   background: var(--surface);
-  border: 1px solid var(--accent-1);
+  border: 1px solid var(--gold-line);
   border-radius: 14px;
   padding: 16px 42px 16px 16px;
-  box-shadow: var(--shadow), 0 0 32px -14px var(--accent-glow);
+  box-shadow: var(--shadow);
   box-sizing: border-box;
   animation: freeBannerIn .35s ease;
 }
@@ -292,15 +299,15 @@ input[type="number"]{
   align-self: flex-start;
   padding: 10px 18px;
   border-radius: 9px;
-  background: var(--accent-grad);
-  color: #0D0D12;
+  background: var(--gold-fill);
+  color: var(--on-gold);
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 13px;
   text-decoration: none;
   transition: transform .12s ease, box-shadow .12s ease;
 }
-.btn-follow:hover{ transform: translateY(-1px); box-shadow: 0 8px 18px var(--accent-glow); }
+.btn-follow:hover{ transform: translateY(-1px); filter: brightness(1.08); }
 
 @media (max-width: 520px){
   .free-banner{ bottom: 10px; }
@@ -320,7 +327,7 @@ input[type="number"]{
   max-width: calc(100% - 32px);
   padding: 10px 16px;
   background: var(--surface);
-  border: 1px solid var(--accent-1);
+  border: 1px solid var(--gold-line);
   border-radius: 10px;
   box-shadow: var(--shadow);
   color: var(--text);
@@ -352,10 +359,10 @@ input[type="number"]{
   width: 100%;
   max-width: 360px;
   background: var(--surface);
-  border: 1px solid var(--accent-1);
+  border: 1px solid var(--gold-line);
   border-radius: var(--radius);
   padding: 22px;
-  box-shadow: var(--shadow), 0 0 40px -18px var(--accent-glow);
+  box-shadow: var(--shadow);
 }
 
 .modal-card h3{
@@ -400,7 +407,7 @@ input[type="number"]{
   font-size: 11px;
   letter-spacing: 1.2px;
   text-transform: uppercase;
-  color: var(--accent-2);
+  color: var(--gold);
 }
 
 .modal-actions{
@@ -450,9 +457,8 @@ input[type="number"]{
 }
 .mode-switch-btn:hover{ color: var(--text); }
 .mode-switch-btn.active{
-  background: var(--accent-grad);
-  color: #0D0D12;
-  box-shadow: 0 6px 16px var(--accent-soft);
+  background: var(--gold-fill);
+  color: var(--on-gold);
 }
 
 /* ===================== ANIMAÇÃO DE EXPANSÃO =====================
@@ -488,8 +494,8 @@ input[type="number"]{
 .step-dot{
   width: 22px; height: 22px;
   border-radius: 50%;
-  background: var(--accent-grad);
-  color: #0D0D12;
+  border: 1px solid var(--gold);
+  color: var(--gold);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 700;
@@ -504,8 +510,8 @@ input[type="number"]{
   padding: 0 8px;
   height: 22px;
   border-radius: 999px;
-  background: var(--accent-grad);
-  color: #0D0D12;
+  border: 1px solid var(--gold);
+  color: var(--gold);
   font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 700;
@@ -548,11 +554,11 @@ input[type="number"]{
   cursor: pointer;
   transition: border-color .15s ease, color .15s ease, background .15s ease;
 }
-.chip-btn:hover{ border-color: var(--accent-2); color: var(--text); }
+.chip-btn:hover{ border-color: var(--gold-line); color: var(--text); }
 .chip-btn.active{
-  background: var(--accent-grad);
-  border-color: transparent;
-  color: #0D0D12;
+  background: var(--gold-soft);
+  border-color: var(--gold);
+  color: var(--gold);
 }
 
 .pro-item-head{
@@ -598,10 +604,10 @@ input[type="number"]{
   cursor: pointer;
   transition: border-color .15s ease, color .15s ease, background .15s ease;
 }
-.tier-option:hover{ border-color: var(--accent-2); color: var(--text); }
+.tier-option:hover{ border-color: var(--gold-line); color: var(--text); }
 .tier-option.active{
-  background: var(--accent-soft);
-  border-color: var(--accent-1);
+  background: var(--gold-soft);
+  border-color: var(--gold);
   color: var(--text);
   font-weight: 600;
 }
@@ -654,8 +660,8 @@ input[type="number"]{
 .field select:focus,
 .field input:focus{
   outline: none;
-  border-color: var(--accent-2);
-  box-shadow: 0 0 0 3px var(--accent-soft);
+  border-color: var(--gold);
+  box-shadow: 0 0 0 3px var(--gold-soft);
 }
 
 /* Campo bloqueado por conta da seleção mutuamente exclusiva (% x valor fixo) */
@@ -714,8 +720,8 @@ input[type="number"]{
   background: var(--text-muted);
   transition: transform .18s ease, background .18s ease;
 }
-.switch input:checked + .switch-track{ background: var(--accent-grad); border-color: transparent; }
-.switch input:checked + .switch-track .switch-thumb{ transform: translateX(18px); background: #0D0D12; }
+.switch input:checked + .switch-track{ background: var(--gold-fill); border-color: transparent; }
+.switch input:checked + .switch-track .switch-thumb{ transform: translateX(18px); background: var(--on-gold); }
 .switch-text{ font-size: 13.5px; color: var(--text); }
 
 /* Botão principal (Calcular preço) */
@@ -725,17 +731,16 @@ input[type="number"]{
   padding: 13px 16px;
   border: none;
   border-radius: 10px;
-  background: var(--accent-grad);
-  color: #0D0D12;
+  background: var(--gold-metal);
+  color: var(--on-gold);
   font-family: var(--font-display);
   font-weight: 700;
   font-size: 14.5px;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.4px;
   cursor: pointer;
-  transition: transform .12s ease, box-shadow .12s ease;
-  box-shadow: 0 6px 20px var(--accent-soft);
+  transition: transform .12s ease, filter .12s ease;
 }
-.btn-primary:hover{ transform: translateY(-1px); box-shadow: 0 10px 26px var(--accent-glow); }
+.btn-primary:hover{ transform: translateY(-1px); filter: brightness(1.06); }
 .btn-primary:active{ transform: translateY(0); }
 
 /* Botão secundário (Limpar tudo) */
@@ -754,21 +759,17 @@ input[type="number"]{
   cursor: pointer;
   transition: border-color .15s ease, color .15s ease;
 }
-.btn-secondary:hover{ border-color: var(--accent-2); color: var(--text); }
+.btn-secondary:hover{ border-color: var(--gold-line); color: var(--text); }
 
 /* ===================== PAINEL DE RESULTADO (assinatura visual) ===================== */
 .readout{
   position: relative;
   overflow: hidden;
-  background: radial-gradient(120% 140% at 15% 0%, #262013 0%, var(--surface) 55%);
-  border: 1px solid var(--accent-1);
+  background: var(--surface);
+  border: 1px solid var(--gold-line);
   border-radius: var(--radius);
   padding: 20px;
-  box-shadow: var(--shadow), 0 0 0 1px rgba(201,150,43,0.10), 0 0 40px -18px var(--accent-glow);
-}
-
-[data-theme="light"] .readout{
-  background: radial-gradient(120% 140% at 15% 0%, #FBF1DA 0%, var(--surface) 60%);
+  box-shadow: var(--shadow);
 }
 
 .readout-scanline{
@@ -777,8 +778,8 @@ input[type="number"]{
   pointer-events: none;
   background: repeating-linear-gradient(
     to bottom,
-    rgba(201,150,43,0.04) 0px,
-    rgba(201,150,43,0.04) 1px,
+    rgba(212,175,90,0.03) 0px,
+    rgba(212,175,90,0.03) 1px,
     transparent 1px,
     transparent 3px
   );
@@ -792,7 +793,7 @@ input[type="number"]{
   font-family: var(--font-mono);
   font-size: 11px;
   letter-spacing: 1.5px;
-  color: var(--accent-2);
+  color: var(--gold);
   text-transform: uppercase;
   margin-bottom: 14px;
 }
@@ -800,8 +801,7 @@ input[type="number"]{
 .readout-led{
   width: 7px; height: 7px;
   border-radius: 50%;
-  background: var(--accent-grad);
-  box-shadow: 0 0 10px var(--accent-glow);
+  background: var(--gold);
   animation: blink 2.4s ease-in-out infinite;
 }
 @keyframes blink{ 0%,100%{ opacity: 1; } 50%{ opacity: 0.35; } }
@@ -818,11 +818,10 @@ input[type="number"]{
   font-size: clamp(32px, 8vw, 44px);
   font-weight: 700;
   letter-spacing: 0.5px;
-  background: var(--accent-grad);
+  background: var(--gold-metal);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
-  filter: drop-shadow(0 0 18px var(--accent-glow));
   transition: opacity .15s ease;
 }
 .readout-value.pulse{ animation: pulseIn .4s ease; }
@@ -849,7 +848,7 @@ input[type="number"]{
 [data-theme="light"] .readout-cell{ background: rgba(0,0,0,0.03); }
 
 .readout-cell-label{ font-size: 10.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.4px; }
-.readout-cell-value{ font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--accent-2); }
+.readout-cell-value{ font-family: var(--font-mono); font-size: 15px; font-weight: 600; color: var(--text); }
 .readout-cell-sub{ font-size: 11px; color: var(--text-muted); }
 
 /* ===================== GRÁFICO DE PIZZA (breakdown de custos) ===================== */
@@ -910,10 +909,10 @@ input[type="number"]{
 .btn-copy{
   width: 100%;
   padding: 12px 16px;
-  border: 1px solid var(--accent-1);
+  border: 1px solid var(--gold);
   border-radius: 10px;
-  background: var(--accent-soft);
-  color: var(--text);
+  background: transparent;
+  color: var(--gold);
   font-family: var(--font-body);
   font-weight: 600;
   font-size: 13.5px;
@@ -924,9 +923,9 @@ input[type="number"]{
   cursor: pointer;
   transition: background .15s ease, opacity .15s ease, box-shadow .15s ease;
 }
-.btn-copy:hover{ box-shadow: 0 6px 18px var(--accent-soft); }
+.btn-copy:hover{ background: var(--gold-soft); }
 .btn-copy:disabled{ opacity: 0.4; cursor: not-allowed; box-shadow: none; }
-.btn-copy.copied{ border-color: var(--accent-2); color: var(--accent-2); background: var(--accent-soft); }
+.btn-copy.copied{ background: var(--gold-fill); color: var(--on-gold); }
 
 /* Botão de exportação (PDF) — secundário e discreto de propósito,
    abaixo do botão principal de copiar pro WhatsApp (sem o destaque do gradiente). */
@@ -954,7 +953,7 @@ input[type="number"]{
   cursor: pointer;
   transition: border-color .15s ease, color .15s ease;
 }
-.btn-ghost:hover{ border-color: var(--accent-2); color: var(--text); }
+.btn-ghost:hover{ border-color: var(--gold-line); color: var(--text); }
 .btn-ghost:disabled{ opacity: 0.4; cursor: not-allowed; border-color: var(--border); color: var(--text-muted); }
 
 .export-error{ margin-top: 8px; text-align: center; }
@@ -990,7 +989,7 @@ input[type="number"]{
   font-size: 10.5px;
   letter-spacing: 0.6px;
   text-transform: uppercase;
-  color: var(--accent-2);
+  color: var(--gold);
 }
 
 .footer-social{
@@ -999,16 +998,16 @@ input[type="number"]{
   gap: 7px;
   padding: 8px 14px;
   border-radius: 999px;
-  border: 1px solid var(--accent-1);
-  background: var(--accent-soft);
+  border: 1px solid var(--gold-line);
+  background: transparent;
   color: var(--text);
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
   transition: box-shadow .15s ease, transform .15s ease;
 }
-.footer-social svg{ color: var(--accent-2); }
-.footer-social:hover{ box-shadow: 0 6px 18px var(--accent-soft); transform: translateY(-1px); }
+.footer-social svg{ color: var(--gold); }
+.footer-social:hover{ background: var(--gold-soft); transform: translateY(-1px); }
 
 .footer-copy{
   font-size: 11px;
