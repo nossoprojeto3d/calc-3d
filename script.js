@@ -1527,6 +1527,7 @@ function calculate() {
 
   lastResult = result;
   renderResult(result);
+  showFreeBanner();
 }
 
 // ---------------------------------------------------------
@@ -2205,23 +2206,26 @@ function initInstallPrompt() {
 }
 
 // ---------------------------------------------------------
-// BANNER "PROJETO GRATUITO" — reaparece a cada nova visita/sessão.
-// Usa sessionStorage (não localStorage) de propósito: fechando o X,
-// ele some só enquanto essa aba/sessão do navegador estiver aberta.
-// Ao abrir de novo depois (nova aba, navegador fechado e reaberto
-// etc.), o banner volta a aparecer.
+// BANNER "PROJETO GRATUITO" — aparece discreto logo depois do primeiro
+// preço calculado (e não ao abrir a página, pra primeira tela ficar
+// limpa). Usa sessionStorage de propósito: fechando o X, ele some só
+// enquanto essa aba/sessão estiver aberta e volta numa próxima visita.
 // ---------------------------------------------------------
+let freeBannerScheduled = false;
+
 function initFreeBanner() {
-  const seenThisSession = sessionStorage.getItem("np3d_free_banner_seen") === "1";
-  if (seenThisSession) return;
-
-  const banner = el("freeBanner");
-  banner.hidden = false;
-
   el("closeFreeBanner").addEventListener("click", () => {
-    banner.hidden = true;
+    el("freeBanner").hidden = true;
     sessionStorage.setItem("np3d_free_banner_seen", "1");
   });
+}
+
+function showFreeBanner() {
+  if (freeBannerScheduled) return;
+  freeBannerScheduled = true;
+  if (sessionStorage.getItem("np3d_free_banner_seen") === "1") return;
+  // pequeno atraso pra pessoa ver o preço antes do aviso surgir
+  setTimeout(() => { el("freeBanner").hidden = false; }, 1500);
 }
 
 // ---------------------------------------------------------

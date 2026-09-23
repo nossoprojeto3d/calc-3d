@@ -181,74 +181,48 @@ input[type="number"]{
 }
 
 /* ===================== BANNER: INSTALAR APP ===================== */
+/* Faixa fina de uma linha — avisa que dá pra instalar sem competir com a
+   calculadora. O botão de instalar do topo continua disponível. */
 .install-banner{
-  position: relative;
   display: flex;
   align-items: center;
-  flex-wrap: wrap;
-  gap: 12px;
+  gap: 10px;
   width: calc(100% - 32px);
-  max-width: 720px;
-  margin: 16px auto 0;
-  padding: 14px 42px 14px 14px;
-  background: var(--gold-soft);
-  border: 1px solid var(--gold-line);
-  border-radius: 12px;
+  max-width: 688px;
+  margin: 14px auto 0;
+  padding: 6px 6px 6px 14px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
   box-sizing: border-box;
+  font-size: 12.5px;
+  color: var(--text-muted);
 }
+.install-banner-icon{ color: var(--gold); flex-shrink: 0; }
+.install-banner-text{ flex: 1; min-width: 0; line-height: 1.35; }
 
-.install-banner-main{
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex: 1;
-  min-width: 220px;
-}
-
-.install-banner-icon{
-  width: 36px; height: 36px;
-  border-radius: 9px;
+/* Link-botão discreto em ouro, usado nos dois banners */
+.banner-link{
   flex-shrink: 0;
-}
-
-.install-banner-text{
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-  min-width: 0;
-}
-.install-banner-text strong{ font-family: var(--font-display); font-size: 13.5px; }
-.install-banner-text span{ font-size: 12px; color: var(--text-muted); }
-
-.btn-install{
-  flex-shrink: 0;
-  padding: 9px 16px;
+  padding: 6px 8px;
   border: none;
-  border-radius: 9px;
-  background: var(--gold-fill);
-  color: var(--on-gold);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 13px;
-  cursor: pointer;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--gold);
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: inherit;
+  text-decoration: none;
   white-space: nowrap;
-  transition: transform .12s ease, box-shadow .12s ease;
+  cursor: pointer;
+  transition: background .15s ease;
 }
-.btn-install:hover{ transform: translateY(-1px); filter: brightness(1.08); }
+.banner-link:hover{ background: var(--gold-soft); }
 
-@media (max-width: 520px){
-  .install-banner{ padding: 14px 42px 14px 14px; }
-  .btn-install{ width: 100%; }
-}
-
-/* Botão "x" de fechar — reutilizado nos banners (instalar app / projeto gratuito).
-   Sempre fixo no canto superior direito do card, independente de como o
-   resto do conteúdo quebra a linha em telas menores. */
+/* Botão "x" de fechar — reutilizado nos banners (instalar app / projeto gratuito) */
 .banner-close{
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  width: 26px; height: 26px;
+  flex-shrink: 0;
+  width: 28px; height: 28px;
   border: none;
   background: transparent;
   color: var(--text-muted);
@@ -257,69 +231,44 @@ input[type="number"]{
   border-radius: 6px;
   transition: color .15s ease, background .15s ease;
 }
-.banner-close:hover{ color: var(--text); background: rgba(0,0,0,0.15); }
+.banner-close:hover{ color: var(--text); background: var(--gold-soft); }
 
 /* ===================== BANNER: PROJETO GRATUITO + INSTAGRAM ===================== */
+/* Aviso pequeno no rodapé da tela, só depois do primeiro cálculo — ver
+   showFreeBanner em script.js. */
 .free-banner{
   position: fixed;
   left: 50%;
-  bottom: 16px;
+  bottom: 14px;
   transform: translateX(-50%);
-  width: calc(100% - 32px);
-  max-width: 620px;
+  width: max-content;
+  max-width: calc(100% - 24px);
   z-index: 60;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 6px 6px 14px;
   background: var(--surface);
   border: 1px solid var(--gold-line);
-  border-radius: 14px;
-  padding: 16px 42px 16px 16px;
+  border-radius: 12px;
   box-shadow: var(--shadow);
   box-sizing: border-box;
+  font-size: 12.5px;
   animation: freeBannerIn .35s ease;
 }
 
 @keyframes freeBannerIn{
-  from{ opacity: 0; transform: translateX(-50%) translateY(16px); }
+  from{ opacity: 0; transform: translateX(-50%) translateY(12px); }
   to{ opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
-.free-banner-main{
-  display: flex;
-  align-items: flex-start;
-  gap: 10px;
-}
 .free-banner-icon{ color: var(--gold); line-height: 0; flex-shrink: 0; }
 .free-banner-text{
   margin: 0;
-  font-size: 13px;
   color: var(--text-muted);
-  line-height: 1.5;
+  line-height: 1.4;
 }
-
-.btn-follow{
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  align-self: flex-start;
-  padding: 10px 18px;
-  border-radius: 9px;
-  background: var(--gold-fill);
-  color: var(--on-gold);
-  font-family: var(--font-display);
-  font-weight: 700;
-  font-size: 13px;
-  text-decoration: none;
-  transition: transform .12s ease, box-shadow .12s ease;
-}
-.btn-follow:hover{ transform: translateY(-1px); filter: brightness(1.08); }
-
-@media (max-width: 520px){
-  .free-banner{ bottom: 10px; }
-  .btn-follow{ align-self: stretch; }
-}
+.free-banner-text .banner-link{ padding: 2px 4px; margin-left: -2px; }
 
 /* ===================== TOAST RÁPIDO ===================== */
 /* Feedback temporário e discreto (ex.: "Taxa X desativada..."). Aparece
