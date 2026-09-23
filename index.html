@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Calculadora - NP3D</title>
-<meta name="description" content="Calculadora gratuita de preço para impressão 3D: filamento, resina, energia, desgaste, mão de obra, taxas de marketplace e lucro — com orçamento pronto pro WhatsApp e PDF.">
+<meta name="description" content="Calculadora gratuita de preço para impressão 3D: filamento, energia, desgaste, mão de obra, taxas de marketplace e lucro — com orçamento pronto pro WhatsApp e PDF.">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/icon-192.png">
 <link rel="manifest" href="manifest.json">
@@ -75,7 +75,7 @@
     <section class="hero">
       <p class="eyebrow">Calculadora de preço 3D</p>
       <h1>Quanto cobrar pela sua <em>peça?</em></h1>
-      <p class="hero-lead">Filamento ou resina, energia, desgaste, mão de obra e taxas — o preço justo em segundos, pronto pra mandar no WhatsApp.</p>
+      <p class="hero-lead">Filamento, energia, desgaste, mão de obra e taxas — o preço justo em segundos, pronto pra mandar no WhatsApp.</p>
       <button id="exampleBtn" class="link-btn" type="button">
         <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M5 3l14 9-14 9V3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
         Ver um exemplo preenchido
@@ -158,21 +158,21 @@
             </div>
 
             <div class="field">
-              <label for="pricePerKg">Preço do material</label>
+              <label for="pricePerKg">Preço do filamento</label>
               <div class="input-wrap">
                 <span class="input-affix">R$</span>
                 <input type="number" id="pricePerKg" min="0" step="0.01" inputmode="decimal" placeholder="109,90">
                 <span class="input-affix">/kg</span>
               </div>
               <p class="hint">Preenchido com a média do mercado — ajuste pro que você pagou.</p>
-              <p class="field-error-text" id="pricePerKgError" hidden>Informe o preço do material por kg.</p>
+              <p class="field-error-text" id="pricePerKgError" hidden>Informe o preço do filamento por kg.</p>
             </div>
           </div>
 
           <!-- Só aparece quando o material for "Outro" -->
           <div class="field" id="customMaterialWrap" hidden>
             <label for="customMaterialName">Nome do material</label>
-            <input type="text" id="customMaterialName" placeholder="Ex: PA-CF, PC Blend, Resina Tough">
+            <input type="text" id="customMaterialName" placeholder="Ex: PA-CF, PC Blend, PP">
             <p class="field-error-text" id="customMaterialNameError" hidden>Informe o nome do material.</p>
           </div>
         </section>
@@ -211,13 +211,13 @@
           </div>
 
           <div class="field">
-            <label for="printGrams">Peso do material usado</label>
+            <label for="printGrams">Peso do filamento usado</label>
             <div class="input-wrap">
               <input type="number" id="printGrams" min="0" step="1" inputmode="decimal" placeholder="45">
               <span class="input-affix">g</span>
             </div>
-            <p class="hint" id="gramsHint">Também está no fatiador. Resina: use os ml (1 ml ≈ 1 g).</p>
-            <p class="field-error-text" id="printGramsError" hidden>Informe o peso do material usado.</p>
+            <p class="hint" id="gramsHint">Também está no fatiador.</p>
+            <p class="field-error-text" id="printGramsError" hidden>Informe o peso do filamento usado.</p>
           </div>
         </section>
 

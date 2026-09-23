@@ -47,9 +47,6 @@ const PRINTERS = [
   { id: "qd-q1-pro", brand: "Qidi",  name: "Qidi Q1 Pro", power: 350, desc: "350W · Câmara aquecida",          avgPurchasePrice: 3300, avgLifespanHours: 8000 },
   { id: "sv-sv06",   brand: "Sovol", name: "Sovol SV06",  power: 300, desc: "300W · Entrada, estilo Prusa",    avgPurchasePrice: 1400, avgLifespanHours: 6000 },
 
-  { id: "rs-saturn4-ultra", brand: "Resina", name: "Elegoo Saturn 4 Ultra",    power: 120, desc: "120W · Resina 12K",           avgPurchasePrice: 3000, avgLifespanHours: 5000 },
-  { id: "rs-mars5-ultra",   brand: "Resina", name: "Elegoo Mars 5 Ultra",      power: 80,  desc: "80W · Resina 9K, compacta",    avgPurchasePrice: 1800, avgLifespanHours: 5000 },
-  { id: "rs-photon-m7",     brand: "Resina", name: "Anycubic Photon Mono M7",  power: 100, desc: "100W · Resina 10K",           avgPurchasePrice: 2300, avgLifespanHours: 5000 },
 ];
 
 // "Outra impressora": potência (e, opcionalmente, o preço pago) informados
@@ -59,7 +56,7 @@ const CUSTOM_PRINTER_LIFESPAN_HOURS = 8000;
 const CUSTOM_PRINTER_STORAGE_KEY = "np3d_custom_printer";
 
 // ---------------------------------------------------------
-// DADOS: MATERIAIS (preço médio por kg em R$), agrupados por tipo.
+// DADOS: FILAMENTOS (preço médio por kg em R$), agrupados por tipo.
 // "Outro" fica sempre por último — é a opção de personalizar.
 // ---------------------------------------------------------
 const MATERIALS = [
@@ -75,9 +72,6 @@ const MATERIALS = [
   { id: "pc",          group: "Engenharia", name: "PC (policarbonato)", pricePerKg: 199.90 },
   { id: "pa-nylon",    group: "Engenharia", name: "PA / Nylon",  pricePerKg: 249.90 },
   { id: "tpu-95a",     group: "Flexível",   name: "TPU 95A",     pricePerKg: 149.90 },
-  { id: "resin-std",   group: "Resina",     name: "Resina padrão",         pricePerKg: 159.90, resin: true },
-  { id: "resin-abs",   group: "Resina",     name: "Resina ABS-like",       pricePerKg: 189.90, resin: true },
-  { id: "resin-water", group: "Resina",     name: "Resina lavável em água", pricePerKg: 199.90, resin: true },
   { id: "outro",       group: "Outro",      name: "Outro (personalizado)", pricePerKg: null },
 ];
 
@@ -1347,9 +1341,7 @@ function syncMaterialUI(prefillPrice) {
   const isCustom = material.id === "outro";
 
   customWrap.hidden = !isCustom;
-  materialHint.textContent = material.resin
-    ? "Resina: no peso, use os ml do fatiador (1 ml ≈ 1 g)."
-    : "";
+  materialHint.textContent = "";
 
   if (isCustom) {
     if (prefillPrice) {
@@ -2695,7 +2687,7 @@ function getProgressItems() {
     { label: "Impressora", done: !!getSelectedPrinter() },
     { label: "Energia", done: Number(kwhPriceInput.value) > 0 },
     { label: "Material", done: materialOk },
-    { label: "Preço do material", done: Number(pricePerKgInput.value) > 0 },
+    { label: "Preço do filamento", done: Number(pricePerKgInput.value) > 0 },
     { label: "Tempo", done: timeOk },
     { label: "Peso", done: Number(printGramsInput.value) > 0 },
     { label: "Margem", done: (pctVal !== "" && Number(pctVal) >= 0) || (fixedVal !== "" && Number(fixedVal) >= 0) },

@@ -1,7 +1,7 @@
 {
   "name": "Nosso Projeto 3D — Calculadora",
   "short_name": "NP3D Calc",
-  "description": "Calculadora gratuita de preço para impressão 3D — filamento, resina, energia, custos do negócio e lucro.",
+  "description": "Calculadora gratuita de preço para impressão 3D — filamento, energia, custos do negócio e lucro.",
   "start_url": "./index.html",
   "scope": "./",
   "id": "./",
