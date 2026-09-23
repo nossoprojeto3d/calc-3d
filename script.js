@@ -1763,8 +1763,8 @@ async function buildAndSavePdf(JsPDF, r) {
   const marginX = 18;
   let y;
 
-  // Faixa colorida no topo com o logo, no mesmo tom de acento usado no app
-  doc.setFillColor(139, 92, 246);
+  // Faixa escura no topo com o logo, nas cores da marca (dourado sobre preto)
+  doc.setFillColor(16, 16, 20);
   doc.rect(0, 0, pageWidth, 30, "F");
 
   try {
@@ -1774,7 +1774,7 @@ async function buildAndSavePdf(JsPDF, r) {
     // Sem problema seguir sem o logo — não impede a geração do PDF
   }
 
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(242, 210, 122);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.text("Nosso Projeto 3D", marginX + 20, 15);
@@ -1800,10 +1800,10 @@ async function buildAndSavePdf(JsPDF, r) {
   const drawSectionTitle = (title) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11.5);
-    doc.setTextColor(124, 58, 237);
+    doc.setTextColor(138, 95, 14);
     doc.text(title.toUpperCase(), marginX, y);
     y += 1.5;
-    doc.setDrawColor(225, 222, 238);
+    doc.setDrawColor(230, 224, 210);
     doc.line(marginX, y, pageWidth - marginX, y);
     y += 6;
   };
@@ -1843,7 +1843,7 @@ async function buildAndSavePdf(JsPDF, r) {
   y += 4;
 
   // Preço final em destaque, num cartão colorido
-  doc.setFillColor(240, 238, 252);
+  doc.setFillColor(251, 241, 218);
   doc.roundedRect(marginX, y, pageWidth - marginX * 2, 20, 3, 3, "F");
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
@@ -1851,7 +1851,7 @@ async function buildAndSavePdf(JsPDF, r) {
   doc.text("Preço final sugerido", marginX + 6, y + 8);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.setTextColor(124, 58, 237);
+  doc.setTextColor(138, 95, 14);
   doc.text(brl(r.finalPrice), marginX + 6, y + 16);
 
   y += 30;
