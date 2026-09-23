@@ -11,7 +11,7 @@
    contra versão antiga.
    ========================================================= */
 
-const CACHE_NAME = "np3d-calc-v1";
+const CACHE_NAME = "np3d-calc-v3";
 
 const CORE_ASSETS = [
   "./",

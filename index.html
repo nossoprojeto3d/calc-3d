@@ -2,21 +2,24 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Calculadora - NP3D</title>
+<meta name="description" content="Calculadora gratuita de preço para impressão 3D: filamento, resina, energia, desgaste, mão de obra, taxas de marketplace e lucro — com orçamento pronto pro WhatsApp e PDF.">
 <link rel="icon" type="image/png" href="assets/favicon.png">
 <link rel="apple-touch-icon" href="assets/icon-192.png">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#101014">
+<meta name="theme-color" content="#0E0B07">
 <meta name="color-scheme" content="dark light">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="NP3D Calc">
 
-<!-- Fontes: display técnico (Space Grotesk), corpo (Inter) e leitor numérico tipo display de impressora (JetBrains Mono) -->
+<!-- Fontes da identidade Nosso Projeto 3D (mesmas do site e do catálogo):
+     Fraunces (títulos e preço), Work Sans (corpo) e JetBrains Mono (rótulos e números) -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500&family=Work+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 
 <link rel="stylesheet" href="style.css">
 </head>
@@ -24,129 +27,37 @@
 
   <!-- ===================== CABEÇALHO ===================== -->
   <header class="topbar">
-    <div class="brand">
-      <span class="brand-mark">
-        <img src="assets/logo.png" alt="Nosso Projeto 3D">
-      </span>
-      <div class="brand-text">
+    <a class="brand" href="./" aria-label="Nosso Projeto 3D — Calculadora">
+      <img class="brand-mark" src="assets/logo.png" alt="">
+      <span class="brand-text">
         <strong>Nosso Projeto 3D</strong>
-        <span class="brand-tag">Feita com amor para quem vive de impressão 3D</span>
-      </div>
-    </div>
+        <span class="brand-tag">Calculadora</span>
+      </span>
+    </a>
 
     <div class="header-actions">
-      <button id="installBtn" class="icon-btn" type="button" aria-label="Instalar aplicativo" title="Instalar app" hidden>
-        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <button id="installBtn" class="icon-btn icon-btn-gold" type="button" aria-label="Instalar aplicativo" title="Instalar app" hidden>
+        <svg viewBox="0 0 24 24" width="18" height="18"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+
+      <button id="historyBtn" class="icon-btn" type="button" aria-label="Meus orçamentos" title="Meus orçamentos">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l3 2"/></svg>
+        <span class="icon-badge" id="historyCount" hidden>0</span>
       </button>
 
       <button id="themeToggle" class="icon-btn" type="button" aria-label="Alternar tema claro/escuro" title="Alternar tema">
-        <svg id="iconMoon" viewBox="0 0 24 24" width="18" height="18"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" fill="currentColor"/></svg>
-        <svg id="iconSun" viewBox="0 0 24 24" width="18" height="18" style="display:none"><circle cx="12" cy="12" r="4.2" fill="currentColor"/><g stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 2v2.4M12 19.6V22M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2 12h2.4M19.6 12H22M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></g></svg>
+        <svg id="iconMoon" viewBox="0 0 24 24" width="18" height="18"><path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        <svg id="iconSun" viewBox="0 0 24 24" width="18" height="18" style="display:none"><circle cx="12" cy="12" r="4" fill="none" stroke="currentColor" stroke-width="1.7"/><g stroke="currentColor" stroke-width="1.7" stroke-linecap="round"><path d="M12 2v2.4M12 19.6V22M4.2 4.2l1.7 1.7M18.1 18.1l1.7 1.7M2 12h2.4M19.6 12H22M4.2 19.8l1.7-1.7M18.1 5.9l1.7-1.7"/></g></svg>
       </button>
 
       <button id="settingsBtn" class="icon-btn" type="button" aria-label="Configurações da loja" title="Configurações da loja">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="12" cy="12" r="3"></circle>
           <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
         </svg>
       </button>
     </div>
   </header>
-
-  <!-- Modal com instruções de instalação para iPhone/iPad (Safari não permite instalar via botão) -->
-  <div class="modal-overlay" id="installModalOverlay" hidden>
-    <div class="modal-card">
-      <h3>Instalar na tela de início</h3>
-      <ol>
-        <li>Toque no ícone de compartilhar <strong>⬆️</strong> na barra do Safari.</li>
-        <li>Role e escolha <strong>"Adicionar à Tela de Início"</strong>.</li>
-        <li>Toque em <strong>"Adicionar"</strong> no canto superior direito.</li>
-      </ol>
-      <button id="closeInstallModal" class="btn-secondary" type="button">Entendi</button>
-    </div>
-  </div>
-
-  <!-- Modal de configurações da loja — mesmo estilo visual do modal de instalação
-       acima. Todos os campos são opcionais; ao salvar viram os valores padrão
-       da calculadora (aplicados automaticamente nos campos correspondentes). -->
-  <div class="modal-overlay" id="settingsModalOverlay" hidden>
-    <div class="modal-card modal-card-lg" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
-      <div class="modal-head">
-        <h3 id="settingsTitle">Configurações da loja</h3>
-        <button id="closeSettingsBtn" class="modal-close" type="button" aria-label="Fechar configurações">
-          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-        </button>
-      </div>
-      <p class="hint">Preencha o que fizer sentido pro seu negócio — tudo aqui é opcional e só vira padrão depois de salvar.</p>
-
-      <div class="field-grid two-cols">
-        <div class="field">
-          <label for="settingsKwh">Valor padrão do kWh (R$)</label>
-          <input type="number" id="settingsKwh" min="0" step="0.01" placeholder="Ex: 0.85">
-        </div>
-        <div class="field">
-          <label for="settingsMarginPct">Margem de lucro padrão (%)</label>
-          <input type="number" id="settingsMarginPct" min="0" step="1" placeholder="Ex: 100">
-        </div>
-      </div>
-
-      <div class="field-grid two-cols">
-        <div class="field">
-          <label for="settingsHourlyRate">Seu valor-hora (R$)</label>
-          <input type="number" id="settingsHourlyRate" min="0" step="0.01" placeholder="Ex: 25.00">
-          <p class="hint">Calcula sozinho o custo profissional "Mão de obra" (junto com o tempo de preparo).</p>
-        </div>
-        <div class="field">
-          <label for="settingsFailurePct">Margem de falha padrão (%)</label>
-          <input type="number" id="settingsFailurePct" min="0" step="1" placeholder="Ex: 10">
-          <p class="hint">Só é usada se o item "Margem de falha" do modo Profissional estiver ligado.</p>
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="settingsDefaultPrinter">Impressora padrão</label>
-        <select id="settingsDefaultPrinter">
-          <option value="">Nenhuma preferência</option>
-        </select>
-      </div>
-
-      <div class="field-grid two-cols">
-        <div class="field">
-          <label for="settingsStoreName">Nome da loja</label>
-          <input type="text" id="settingsStoreName" placeholder="Ex: NP3D Impressões">
-        </div>
-        <div class="field">
-          <label for="settingsCity">Cidade</label>
-          <input type="text" id="settingsCity" placeholder="Ex: Belo Horizonte/MG">
-        </div>
-      </div>
-
-      <div class="field-grid two-cols">
-        <div class="field">
-          <label for="settingsWhatsapp">WhatsApp</label>
-          <input type="text" id="settingsWhatsapp" placeholder="Ex: (31) 99999-0000">
-        </div>
-        <div class="field">
-          <label for="settingsInstagram">Instagram</label>
-          <input type="text" id="settingsInstagram" placeholder="Ex: @sualoja3d">
-        </div>
-      </div>
-
-      <div class="field">
-        <span class="pseudo-label">Arredondamento favorito</span>
-        <label class="switch">
-          <input type="checkbox" id="settingsRoundToggle" checked>
-          <span class="switch-track"><span class="switch-thumb"></span></span>
-          <span class="switch-text" id="settingsRoundToggleText">Arredondar para .99 acima</span>
-        </label>
-      </div>
-
-      <div class="modal-actions">
-        <button id="settingsResetBtn" class="btn-secondary" type="button">Restaurar padrão</button>
-        <button id="settingsSaveBtn" class="btn-primary" type="button">Salvar</button>
-      </div>
-    </div>
-  </div>
 
   <!-- ===================== BANNER: INSTALAR APP ===================== -->
   <div class="install-banner" id="installBanner" hidden>
@@ -158,8 +69,483 @@
     </button>
   </div>
 
-  <!-- ===================== POPUP: PROJETO GRATUITO + INSTAGRAM ===================== -->
-  <!-- Aparece depois do primeiro preço calculado; fechado, some até a próxima sessão -->
+  <main class="page">
+
+    <!-- ===================== ABERTURA ===================== -->
+    <section class="hero">
+      <p class="eyebrow">Calculadora de preço 3D</p>
+      <h1>Quanto cobrar pela sua <em>peça?</em></h1>
+      <p class="hero-lead">Filamento ou resina, energia, desgaste, mão de obra e taxas — o preço justo em segundos, pronto pra mandar no WhatsApp.</p>
+      <button id="exampleBtn" class="link-btn" type="button">
+        <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M5 3l14 9-14 9V3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+        Ver um exemplo preenchido
+      </button>
+    </section>
+
+    <div class="layout">
+
+      <!-- ===================== FORMULÁRIO ===================== -->
+      <div class="calc-form" id="calcForm">
+
+        <!-- Básico / Profissional -->
+        <div class="mode-block">
+          <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Modo da calculadora">
+            <button type="button" class="mode-switch-btn active" data-mode="basico" role="tab" aria-pressed="true">Básico</button>
+            <button type="button" class="mode-switch-btn" data-mode="profissional" role="tab" aria-pressed="false">Profissional</button>
+          </div>
+          <p class="mode-desc" id="modeDesc">Material, energia e lucro — o essencial pra precificar.</p>
+        </div>
+
+        <!-- 01 · Impressora e material -->
+        <section class="panel">
+          <header class="panel-head">
+            <span class="step-num">01</span>
+            <h2 class="panel-title">Impressora e material</h2>
+          </header>
+
+          <div class="field-grid two-cols">
+            <div class="field">
+              <label for="printerSelect">Impressora</label>
+              <select id="printerSelect"></select>
+              <p class="hint" id="printerHint">—</p>
+            </div>
+
+            <div class="field">
+              <label for="kwhPrice">Valor do kWh da sua energia</label>
+              <div class="input-wrap">
+                <span class="input-affix">R$</span>
+                <input type="number" id="kwhPrice" min="0" step="0.01" inputmode="decimal" placeholder="0,85">
+                <span class="input-affix">/kWh</span>
+              </div>
+              <p class="hint">Está na sua conta de luz. Média no Brasil: R$ 0,85.</p>
+              <p class="field-error-text" id="kwhPriceError" hidden>Informe o valor do kWh da sua energia.</p>
+            </div>
+          </div>
+
+          <!-- Só aparece com "Outra impressora" selecionada -->
+          <div class="reveal" id="customPrinterWrap" hidden>
+            <div class="reveal-inner">
+              <div class="sub-panel field-grid two-cols">
+                <div class="field">
+                  <label for="customPrinterPower">Potência da impressora</label>
+                  <div class="input-wrap">
+                    <input type="number" id="customPrinterPower" min="1" step="1" inputmode="numeric" placeholder="350">
+                    <span class="input-affix">W</span>
+                  </div>
+                  <p class="hint">Veja na etiqueta da fonte ou no site do fabricante.</p>
+                  <p class="field-error-text" id="customPrinterPowerError" hidden>Informe a potência da impressora, em watts.</p>
+                </div>
+                <div class="field">
+                  <label for="customPrinterPrice">Quanto ela custou <span class="optional">opcional</span></label>
+                  <div class="input-wrap">
+                    <span class="input-affix">R$</span>
+                    <input type="number" id="customPrinterPrice" min="0" step="1" inputmode="decimal" placeholder="3.000">
+                  </div>
+                  <p class="hint">Usado no cálculo do desgaste da máquina (modo Profissional).</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="field-grid two-cols">
+            <div class="field">
+              <label for="materialSelect">Material</label>
+              <select id="materialSelect">
+                <option value="" disabled selected>Selecione um material</option>
+              </select>
+              <p class="hint" id="materialHint"></p>
+              <p class="field-error-text" id="materialSelectError" hidden>Selecione um material.</p>
+            </div>
+
+            <div class="field">
+              <label for="pricePerKg">Preço do material</label>
+              <div class="input-wrap">
+                <span class="input-affix">R$</span>
+                <input type="number" id="pricePerKg" min="0" step="0.01" inputmode="decimal" placeholder="109,90">
+                <span class="input-affix">/kg</span>
+              </div>
+              <p class="hint">Preenchido com a média do mercado — ajuste pro que você pagou.</p>
+              <p class="field-error-text" id="pricePerKgError" hidden>Informe o preço do material por kg.</p>
+            </div>
+          </div>
+
+          <!-- Só aparece quando o material for "Outro" -->
+          <div class="field" id="customMaterialWrap" hidden>
+            <label for="customMaterialName">Nome do material</label>
+            <input type="text" id="customMaterialName" placeholder="Ex: PA-CF, PC Blend, Resina Tough">
+            <p class="field-error-text" id="customMaterialNameError" hidden>Informe o nome do material.</p>
+          </div>
+        </section>
+
+        <!-- 02 · A peça -->
+        <section class="panel">
+          <header class="panel-head">
+            <span class="step-num">02</span>
+            <h2 class="panel-title">Dados da peça</h2>
+          </header>
+
+          <div class="field">
+            <label for="jobName">Nome da peça <span class="optional">opcional</span></label>
+            <input type="text" id="jobName" placeholder="Ex: Suporte de celular" autocomplete="off">
+          </div>
+
+          <div class="field">
+            <span class="pseudo-label">Tempo de impressão <span class="optional">está no fatiador</span></span>
+            <div class="field-grid two-cols compact">
+              <div class="field">
+                <div class="input-wrap">
+                  <input type="number" id="printHours" min="0" step="1" inputmode="numeric" placeholder="2" aria-label="Horas de impressão">
+                  <span class="input-affix">h</span>
+                </div>
+                <p class="field-error-text" id="printHoursError" hidden>Informe as horas (pode ser 0).</p>
+              </div>
+              <div class="field">
+                <div class="input-wrap">
+                  <input type="number" id="printMinutes" min="0" max="59" step="1" inputmode="numeric" placeholder="30" aria-label="Minutos de impressão">
+                  <span class="input-affix">min</span>
+                </div>
+                <p class="field-error-text" id="printMinutesError" hidden>Minutos entre 0 e 59.</p>
+              </div>
+            </div>
+            <p class="field-error-text" id="printTimeError" hidden>O tempo não pode ser zero — preencha horas, minutos ou os dois.</p>
+          </div>
+
+          <div class="field">
+            <label for="printGrams">Peso do material usado</label>
+            <div class="input-wrap">
+              <input type="number" id="printGrams" min="0" step="1" inputmode="decimal" placeholder="45">
+              <span class="input-affix">g</span>
+            </div>
+            <p class="hint" id="gramsHint">Também está no fatiador. Resina: use os ml (1 ml ≈ 1 g).</p>
+            <p class="field-error-text" id="printGramsError" hidden>Informe o peso do material usado.</p>
+          </div>
+        </section>
+
+        <!-- PRO · Custos profissionais (só no modo Profissional) -->
+        <div class="reveal" id="proSection" hidden>
+          <div class="reveal-inner">
+            <section class="panel pro-panel">
+              <header class="panel-head">
+                <span class="step-num step-num-pro">PRO</span>
+                <h2 class="panel-title">Custos do negócio</h2>
+              </header>
+              <p class="hint panel-intro">Ligue só o que faz parte do seu custo — o que estiver desligado não entra na conta.</p>
+              <div class="pro-item-grid" id="proItemGrid"></div>
+            </section>
+          </div>
+        </div>
+
+        <!-- 03 · Lucro -->
+        <section class="panel">
+          <header class="panel-head">
+            <span class="step-num" id="profitStepNum">03</span>
+            <h2 class="panel-title">Seu lucro</h2>
+          </header>
+
+          <div class="field">
+            <span class="pseudo-label">Margem de lucro</span>
+            <div class="chip-row" id="marginChips">
+              <button type="button" class="chip-btn" data-value="30">30%</button>
+              <button type="button" class="chip-btn" data-value="50">50%</button>
+              <button type="button" class="chip-btn" data-value="100">100%</button>
+              <button type="button" class="chip-btn" data-value="150">150%</button>
+              <button type="button" class="chip-btn" data-value="200">200%</button>
+            </div>
+          </div>
+
+          <div class="field-grid two-cols">
+            <div class="field">
+              <label for="marginPct">Margem personalizada</label>
+              <div class="input-wrap">
+                <input type="number" id="marginPct" min="0" step="1" inputmode="decimal" placeholder="100">
+                <span class="input-affix">%</span>
+              </div>
+            </div>
+            <div class="field">
+              <label for="marginFixed">Ou um valor fixo</label>
+              <div class="input-wrap">
+                <span class="input-affix">R$</span>
+                <input type="number" id="marginFixed" min="0" step="0.01" inputmode="decimal" placeholder="15,00">
+              </div>
+            </div>
+          </div>
+          <p class="hint">Use a % ou o valor fixo — ao preencher um, o outro fica bloqueado.</p>
+          <p class="field-error-text" id="marginError" hidden>Escolha uma margem de lucro (em % ou valor fixo).</p>
+
+          <label class="switch switch-row">
+            <input type="checkbox" id="roundToggle" checked>
+            <span class="switch-track"><span class="switch-thumb"></span></span>
+            <span class="switch-text">
+              <span id="roundToggleText">Arredondar para .99 acima</span>
+              <span class="switch-sub">Ex.: R$ 45,24 vira R$ 45,99</span>
+            </span>
+          </label>
+
+          <div class="form-actions">
+            <button id="calcBtn" class="btn-primary" type="button">
+              Calcular preço
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </button>
+            <button id="clearBtn" class="btn-secondary" type="button">Novo orçamento</button>
+          </div>
+        </section>
+      </div>
+
+      <!-- ===================== RESULTADO ===================== -->
+      <aside class="result-col">
+        <section class="readout" id="readoutPanel" aria-live="polite">
+          <span class="corner corner-tl" aria-hidden="true"></span>
+          <span class="corner corner-tr" aria-hidden="true"></span>
+          <span class="corner corner-bl" aria-hidden="true"></span>
+          <span class="corner corner-br" aria-hidden="true"></span>
+
+          <div class="readout-head">
+            <span class="readout-status"><span class="readout-led" id="readoutLed" aria-hidden="true"></span><span id="readoutStatus">Aguardando dados</span></span>
+            <span class="readout-code">NP-3D</span>
+          </div>
+
+          <div class="readout-main">
+            <span class="readout-label" id="readoutJobName">Preço sugerido</span>
+            <span class="readout-value" id="finalPrice">R$ 0,00</span>
+            <span class="readout-sub" id="roundingNote"></span>
+          </div>
+
+          <!-- Estado vazio: guia rápido antes do primeiro cálculo -->
+          <div class="readout-empty" id="readoutEmpty">
+            <p>Preencha os dados ao lado e o preço aparece aqui, <em>ao vivo</em>.</p>
+            <ul class="missing-list" id="missingList"></ul>
+          </div>
+
+          <div class="readout-body" id="readoutBody" hidden>
+            <div class="insights">
+              <div class="insight">
+                <span class="insight-label">Custo</span>
+                <span class="insight-value" id="totalCost">R$ 0,00</span>
+              </div>
+              <div class="insight">
+                <span class="insight-label">Lucro</span>
+                <span class="insight-value insight-value-gold" id="profitValue">R$ 0,00</span>
+              </div>
+              <div class="insight">
+                <span class="insight-label">Lucro/hora</span>
+                <span class="insight-value" id="profitPerHour">R$ 0,00</span>
+              </div>
+            </div>
+
+            <!-- Composição do preço: barra empilhada + lista -->
+            <div class="breakdown" id="readoutPie" hidden>
+              <div class="breakdown-head">
+                <span>Composição do preço</span>
+                <span id="marginOnPrice"></span>
+              </div>
+              <div class="breakdown-bar" id="pieChart" role="img" aria-label="Composição do preço"></div>
+              <div class="breakdown-list" id="pieLegend"></div>
+            </div>
+
+            <div class="readout-meta">
+              <span id="filamentCost" hidden>R$ 0,00</span>
+              <span id="energyCost" hidden>R$ 0,00</span>
+              <span id="filamentGramsSub">0 g</span>
+              <span aria-hidden="true">·</span>
+              <span id="energyKwhSub">0,00 kWh</span>
+              <span aria-hidden="true">·</span>
+              <span id="printTimeSub">0h00</span>
+            </div>
+          </div>
+
+          <div class="readout-actions">
+            <a id="whatsappBtn" class="btn-whatsapp is-disabled" href="#" target="_blank" rel="noopener noreferrer" aria-disabled="true">
+              <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M20.5 11.8a8.5 8.5 0 0 1-12.6 7.4L3.5 20.5l1.3-4.3A8.5 8.5 0 1 1 20.5 11.8z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/><path d="M9 8.5c.2-.4.5-.5.8-.5h.5c.2 0 .4.1.5.4l.6 1.5c.1.3 0 .5-.1.7l-.5.6c.6 1.1 1.5 2 2.6 2.6l.6-.5c.2-.2.4-.2.7-.1l1.5.6c.3.1.4.3.4.5v.5c0 .3-.1.6-.5.8-.6.4-1.4.5-2.2.2a8 8 0 0 1-4.8-4.8c-.3-.8-.2-1.6.2-2.2z" fill="currentColor"/></svg>
+              Enviar no WhatsApp
+            </a>
+            <div class="action-row">
+              <button id="copyBtn" class="btn-ghost" type="button" disabled>
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M8 4h9a2 2 0 0 1 2 2v12M6 8h9a2 2 0 0 1 2 2v10H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+                <span id="copyBtnLabel">Copiar</span>
+              </button>
+              <button id="exportPdfBtn" class="btn-ghost" type="button" disabled>
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <span id="exportPdfBtnLabel">PDF</span>
+              </button>
+              <button id="saveBtn" class="btn-ghost" type="button" disabled>
+                <svg viewBox="0 0 24 24" width="15" height="15" aria-hidden="true"><path d="M6 3h12v18l-6-4-6 4V3z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
+                <span id="saveBtnLabel">Salvar</span>
+              </button>
+            </div>
+            <p class="field-error-text export-error" id="pdfExportError" hidden>Não foi possível gerar o PDF. Verifique sua internet e tente de novo.</p>
+          </div>
+        </section>
+
+        <p class="result-note">Tudo fica salvo só no seu aparelho. Nada é enviado pra lugar nenhum.</p>
+      </aside>
+    </div>
+
+    <!-- ===================== RODAPÉ ===================== -->
+    <footer class="site-footer">
+      <div class="footer-links">
+        <a href="https://nossoprojeto3d.github.io/site/" target="_blank" rel="noopener noreferrer">Nosso site <span aria-hidden="true">↗</span></a>
+        <a href="https://nossoprojeto3d.github.io/catalogo/" target="_blank" rel="noopener noreferrer">Catálogo <span aria-hidden="true">↗</span></a>
+        <a class="footer-social" id="footerSocialLink" href="https://www.instagram.com/nossoprojeto3d" target="_blank" rel="noopener noreferrer" aria-label="Instagram">
+          <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
+            <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor"/>
+          </svg>
+          <span id="footerSocialHandle">@nossoprojeto3d</span>
+        </a>
+      </div>
+
+      <p class="footer-verse">
+        “Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos.”
+        <span>Provérbios 16:3</span>
+      </p>
+
+      <span class="footer-copy">© 2026 Nosso Projeto 3D · Feita com amor pra quem vive de impressão 3D</span>
+    </footer>
+  </main>
+
+  <!-- ===================== BARRA FIXA (CELULAR): PREÇO AO VIVO ===================== -->
+  <div class="sticky-bar" id="stickyBar">
+    <div class="sticky-info">
+      <span class="sticky-label" id="stickyLabel">Preço sugerido</span>
+      <span class="sticky-value" id="stickyValue">Faltam dados</span>
+    </div>
+    <button id="stickyBtn" class="sticky-btn" type="button">Ver orçamento</button>
+  </div>
+
+  <!-- ===================== MODAIS ===================== -->
+
+  <!-- Instalar no iPhone/iPad (Safari não permite instalar via botão) -->
+  <div class="modal-overlay" id="installModalOverlay" hidden>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="installTitle">
+      <div class="modal-head">
+        <h3 id="installTitle">Instalar na tela de início</h3>
+      </div>
+      <ol class="steps-list">
+        <li>Toque no ícone de <strong>compartilhar</strong> na barra do Safari.</li>
+        <li>Role e escolha <strong>“Adicionar à Tela de Início”</strong>.</li>
+        <li>Toque em <strong>“Adicionar”</strong>, no canto superior direito.</li>
+      </ol>
+      <button id="closeInstallModal" class="btn-secondary" type="button">Entendi</button>
+    </div>
+  </div>
+
+  <!-- Meus orçamentos (histórico salvo no aparelho) -->
+  <div class="modal-overlay" id="historyModalOverlay" hidden>
+    <div class="modal-card modal-card-lg" role="dialog" aria-modal="true" aria-labelledby="historyTitle">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow eyebrow-sm">Salvos no seu aparelho</p>
+          <h3 id="historyTitle">Meus orçamentos</h3>
+        </div>
+        <button id="closeHistoryBtn" class="modal-close" type="button" aria-label="Fechar">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <div class="history-search" id="historySearchWrap" hidden>
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><circle cx="11" cy="11" r="6.5" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="m16 16 4 4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+        <input type="search" id="historySearch" placeholder="Buscar orçamento..." aria-label="Buscar orçamento">
+      </div>
+      <div class="history-list" id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- Configurações da loja -->
+  <div class="modal-overlay" id="settingsModalOverlay" hidden>
+    <div class="modal-card modal-card-lg" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow eyebrow-sm">Tudo opcional</p>
+          <h3 id="settingsTitle">Configurações da loja</h3>
+        </div>
+        <button id="closeSettingsBtn" class="modal-close" type="button" aria-label="Fechar configurações">
+          <svg viewBox="0 0 24 24" width="18" height="18"><path d="M6 6l12 12M18 6 6 18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+      <p class="hint">Preencha uma vez e a calculadora já abre com seus padrões. Só vale depois de salvar.</p>
+
+      <h4 class="settings-subheading">Padrões da calculadora</h4>
+      <div class="field">
+        <label for="settingsDefaultPrinter">Impressora padrão</label>
+        <select id="settingsDefaultPrinter">
+          <option value="">Nenhuma preferência</option>
+        </select>
+      </div>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="settingsKwh">Valor do kWh</label>
+          <div class="input-wrap">
+            <span class="input-affix">R$</span>
+            <input type="number" id="settingsKwh" min="0" step="0.01" inputmode="decimal" placeholder="0,85">
+          </div>
+        </div>
+        <div class="field">
+          <label for="settingsMarginPct">Margem de lucro</label>
+          <div class="input-wrap">
+            <input type="number" id="settingsMarginPct" min="0" step="1" inputmode="decimal" placeholder="100">
+            <span class="input-affix">%</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="settingsHourlyRate">Seu valor-hora</label>
+          <div class="input-wrap">
+            <span class="input-affix">R$</span>
+            <input type="number" id="settingsHourlyRate" min="0" step="0.01" inputmode="decimal" placeholder="25,00">
+          </div>
+          <p class="hint">Calcula a “Mão de obra” do modo Profissional.</p>
+        </div>
+        <div class="field">
+          <label for="settingsFailurePct">Margem de falha</label>
+          <div class="input-wrap">
+            <input type="number" id="settingsFailurePct" min="0" step="1" inputmode="decimal" placeholder="10">
+            <span class="input-affix">%</span>
+          </div>
+          <p class="hint">Usada quando “Margem de falha” estiver ligada.</p>
+        </div>
+      </div>
+
+      <label class="switch switch-row">
+        <input type="checkbox" id="settingsRoundToggle" checked>
+        <span class="switch-track"><span class="switch-thumb"></span></span>
+        <span class="switch-text" id="settingsRoundToggleText">Arredondar para .99 acima</span>
+      </label>
+
+      <h4 class="settings-subheading">Sua loja no orçamento</h4>
+      <p class="hint">Aparece no fim do orçamento enviado no WhatsApp e no PDF.</p>
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="settingsStoreName">Nome da loja</label>
+          <input type="text" id="settingsStoreName" placeholder="Ex: NP3D Impressões">
+        </div>
+        <div class="field">
+          <label for="settingsCity">Cidade</label>
+          <input type="text" id="settingsCity" placeholder="Ex: Goiânia/GO">
+        </div>
+      </div>
+
+      <div class="field-grid two-cols">
+        <div class="field">
+          <label for="settingsWhatsapp">WhatsApp</label>
+          <input type="text" id="settingsWhatsapp" inputmode="tel" placeholder="Ex: (62) 99999-0000">
+        </div>
+        <div class="field">
+          <label for="settingsInstagram">Instagram</label>
+          <input type="text" id="settingsInstagram" placeholder="Ex: @sualoja3d">
+        </div>
+      </div>
+
+      <div class="modal-actions">
+        <button id="settingsResetBtn" class="btn-secondary" type="button">Restaurar padrão</button>
+        <button id="settingsSaveBtn" class="btn-primary" type="button">Salvar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Popup de apoio: projeto gratuito + Instagram (1x por semana, depois de um cálculo) -->
   <div class="modal-overlay" id="freeBanner" hidden>
     <div class="modal-card free-popup" role="dialog" aria-modal="true" aria-labelledby="freePopupTitle">
       <button id="closeFreeBanner" class="modal-close free-popup-close" type="button" aria-label="Fechar">
@@ -169,7 +555,7 @@
         <svg viewBox="0 0 24 24" width="22" height="22"><path d="M12 20.3s-7.4-4.5-9.1-9.2C1.8 8 3.7 4.6 7.1 4.6c2 0 3.6 1.1 4.9 2.9 1.3-1.8 2.9-2.9 4.9-2.9 3.4 0 5.3 3.4 4.2 6.5-1.7 4.7-9.1 9.2-9.1 9.2z" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg>
       </span>
       <h3 id="freePopupTitle">Gostou da calculadora?</h3>
-      <p class="free-popup-text">Ela é 100% gratuita, feita com carinho pra comunidade Bambu Lab. Se quiser apoiar, siga a gente no Instagram.</p>
+      <p class="free-popup-text">Ela é 100% gratuita, feita com carinho pra comunidade 3D. Se quiser apoiar, siga a gente no Instagram.</p>
       <a id="freePopupFollow" class="btn-follow" href="https://www.instagram.com/nossoprojeto3d" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
           <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.7"/>
@@ -182,214 +568,8 @@
     </div>
   </div>
 
-  <!-- ===================== TOAST RÁPIDO (feedback temporário, some sozinho) ===================== -->
+  <!-- Toast rápido (feedback temporário, some sozinho) -->
   <div class="quick-toast" id="quickToast" hidden><span id="quickToastText"></span></div>
-  </div>
-
-  <main class="page">
-
-    <!-- ===================== SEGMENTED CONTROL: BÁSICO / PROFISSIONAL ===================== -->
-    <div class="mode-switch" id="modeSwitch" role="tablist" aria-label="Modo da calculadora">
-      <button type="button" class="mode-switch-btn active" data-mode="basico" role="tab" aria-pressed="true">Básico</button>
-      <button type="button" class="mode-switch-btn" data-mode="profissional" role="tab" aria-pressed="false">Profissional</button>
-    </div>
-
-    <!-- ===================== CARD: IMPRESSORA + MATERIAL ===================== -->
-    <section class="panel">
-      <h2 class="panel-title"><span class="step-dot">1</span> Impressora e material</h2>
-
-      <div class="field-grid two-cols">
-        <div class="field">
-          <label for="printerSelect">Impressora Bambu Lab</label>
-          <select id="printerSelect"></select>
-          <p class="hint" id="printerHint">—</p>
-        </div>
-
-        <div class="field">
-          <label for="materialSelect">Material</label>
-          <select id="materialSelect">
-            <option value="" disabled selected>Selecione um material</option>
-          </select>
-          <p class="hint" id="materialHint">—</p>
-          <p class="field-error-text" id="materialSelectError" hidden>Selecione um material.</p>
-        </div>
-      </div>
-
-      <!-- Aparece somente quando o material selecionado for "Outro" — agora serve
-           só pra dar um nome ao material, o preço é sempre definido no campo
-           "Preço do filamento" lá embaixo, na seção Dados da peça. -->
-      <div class="field" id="customMaterialWrap" hidden>
-        <label for="customMaterialName">Nome do material personalizado</label>
-        <input type="text" id="customMaterialName" placeholder="Ex: Metal 3D PA-CF">
-        <p class="field-error-text" id="customMaterialNameError" hidden>Informe o nome do material personalizado.</p>
-      </div>
-    </section>
-
-    <!-- ===================== CARD: PARÂMETROS DA PEÇA ===================== -->
-    <section class="panel">
-      <h2 class="panel-title"><span class="step-dot">2</span> Dados da peça</h2>
-
-      <div class="field">
-        <label for="jobName">Nome do orçamento</label>
-        <input type="text" id="jobName" placeholder="Ex: Suporte de celular">
-        <p class="field-error-text" id="jobNameError" hidden>Informe um nome para o orçamento.</p>
-      </div>
-
-      <div class="field-grid two-cols">
-        <div class="field">
-          <label for="printHours">Tempo de impressão — horas</label>
-          <input type="number" id="printHours" min="0" step="1" inputmode="numeric" placeholder="Ex: 2">
-          <p class="field-error-text" id="printHoursError" hidden>Informe as horas (número inteiro, pode ser 0).</p>
-        </div>
-        <div class="field">
-          <label for="printMinutes">Tempo de impressão — minutos</label>
-          <input type="number" id="printMinutes" min="0" max="59" step="1" inputmode="numeric" placeholder="Ex: 30">
-          <p class="field-error-text" id="printMinutesError" hidden>Informe os minutos — inteiro, entre 0 e 59 (60min = 1h).</p>
-        </div>
-      </div>
-      <p class="field-error-text" id="printTimeError" hidden>O tempo de impressão não pode ser zero. Preencha horas, minutos, ou os dois.</p>
-
-      <div class="field-grid two-cols">
-        <div class="field">
-          <label for="printGrams">Peso do filamento utilizado (g)</label>
-          <input type="number" id="printGrams" min="0" step="1" placeholder="Ex: 45">
-          <p class="field-error-text" id="printGramsError" hidden>Informe o peso do filamento utilizado.</p>
-        </div>
-        <div class="field">
-          <label for="pricePerKg">Preço do filamento (R$/kg)</label>
-          <input type="number" id="pricePerKg" min="0" step="0.01" placeholder="Ex: 89.90">
-          <p class="field-error-text" id="pricePerKgError" hidden>Informe o preço do filamento por kg.</p>
-        </div>
-      </div>
-
-      <div class="field">
-        <label for="kwhPrice">Valor do kWh da sua energia (R$)</label>
-        <input type="number" id="kwhPrice" min="0" step="0.01" placeholder="Ex: 0.85">
-        <p class="field-error-text" id="kwhPriceError" hidden>Informe o valor do kWh da sua energia.</p>
-      </div>
-    </section>
-
-    <!-- ===================== CARD: CUSTOS PROFISSIONAIS (só no modo Profissional) =====================
-         Só fica visível quando o modo Profissional está ativo — usa a mesma
-         animação de expansão (.reveal) dos itens individuais logo abaixo. -->
-    <div class="reveal" id="proSection" hidden>
-      <div class="reveal-inner">
-        <section class="panel pro-panel">
-          <h2 class="panel-title"><span class="step-badge">PRO</span> Custos profissionais</h2>
-          <p class="hint">Ative os custos que fizerem sentido pro seu negócio — o que estiver desligado não entra na conta.</p>
-          <div class="pro-item-grid" id="proItemGrid"></div>
-        </section>
-      </div>
-    </div>
-
-    <!-- ===================== CARD: MARGEM DE LUCRO ===================== -->
-    <section class="panel">
-      <h2 class="panel-title"><span class="step-dot">3</span> Margem de lucro</h2>
-
-      <div class="field-grid two-cols">
-        <div class="field">
-          <label for="marginPct">Margem de lucro (%)</label>
-          <input type="number" id="marginPct" min="0" step="1" placeholder="Ex: 100">
-        </div>
-        <div class="field">
-          <label for="marginFixed">Valor fixo (R$)</label>
-          <input type="number" id="marginFixed" min="0" step="0.01" placeholder="Ex: 15.00">
-        </div>
-      </div>
-      <p class="hint">Preencha apenas um dos dois — ao usar um, o outro fica bloqueado.</p>
-      <p class="field-error-text" id="marginError" hidden>Preencha a margem de lucro em % ou em valor fixo.</p>
-
-      <div class="field" style="margin-top: 14px;">
-        <span class="pseudo-label">Arredondamento inteligente</span>
-        <label class="switch">
-          <input type="checkbox" id="roundToggle" checked>
-          <span class="switch-track"><span class="switch-thumb"></span></span>
-          <span class="switch-text" id="roundToggleText">Arredondar para .99 acima</span>
-        </label>
-      </div>
-
-      <button id="calcBtn" class="btn-primary" type="button">Calcular preço</button>
-      <button id="clearBtn" class="btn-secondary" type="button">Limpar tudo</button>
-    </section>
-
-    <!-- ===================== PAINEL DE RESULTADO (elemento de assinatura) ===================== -->
-    <section class="readout" id="readoutPanel">
-      <div class="readout-scanline" aria-hidden="true"></div>
-
-      <div class="readout-head">
-        <span class="readout-led" id="readoutLed" aria-hidden="true"></span>
-        PAINEL DE ORÇAMENTO
-      </div>
-
-      <div class="readout-main">
-        <span class="readout-label">Preço final sugerido</span>
-        <span class="readout-value" id="finalPrice">R$ 0,00</span>
-        <span class="readout-sub" id="roundingNote"></span>
-      </div>
-
-      <div class="readout-grid">
-        <div class="readout-cell">
-          <span class="readout-cell-label">Filamento</span>
-          <span class="readout-cell-value" id="filamentCost">R$ 0,00</span>
-          <span class="readout-cell-sub" id="filamentGramsSub">0 g utilizados</span>
-        </div>
-        <div class="readout-cell">
-          <span class="readout-cell-label">Energia</span>
-          <span class="readout-cell-value" id="energyCost">R$ 0,00</span>
-          <span class="readout-cell-sub" id="energyKwhSub">0,00 kWh consumidos</span>
-        </div>
-        <div class="readout-cell">
-          <span class="readout-cell-label">Custo total</span>
-          <span class="readout-cell-value" id="totalCost">R$ 0,00</span>
-        </div>
-        <div class="readout-cell">
-          <span class="readout-cell-label">Lucro</span>
-          <span class="readout-cell-value" id="profitValue">R$ 0,00</span>
-        </div>
-      </div>
-
-      <!-- Gráfico de pizza com o breakdown dos custos — só aparece depois do
-           primeiro cálculo (não faz sentido desenhar uma pizza zerada). -->
-      <div class="readout-pie" id="readoutPie" hidden>
-        <div class="pie-chart" id="pieChart"></div>
-        <div class="pie-legend" id="pieLegend"></div>
-      </div>
-
-      <button id="copyBtn" class="btn-copy" type="button" disabled>
-        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M8 4h9a2 2 0 0 1 2 2v12M6 8h9a2 2 0 0 1 2 2v10H6a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg>
-        <span id="copyBtnLabel">Copiar orçamento para o WhatsApp</span>
-      </button>
-
-      <!-- Exportação: secundária e discreta de propósito — o botão de
-           copiar pro WhatsApp acima continua sendo a ação principal. -->
-      <div class="export-actions">
-        <button id="exportPdfBtn" class="btn-ghost" type="button" disabled>
-          <svg viewBox="0 0 24 24" width="14" height="14" aria-hidden="true"><path d="M12 3v11m0 0 4-4m-4 4-4-4M5 17v2a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-          <span id="exportPdfBtnLabel">Exportar orçamento PDF</span>
-        </button>
-      </div>
-      <p class="field-error-text export-error" id="pdfExportError" hidden>Não foi possível carregar o gerador de PDF. Verifique sua conexão com a internet e tente novamente.</p>
-    </section>
-
-    <footer class="site-footer">
-      <p class="footer-verse">
-        "Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos."
-        <span>Provérbios 16:3</span>
-      </p>
-
-      <a class="footer-social" id="footerSocialLink" href="https://www.instagram.com/nossoprojeto3d" target="_blank" rel="noopener noreferrer" aria-label="Siga a Nosso Projeto 3D no Instagram">
-        <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-          <rect x="3" y="3" width="18" height="18" rx="5" fill="none" stroke="currentColor" stroke-width="1.7"/>
-          <circle cx="12" cy="12" r="4.2" fill="none" stroke="currentColor" stroke-width="1.7"/>
-          <circle cx="17.4" cy="6.6" r="1.1" fill="currentColor"/>
-        </svg>
-        <span id="footerSocialHandle">@nossoprojeto3d</span>
-      </a>
-
-      <span class="footer-copy">© 2026 Nosso Projeto 3D · Todos os direitos reservados</span>
-    </footer>
-
-  </main>
 
 <script src="script.js"></script>
 <!-- Cloudflare Web Analytics --><script type='module' src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "7c4dac6d587541c68ef1da3bc17bf14c"}'></script><!-- End Cloudflare Web Analytics -->

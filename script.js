@@ -1,46 +1,84 @@
 /* =========================================================
-   NOSSO PROJETO 3D — V1 BÁSICA — script.js
-   Nesta versão os dados de impressoras e materiais ficam
-   embutidos aqui mesmo (em vez de printers.json/materials.json)
-   para o app funcionar 100% abrindo o index.html direto no
-   navegador (duplo clique), sem precisar de servidor local.
-   Na V2 esses dados são migrados para os arquivos .json.
+   NOSSO PROJETO 3D — CALCULADORA V3 — script.js
+   Os dados de impressoras e materiais ficam embutidos aqui mesmo
+   pro app funcionar 100% abrindo o index.html direto no navegador
+   (e offline, instalado como app), sem servidor.
    ========================================================= */
 
 // ---------------------------------------------------------
-// DADOS: IMPRESSORAS BAMBU LAB
+// DADOS: IMPRESSORAS (agrupadas por marca no seletor)
 // ---------------------------------------------------------
-// avgPurchasePrice/avgLifespanHours = preço médio de mercado e vida útil
+// power = potência nominal (W) usada no cálculo de energia.
+// avgPurchasePrice/avgLifespanHours = preço médio de mercado (R$) e vida útil
 // estimada, usados pelo cálculo automático de "Desgaste da máquina" no
-// modo Profissional (ver computeAutoWearValue).
+// modo Profissional (ver computeAutoWearValue). Valores aproximados.
 const PRINTERS = [
-  { id: "a1-combo",   name: "Bambu Lab A1 Combo",   power: 180,  desc: "180W · Multicolor com AMS",                avgPurchasePrice: 4400,  avgLifespanHours: 8000 },
-  { id: "a1-mini",    name: "Bambu Lab A1 Mini",    power: 180,  desc: "180W · Compacta, ideal para peças pequenas", avgPurchasePrice: 2900,  avgLifespanHours: 8000 },
-  { id: "a2l",        name: "Bambu Lab A2L",        power: 1000, desc: "1000W · Grande formato, estrutura aberta com kit de corte opcional", avgPurchasePrice: 5500,  avgLifespanHours: 8500 },
-  { id: "p1p",        name: "Bambu Lab P1P",        power: 350,  desc: "350W · Estrutura aberta, alta velocidade",  avgPurchasePrice: 4800,  avgLifespanHours: 10000 },
-  { id: "p1s",        name: "Bambu Lab P1S",        power: 350,  desc: "350W · Câmara fechada, alta velocidade",    avgPurchasePrice: 7500,  avgLifespanHours: 10000 },
-  { id: "p2s",        name: "Bambu Lab P2S",        power: 350,  desc: "350W · Sucessora da P1S, extrusora servo e detecção de falhas por IA", avgPurchasePrice: 6500,  avgLifespanHours: 10000 },
-  { id: "x1-carbon",  name: "Bambu Lab X1 Carbon",  power: 1000, desc: "1000W · Topo de linha, lidar ativo",        avgPurchasePrice: 13000, avgLifespanHours: 12000 },
-  { id: "x2d",        name: "Bambu Lab X2D",        power: 1000, desc: "1000W · Sucessora da X1 Carbon, dupla extrusora e câmara aquecida", avgPurchasePrice: 8500,  avgLifespanHours: 12000 },
-  { id: "h2s",        name: "Bambu Lab H2S",        power: 1000, desc: "1000W · Grande formato, bico único, linha profissional H", avgPurchasePrice: 15000, avgLifespanHours: 12000 },
-  { id: "h2d",        name: "Bambu Lab H2D",        power: 1000, desc: "1000W · Dupla extrusora, plataforma de manufatura pessoal, corte e gravação opcionais", avgPurchasePrice: 22500, avgLifespanHours: 13000 },
-  { id: "h2c",        name: "Bambu Lab H2C",        power: 1000, desc: "1000W · Topo de linha, 6 bicos intercambiáveis (sistema Vortek)", avgPurchasePrice: 29000, avgLifespanHours: 13000 },
+  { id: "a1-combo",   brand: "Bambu Lab", name: "Bambu Lab A1 Combo",   power: 180,  desc: "180W · Multicolor com AMS",                avgPurchasePrice: 4400,  avgLifespanHours: 8000 },
+  { id: "a1-mini",    brand: "Bambu Lab", name: "Bambu Lab A1 Mini",    power: 180,  desc: "180W · Compacta, ideal para peças pequenas", avgPurchasePrice: 2900,  avgLifespanHours: 8000 },
+  { id: "a2l",        brand: "Bambu Lab", name: "Bambu Lab A2L",        power: 1000, desc: "1000W · Grande formato, estrutura aberta com kit de corte opcional", avgPurchasePrice: 5500,  avgLifespanHours: 8500 },
+  { id: "p1p",        brand: "Bambu Lab", name: "Bambu Lab P1P",        power: 350,  desc: "350W · Estrutura aberta, alta velocidade",  avgPurchasePrice: 4800,  avgLifespanHours: 10000 },
+  { id: "p1s",        brand: "Bambu Lab", name: "Bambu Lab P1S",        power: 350,  desc: "350W · Câmara fechada, alta velocidade",    avgPurchasePrice: 7500,  avgLifespanHours: 10000 },
+  { id: "p2s",        brand: "Bambu Lab", name: "Bambu Lab P2S",        power: 350,  desc: "350W · Sucessora da P1S, extrusora servo e detecção de falhas por IA", avgPurchasePrice: 6500,  avgLifespanHours: 10000 },
+  { id: "x1-carbon",  brand: "Bambu Lab", name: "Bambu Lab X1 Carbon",  power: 1000, desc: "1000W · Topo de linha, lidar ativo",        avgPurchasePrice: 13000, avgLifespanHours: 12000 },
+  { id: "x2d",        brand: "Bambu Lab", name: "Bambu Lab X2D",        power: 1000, desc: "1000W · Sucessora da X1 Carbon, dupla extrusora e câmara aquecida", avgPurchasePrice: 8500,  avgLifespanHours: 12000 },
+  { id: "h2s",        brand: "Bambu Lab", name: "Bambu Lab H2S",        power: 1000, desc: "1000W · Grande formato, bico único, linha profissional H", avgPurchasePrice: 15000, avgLifespanHours: 12000 },
+  { id: "h2d",        brand: "Bambu Lab", name: "Bambu Lab H2D",        power: 1000, desc: "1000W · Dupla extrusora, plataforma de manufatura pessoal, corte e gravação opcionais", avgPurchasePrice: 22500, avgLifespanHours: 13000 },
+  { id: "h2c",        brand: "Bambu Lab", name: "Bambu Lab H2C",        power: 1000, desc: "1000W · Topo de linha, 6 bicos intercambiáveis (sistema Vortek)", avgPurchasePrice: 29000, avgLifespanHours: 13000 },
+
+  { id: "cr-ender3-v3-se", brand: "Creality", name: "Creality Ender-3 V3 SE", power: 350,  desc: "350W · Entrada, cama aberta",                 avgPurchasePrice: 1500, avgLifespanHours: 6000 },
+  { id: "cr-ender3-v3-ke", brand: "Creality", name: "Creality Ender-3 V3 KE", power: 350,  desc: "350W · Klipper, alta velocidade",             avgPurchasePrice: 2000, avgLifespanHours: 6000 },
+  { id: "cr-k1c",          brand: "Creality", name: "Creality K1C",           power: 350,  desc: "350W · Câmara fechada, bico endurecido",       avgPurchasePrice: 3500, avgLifespanHours: 8000 },
+  { id: "cr-k1-max",       brand: "Creality", name: "Creality K1 Max",        power: 1000, desc: "1000W · Grande formato, câmara fechada",       avgPurchasePrice: 5500, avgLifespanHours: 8000 },
+  { id: "cr-k2-plus",      brand: "Creality", name: "Creality K2 Plus Combo", power: 1200, desc: "1200W · Grande formato, multicolor com CFS",   avgPurchasePrice: 9500, avgLifespanHours: 10000 },
+
+  { id: "el-neptune4",     brand: "Elegoo", name: "Elegoo Neptune 4",       power: 310, desc: "310W · Klipper, cama aberta",                  avgPurchasePrice: 1500, avgLifespanHours: 6000 },
+  { id: "el-neptune4-pro", brand: "Elegoo", name: "Elegoo Neptune 4 Pro",   power: 310, desc: "310W · Klipper, cama com aquecimento por zonas", avgPurchasePrice: 1900, avgLifespanHours: 6000 },
+  { id: "el-centauri",     brand: "Elegoo", name: "Elegoo Centauri Carbon", power: 350, desc: "350W · CoreXY, câmara fechada",                avgPurchasePrice: 2700, avgLifespanHours: 8000 },
+
+  { id: "pr-mk4s",     brand: "Prusa", name: "Prusa MK4S",     power: 240, desc: "240W · Referência em confiabilidade",  avgPurchasePrice: 7500,  avgLifespanHours: 12000 },
+  { id: "pr-core-one", brand: "Prusa", name: "Prusa CORE One", power: 350, desc: "350W · CoreXY, câmara fechada",        avgPurchasePrice: 10500, avgLifespanHours: 12000 },
+
+  { id: "ac-kobra3",   brand: "Anycubic", name: "Anycubic Kobra 3 Combo",  power: 400, desc: "400W · Multicolor com ACE Pro",       avgPurchasePrice: 3300, avgLifespanHours: 7000 },
+  { id: "ac-kobra-s1", brand: "Anycubic", name: "Anycubic Kobra S1 Combo", power: 400, desc: "400W · Câmara fechada, multicolor",   avgPurchasePrice: 4500, avgLifespanHours: 8000 },
+
+  { id: "ff-ad5m",     brand: "Flashforge", name: "Flashforge Adventurer 5M",     power: 350, desc: "350W · CoreXY compacta",          avgPurchasePrice: 2500, avgLifespanHours: 7000 },
+  { id: "ff-ad5m-pro", brand: "Flashforge", name: "Flashforge Adventurer 5M Pro", power: 350, desc: "350W · CoreXY, câmara fechada",   avgPurchasePrice: 3300, avgLifespanHours: 7000 },
+
+  { id: "qd-q1-pro", brand: "Qidi",  name: "Qidi Q1 Pro", power: 350, desc: "350W · Câmara aquecida",          avgPurchasePrice: 3300, avgLifespanHours: 8000 },
+  { id: "sv-sv06",   brand: "Sovol", name: "Sovol SV06",  power: 300, desc: "300W · Entrada, estilo Prusa",    avgPurchasePrice: 1400, avgLifespanHours: 6000 },
+
+  { id: "rs-saturn4-ultra", brand: "Resina", name: "Elegoo Saturn 4 Ultra",    power: 120, desc: "120W · Resina 12K",           avgPurchasePrice: 3000, avgLifespanHours: 5000 },
+  { id: "rs-mars5-ultra",   brand: "Resina", name: "Elegoo Mars 5 Ultra",      power: 80,  desc: "80W · Resina 9K, compacta",    avgPurchasePrice: 1800, avgLifespanHours: 5000 },
+  { id: "rs-photon-m7",     brand: "Resina", name: "Anycubic Photon Mono M7",  power: 100, desc: "100W · Resina 10K",           avgPurchasePrice: 2300, avgLifespanHours: 5000 },
 ];
 
+// "Outra impressora": potência (e, opcionalmente, o preço pago) informados
+// pela pessoa — ver getSelectedPrinter. A vida útil usa um padrão genérico.
+const CUSTOM_PRINTER_ID = "custom";
+const CUSTOM_PRINTER_LIFESPAN_HOURS = 8000;
+const CUSTOM_PRINTER_STORAGE_KEY = "np3d_custom_printer";
+
 // ---------------------------------------------------------
-// DADOS: MATERIAIS (preço padrão por kg em R$)
-// Ordenados alfabeticamente — "Outro" fica sempre por último,
-// já que é a opção de personalizar um material fora da lista.
+// DADOS: MATERIAIS (preço médio por kg em R$), agrupados por tipo.
+// "Outro" fica sempre por último — é a opção de personalizar.
 // ---------------------------------------------------------
 const MATERIALS = [
-  { id: "pla-basic", name: "PLA Basic",  pricePerKg: 109.90 },
-  { id: "pla-matte", name: "PLA Matte",  pricePerKg: 119.90 },
-  { id: "silk-pla",  name: "Silk PLA",   pricePerKg: 129.90 },  
-  { id: "abs",       name: "ABS",        pricePerKg: 99.90 },
-  { id: "asa",       name: "ASA",        pricePerKg: 129.90 },
-  { id: "petg-basic",name: "PETG Basic", pricePerKg: 109.90 },
-  { id: "tpu-95a",   name: "TPU 95A",    pricePerKg: 149.90 },
-  { id: "outro",     name: "Outro (personalizado)", pricePerKg: null },
+  { id: "pla-basic",   group: "PLA",        name: "PLA Basic",   pricePerKg: 109.90 },
+  { id: "pla-plus",    group: "PLA",        name: "PLA+",        pricePerKg: 99.90 },
+  { id: "pla-matte",   group: "PLA",        name: "PLA Matte",   pricePerKg: 119.90 },
+  { id: "silk-pla",    group: "PLA",        name: "Silk PLA",    pricePerKg: 129.90 },
+  { id: "pla-cf",      group: "PLA",        name: "PLA-CF (fibra de carbono)", pricePerKg: 179.90 },
+  { id: "petg-basic",  group: "Engenharia", name: "PETG Basic",  pricePerKg: 109.90 },
+  { id: "petg-cf",     group: "Engenharia", name: "PETG-CF",     pricePerKg: 169.90 },
+  { id: "abs",         group: "Engenharia", name: "ABS",         pricePerKg: 99.90 },
+  { id: "asa",         group: "Engenharia", name: "ASA",         pricePerKg: 129.90 },
+  { id: "pc",          group: "Engenharia", name: "PC (policarbonato)", pricePerKg: 199.90 },
+  { id: "pa-nylon",    group: "Engenharia", name: "PA / Nylon",  pricePerKg: 249.90 },
+  { id: "tpu-95a",     group: "Flexível",   name: "TPU 95A",     pricePerKg: 149.90 },
+  { id: "resin-std",   group: "Resina",     name: "Resina padrão",         pricePerKg: 159.90, resin: true },
+  { id: "resin-abs",   group: "Resina",     name: "Resina ABS-like",       pricePerKg: 189.90, resin: true },
+  { id: "resin-water", group: "Resina",     name: "Resina lavável em água", pricePerKg: 199.90, resin: true },
+  { id: "outro",       group: "Outro",      name: "Outro (personalizado)", pricePerKg: null },
 ];
 
 // ---------------------------------------------------------
@@ -61,6 +99,9 @@ const MATERIALS = [
 // Valor-hora usado no cálculo de "Mão de obra" quando a pessoa ainda não
 // configurou o próprio valor-hora nas Configurações da loja.
 const DEFAULT_HOURLY_RATE = 30;
+
+// Nome usado no orçamento quando a pessoa não dá nome à peça (o campo é opcional).
+const DEFAULT_JOB_NAME = "Peça personalizada";
 
 const PRO_COSTS = [
   { id: "wear",        label: "Desgaste da máquina", unit: "currency", placeholder: "Ex: 5,00",  emoji: "🔧",
@@ -139,8 +180,33 @@ const exportPdfBtnLabel = el("exportPdfBtnLabel");
 const proItemGrid       = el("proItemGrid");
 const proSection        = el("proSection");
 
+const customPrinterPowerInput = el("customPrinterPower");
+const customPrinterPriceInput = el("customPrinterPrice");
+
+/** Impressora selecionada — do catálogo, ou a "Outra impressora" montada com
+ *  a potência (e o preço pago, se informado) digitados pela pessoa. */
+function getSelectedPrinter() {
+  if (printerSelect.value === CUSTOM_PRINTER_ID) {
+    const power = parseFloat(customPrinterPowerInput.value) || 0;
+    if (power <= 0) return null;
+    const price = parseFloat(customPrinterPriceInput.value) || 0;
+    return {
+      id: CUSTOM_PRINTER_ID,
+      name: `Outra impressora (${power}W)`,
+      power,
+      avgPurchasePrice: price,
+      avgLifespanHours: CUSTOM_PRINTER_LIFESPAN_HOURS,
+    };
+  }
+  return PRINTERS.find((p) => p.id === printerSelect.value) || null;
+}
+
 // Guarda o último resultado calculado com sucesso, usado pelo botão "Copiar"
 let lastResult = null;
+
+// id do orçamento aberto/salvo em "Meus orçamentos" (null = orçamento novo,
+// ainda não salvo). Enquanto houver um, recálculos atualizam o salvo.
+let currentBudgetId = null;
 
 // true assim que validateAll() passar sem nenhum campo inválido pela
 // primeira vez (clique no botão ou checagem silenciosa automática — ver
@@ -186,6 +252,11 @@ function setMode(mode) {
     btn.classList.toggle("active", active);
     btn.setAttribute("aria-pressed", active ? "true" : "false");
   });
+
+  el("modeSwitch").dataset.active = mode;
+  el("modeDesc").textContent = mode === "profissional"
+    ? "Tudo do Básico + desgaste, mão de obra, embalagem, taxas de marketplace e impostos."
+    : "Material, energia e lucro — o essencial pra precificar.";
 
   setExpanded(proSection, mode === "profissional");
   localStorage.setItem("np3d_mode", mode);
@@ -280,7 +351,12 @@ function populateProCosts() {
             <p class="hint" id="${fieldId}Hint">${cost.hint}</p>
     ` : `
             ${warningHtml}
-            <input type="number" id="${fieldId}" min="0" step="${step}" placeholder="${cost.placeholder}" aria-label="${unitLabel}">
+            ${cost.fieldLabel ? `<label for="${fieldId}">${cost.fieldLabel}</label>` : ""}
+            <div class="input-wrap">
+              ${unitSuffix === "R$" ? `<span class="input-affix">R$</span>` : ""}
+              <input type="number" id="${fieldId}" min="0" step="${step}" inputmode="decimal" placeholder="${cost.placeholder.replace(/^Ex:\s*/, "")}" aria-label="${unitLabel}">
+              ${unitSuffix !== "R$" ? `<span class="input-affix">${unitSuffix}</span>` : ""}
+            </div>
             ${adTypeSelectHtml}
             ${shortcutsHtml}
             ${shortcutsHintHtml}
@@ -293,7 +369,7 @@ function populateProCosts() {
     item.id = `${fieldId}Item`;
     item.innerHTML = `
       <div class="pro-item-head">
-        <span class="pro-item-label">${unitLabel}</span>
+        <span class="pro-item-label">${cost.label}</span>
         <label class="switch">
           <input type="checkbox" class="pro-toggle" id="${fieldId}Toggle">
           <span class="switch-track"><span class="switch-thumb"></span></span>
@@ -552,8 +628,8 @@ function initSettingsModal() {
 // fica intocado até uma dessas duas coisas mudar de novo.
 // ---------------------------------------------------------
 function computeAutoWearValue() {
-  const printer = PRINTERS.find((p) => p.id === printerSelect.value);
-  if (!printer) return null;
+  const printer = getSelectedPrinter();
+  if (!printer || !(printer.avgPurchasePrice > 0)) return null;
 
   const hours = parseInt(printHoursInput.value, 10) || 0;
   const minutes = parseInt(printMinutesInput.value, 10) || 0;
@@ -571,7 +647,9 @@ function updateWearHint(details) {
   if (!hintEl) return;
 
   if (!details) {
-    hintEl.textContent = "Calculado automaticamente a partir do preço médio de mercado e da vida útil estimada da impressora selecionada. Edite o valor acima se quiser usar outra conta.";
+    hintEl.textContent = printerSelect.value === CUSTOM_PRINTER_ID && !(parseFloat(customPrinterPriceInput.value) > 0)
+      ? "Pra calcular sozinho, informe quanto a impressora custou (em “Outra impressora”, lá em cima) — ou digite o valor do desgaste acima."
+      : "Calculado automaticamente a partir do preço médio de mercado e da vida útil estimada da impressora selecionada. Edite o valor acima se quiser usar outra conta.";
     return;
   }
 
@@ -583,13 +661,27 @@ function updateWearHint(details) {
   hintEl.textContent = `Estimativa: R$ ${priceLabel} (preço médio da impressora) ÷ ${lifespanLabel}h (vida útil estimada) × ${timeLabel} (tempo dessa impressão) = ${brl(value)}. Edite o valor acima se quiser usar outra conta.`;
 }
 
+// Último valor preenchido sozinho no "Desgaste" — se o campo ainda tiver
+// esse valor quando a conta deixar de ser possível (ex.: "Outra impressora"
+// sem preço informado), ele é limpo; um valor digitado à mão é mantido.
+let lastAutoWearValue = null;
+
 function recalcAutoWear() {
   const details = computeAutoWearValue();
   updateWearHint(details);
-  if (!details) return;
-
   const input = el("proWear");
+
+  if (!details) {
+    if (lastAutoWearValue !== null && input.value === lastAutoWearValue) {
+      input.value = "";
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+    lastAutoWearValue = null;
+    return;
+  }
+
   input.value = details.value.toFixed(2);
+  lastAutoWearValue = input.value;
   input.dispatchEvent(new Event("input", { bubbles: true }));
 }
 
@@ -776,7 +868,7 @@ function selectShopeeTier(value) {
  * configuração.
  */
 function computeMarketplaceFeeBase() {
-  const printer = PRINTERS.find((p) => p.id === printerSelect.value);
+  const printer = getSelectedPrinter();
   if (!printer) return null;
 
   const hours = parseInt(printHoursInput.value, 10) || 0;
@@ -830,7 +922,7 @@ function computeMarketplaceFeeBase() {
  *  de impressão, peso, preço do filamento e kWh preenchidos) — usado só pra
  *  decidir a pré-seleção inicial da faixa da Taxa Shopee. */
 function hasCalculablePrintJob() {
-  const printer = PRINTERS.find((p) => p.id === printerSelect.value);
+  const printer = getSelectedPrinter();
   if (!printer) return false;
   if (!printHoursTest(printHoursInput.value) || !printMinutesTest(printMinutesInput.value)) return false;
   if (Number(printHoursInput.value) === 0 && Number(printMinutesInput.value) === 0) return false;
@@ -1164,24 +1256,44 @@ function showQuickToast(message) {
 function populateSelects() {
   const settingsDefaultPrinterSelect = el("settingsDefaultPrinter");
 
-  PRINTERS.forEach((p) => {
-    const opt = document.createElement("option");
-    opt.value = p.id;
-    opt.textContent = p.name;
-    printerSelect.appendChild(opt);
+  // Agrupa as impressoras por marca (<optgroup>), na ordem em que aparecem.
+  const brands = [...new Set(PRINTERS.map((p) => p.brand))];
+  brands.forEach((brand) => {
+    const group = document.createElement("optgroup");
+    group.label = brand;
+    const settingsGroup = document.createElement("optgroup");
+    settingsGroup.label = brand;
 
-    const settingsOpt = document.createElement("option");
-    settingsOpt.value = p.id;
-    settingsOpt.textContent = p.name;
-    settingsDefaultPrinterSelect.appendChild(settingsOpt);
+    PRINTERS.filter((p) => p.brand === brand).forEach((p) => {
+      group.appendChild(new Option(p.name, p.id));
+      settingsGroup.appendChild(new Option(p.name, p.id));
+    });
+
+    printerSelect.appendChild(group);
+    settingsDefaultPrinterSelect.appendChild(settingsGroup);
   });
 
-  MATERIALS.forEach((m) => {
-    const opt = document.createElement("option");
-    opt.value = m.id;
-    opt.textContent = m.name;
-    materialSelect.appendChild(opt);
+  const otherGroup = document.createElement("optgroup");
+  otherGroup.label = "Outra";
+  otherGroup.appendChild(new Option("Outra impressora (informar potência)", CUSTOM_PRINTER_ID));
+  printerSelect.appendChild(otherGroup);
+
+  const materialGroups = [...new Set(MATERIALS.map((m) => m.group))];
+  materialGroups.forEach((groupName) => {
+    const group = document.createElement("optgroup");
+    group.label = groupName;
+    MATERIALS.filter((m) => m.group === groupName).forEach((m) => {
+      group.appendChild(new Option(m.name, m.id));
+    });
+    materialSelect.appendChild(group);
   });
+
+  // "Outra impressora": relembra a potência/preço usados da última vez
+  try {
+    const saved = JSON.parse(localStorage.getItem(CUSTOM_PRINTER_STORAGE_KEY)) || {};
+    if (saved.power) customPrinterPowerInput.value = saved.power;
+    if (saved.price) customPrinterPriceInput.value = saved.price;
+  } catch (err) { /* sem problema */ }
 
   updatePrinterHint();
   syncMaterialUI(false); // na inicialização, só ajusta textos/visibilidade — não preenche o preço/kg
@@ -1189,8 +1301,24 @@ function populateSelects() {
 
 /** Atualiza a descrição (potência) exibida abaixo do select de impressora. */
 function updatePrinterHint() {
-  const printer = PRINTERS.find((p) => p.id === printerSelect.value);
+  const isCustom = printerSelect.value === CUSTOM_PRINTER_ID;
+  setExpanded(el("customPrinterWrap"), isCustom);
+
+  if (isCustom) {
+    printerHint.textContent = "Informe a potência logo abaixo.";
+    return;
+  }
+  const printer = getSelectedPrinter();
   printerHint.textContent = printer ? printer.desc : "—";
+}
+
+function saveCustomPrinter() {
+  try {
+    localStorage.setItem(CUSTOM_PRINTER_STORAGE_KEY, JSON.stringify({
+      power: customPrinterPowerInput.value.trim(),
+      price: customPrinterPriceInput.value.trim(),
+    }));
+  } catch (err) { /* sem problema */ }
 }
 
 /**
@@ -1219,7 +1347,9 @@ function syncMaterialUI(prefillPrice) {
   const isCustom = material.id === "outro";
 
   customWrap.hidden = !isCustom;
-  materialHint.textContent = "Material utilizado na impressão";
+  materialHint.textContent = material.resin
+    ? "Resina: no peso, use os ml do fatiador (1 ml ≈ 1 g)."
+    : "";
 
   if (isCustom) {
     if (prefillPrice) {
@@ -1344,7 +1474,6 @@ function validateAll({ silent = false } = {}) {
   const isCustomMaterial = materialSelect.value === "outro";
 
   const rules = [
-    { input: jobNameInput, test: (v) => v.trim().length > 0 },
     { input: materialSelect, test: (v) => v !== "" },
     { input: printHoursInput, test: printHoursTest },
     { input: printMinutesInput, test: printMinutesTest },
@@ -1355,6 +1484,10 @@ function validateAll({ silent = false } = {}) {
 
   if (isCustomMaterial) {
     rules.push({ input: customNameInput, test: (v) => v.trim().length > 0 });
+  }
+
+  if (printerSelect.value === CUSTOM_PRINTER_ID) {
+    rules.unshift({ input: customPrinterPowerInput, test: (v) => v !== "" && Number(v) > 0 });
   }
 
   // Custos profissionais: só valida os que estiverem com o switch ligado
@@ -1432,7 +1565,7 @@ function calculate() {
   }
 
   const proMode     = isProMode();
-  const printer     = PRINTERS.find((p) => p.id === printerSelect.value);
+  const printer     = getSelectedPrinter();
   const hours       = parseInt(printHoursInput.value, 10) || 0;
   const minutes     = parseInt(printMinutesInput.value, 10) || 0;
   const totalHours  = hours + (minutes / 60);
@@ -1515,7 +1648,9 @@ function calculate() {
     : selectedMaterial.name;
 
   const result = {
-    jobName: jobNameInput.value.trim(),
+    jobName: jobNameInput.value.trim() || DEFAULT_JOB_NAME,
+    hasCustomName: jobNameInput.value.trim() !== "",
+    totalHours,
     printerName: printer.name,
     materialName,
     hours, minutes, grams,
@@ -1527,6 +1662,9 @@ function calculate() {
 
   lastResult = result;
   renderResult(result);
+
+  // orçamento já salvo em "Meus orçamentos": mantém o salvo atualizado
+  if (currentBudgetId && !restoringState) saveCurrentBudget({ silent: true });
 }
 
 // ---------------------------------------------------------
@@ -1542,7 +1680,14 @@ let autoCalculateTimer = null;
  *  animação de sempre. Se não estiver tudo certo, não faz nada visível. */
 function attemptAutoCalculate() {
   const firstInvalid = validateAll({ silent: true });
-  if (!firstInvalid) calculate();
+  if (!firstInvalid) {
+    calculate();
+  } else if (lastResult) {
+    // um dado obrigatório ficou faltando/errado: tira o preço antigo da
+    // tela em vez de mostrar um valor que não vale mais
+    resetReadout();
+    updateStickyBar();
+  }
 }
 
 function scheduleAutoCalculate() {
@@ -1583,14 +1728,23 @@ function renderResult(r) {
   el("filamentCost").textContent = brl(r.filamentCost);
   el("energyCost").textContent   = brl(r.energyCost);
 
-  el("filamentGramsSub").textContent = `${r.grams.toLocaleString("pt-BR")} g utilizados`;
-  el("energyKwhSub").textContent     = `${r.energyKwh.toFixed(2).replace(".", ",")} kWh consumidos`;
+  // Lucro por hora de impressora: quanto cada hora de máquina rende
+  el("profitPerHour").textContent = r.totalHours > 0 ? brl(r.profit / r.totalHours) : "—";
+  el("marginOnPrice").textContent = r.finalPrice > 0
+    ? `lucro = ${Math.round((r.profit / r.finalPrice) * 100)}% do preço`
+    : "";
+
+  el("filamentGramsSub").textContent = `${r.grams.toLocaleString("pt-BR")} g`;
+  el("energyKwhSub").textContent     = `${r.energyKwh.toFixed(2).replace(".", ",")} kWh`;
+  el("printTimeSub").textContent     = formatPrintTime(r.hours, r.minutes);
+  el("readoutJobName").textContent   = r.hasCustomName ? r.jobName : "Preço sugerido";
 
   el("roundingNote").textContent = r.shouldRound && r.roundingDiff > 0.001
-    ? `Preço calculado: ${brl(r.calculatedPrice)} · arredondado (+${brl(r.roundingDiff)})`
+    ? `Calculado: ${brl(r.calculatedPrice)} · arredondado (+${brl(r.roundingDiff)})`
     : "";
 
   renderPieChart(r);
+  setReadoutLive(true);
 
   // pequena animação de destaque ao recalcular (elemento de assinatura)
   const valueEl = el("finalPrice");
@@ -1598,12 +1752,34 @@ function renderResult(r) {
   void valueEl.offsetWidth; // força reflow para reiniciar a animação
   valueEl.classList.add("pulse");
 
-  // habilita o botão de copiar e o de exportação assim que existir um resultado válido
+  // habilita as ações assim que existir um resultado válido
   copyBtn.disabled = false;
   copyBtn.classList.remove("copied");
-  copyBtnLabel.textContent = "Copiar orçamento para o WhatsApp";
+  copyBtnLabel.textContent = "Copiar";
   exportPdfBtn.disabled = false;
+  el("saveBtn").disabled = false;
+  el("saveBtnLabel").textContent = currentBudgetId ? "Salvo" : "Salvar";
   hidePdfExportError();
+
+  const whatsappBtn = el("whatsappBtn");
+  whatsappBtn.href = `https://wa.me/?text=${encodeURIComponent(buildWhatsAppText(r))}`;
+  whatsappBtn.classList.remove("is-disabled");
+  whatsappBtn.removeAttribute("aria-disabled");
+
+  updateStickyBar();
+}
+
+/** "2h30", "0h45" — formato curto do tempo de impressão. */
+function formatPrintTime(hours, minutes) {
+  return `${hours}h${String(minutes).padStart(2, "0")}`;
+}
+
+/** Liga/desliga o estado "ao vivo" do painel (preço calculado x aguardando dados). */
+function setReadoutLive(live) {
+  el("readoutPanel").classList.toggle("is-live", live);
+  el("readoutStatus").textContent = live ? "Orçamento pronto" : "Aguardando dados";
+  el("readoutEmpty").hidden = live;
+  el("readoutBody").hidden = !live;
 }
 
 // ---------------------------------------------------------
@@ -1628,59 +1804,32 @@ function buildPieSlices(r) {
   return slices.filter((s) => s.value > 0);
 }
 
-/** Converte um ângulo (em graus, 0 = topo, sentido horário) em coordenadas x/y no círculo. */
-function polarToCartesian(cx, cy, r, angleDeg) {
-  const rad = (angleDeg - 90) * (Math.PI / 180);
-  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
-}
-
-function buildPieSVG(slices) {
-  const total = slices.reduce((sum, s) => sum + s.value, 0);
-  if (total <= 0) return "";
-
-  const cx = 54, cy = 54, r = 50;
-  let angle = 0;
-
-  const shapes = slices.map((s) => {
-    const fraction = s.value / total;
-    const startAngle = angle;
-    const endAngle = angle + fraction * 360;
-    angle = endAngle;
-
-    // Fatia única (100% do total) não forma um arco válido — desenha o círculo inteiro.
-    if (fraction >= 0.9999) {
-      return `<circle cx="${cx}" cy="${cy}" r="${r}" fill="${s.color}"></circle>`;
-    }
-
-    const start = polarToCartesian(cx, cy, r, startAngle);
-    const end = polarToCartesian(cx, cy, r, endAngle);
-    const largeArc = endAngle - startAngle > 180 ? 1 : 0;
-    const d = `M ${cx} ${cy} L ${start.x.toFixed(2)} ${start.y.toFixed(2)} A ${r} ${r} 0 ${largeArc} 1 ${end.x.toFixed(2)} ${end.y.toFixed(2)} Z`;
-    return `<path d="${d}" fill="${s.color}"></path>`;
-  }).join("");
-
-  return `<svg viewBox="0 0 108 108" width="108" height="108" role="img" aria-label="Gráfico de pizza com o breakdown dos custos">${shapes}</svg>`;
-}
-
+/** Composição do preço: barra empilhada (proporcional) + lista com valor e %
+ *  de cada parte — mais fácil de ler no celular que uma pizza pequena. */
 function renderPieChart(r) {
   const slices = buildPieSlices(r);
-  const pieWrap = el("readoutPie");
+  const wrap = el("readoutPie");
+  const total = slices.reduce((sum, s) => sum + s.value, 0);
 
-  if (!slices.length) {
-    pieWrap.hidden = true;
+  if (!slices.length || total <= 0) {
+    wrap.hidden = true;
     return;
   }
 
-  el("pieChart").innerHTML = buildPieSVG(slices);
+  el("pieChart").innerHTML = slices.map((s) =>
+    `<span class="breakdown-seg" style="flex-grow:${s.value};background:${s.color}" title="${s.label}"></span>`
+  ).join("");
+
   el("pieLegend").innerHTML = slices.map((s) => `
-    <div class="pie-legend-item">
-      <span class="pie-legend-swatch" style="background:${s.color}"></span>
-      <span class="pie-legend-label">${s.label}</span>
-      <span class="pie-legend-value">${brl(s.value)}</span>
+    <div class="breakdown-row">
+      <span class="breakdown-dot" style="background:${s.color}"></span>
+      <span class="breakdown-label">${s.label}</span>
+      <span class="breakdown-pct">${Math.round((s.value / total) * 100)}%</span>
+      <span class="breakdown-value">${brl(s.value)}</span>
     </div>
   `).join("");
 
-  pieWrap.hidden = false;
+  wrap.hidden = false;
 }
 
 // ---------------------------------------------------------
@@ -1770,7 +1919,7 @@ async function buildAndSavePdf(JsPDF, r) {
   let y;
 
   // Faixa escura no topo com o logo, nas cores da marca (dourado sobre preto)
-  doc.setFillColor(16, 16, 20);
+  doc.setFillColor(14, 11, 7);
   doc.rect(0, 0, pageWidth, 30, "F");
 
   try {
@@ -1780,7 +1929,7 @@ async function buildAndSavePdf(JsPDF, r) {
     // Sem problema seguir sem o logo — não impede a geração do PDF
   }
 
-  doc.setTextColor(242, 210, 122);
+  doc.setTextColor(232, 200, 115);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(15);
   doc.text("Nosso Projeto 3D", marginX + 20, 15);
@@ -1806,10 +1955,10 @@ async function buildAndSavePdf(JsPDF, r) {
   const drawSectionTitle = (title) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11.5);
-    doc.setTextColor(138, 95, 14);
+    doc.setTextColor(138, 106, 18);
     doc.text(title.toUpperCase(), marginX, y);
     y += 1.5;
-    doc.setDrawColor(230, 224, 210);
+    doc.setDrawColor(230, 220, 200);
     doc.line(marginX, y, pageWidth - marginX, y);
     y += 6;
   };
@@ -1849,7 +1998,7 @@ async function buildAndSavePdf(JsPDF, r) {
   y += 4;
 
   // Preço final em destaque, num cartão colorido
-  doc.setFillColor(251, 241, 218);
+  doc.setFillColor(248, 240, 220);
   doc.roundedRect(marginX, y, pageWidth - marginX * 2, 20, 3, 3, "F");
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
@@ -1857,7 +2006,7 @@ async function buildAndSavePdf(JsPDF, r) {
   doc.text("Preço final sugerido", marginX + 6, y + 8);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.setTextColor(138, 95, 14);
+  doc.setTextColor(138, 106, 18);
   doc.text(brl(r.finalPrice), marginX + 6, y + 16);
 
   y += 30;
@@ -1872,7 +2021,7 @@ async function buildAndSavePdf(JsPDF, r) {
     doc.text(signature, marginX, y);
     y += 6;
   }
-  doc.text("Orçamento gerado com a calculadora Nosso Projeto 3D — gratuita, feita para a comunidade Bambu Lab.", marginX, y, { maxWidth: pageWidth - marginX * 2 });
+  doc.text("Orçamento gerado com a calculadora Nosso Projeto 3D — gratuita, feita para a comunidade 3D.", marginX, y, { maxWidth: pageWidth - marginX * 2 });
 
   doc.save(`${exportFileBaseName(r)}.pdf`);
 }
@@ -1882,15 +2031,16 @@ async function exportPdf() {
 
   hidePdfExportError();
   exportPdfBtn.disabled = true;
-  exportPdfBtnLabel.textContent = "Gerando PDF...";
+  exportPdfBtnLabel.textContent = "Gerando...";
 
   try {
     const JsPDF = await loadJsPDF();
     await buildAndSavePdf(JsPDF, lastResult);
+    saveCurrentBudget({ silent: true });
   } catch (err) {
     showPdfExportError();
   } finally {
-    exportPdfBtnLabel.textContent = "Exportar orçamento PDF";
+    exportPdfBtnLabel.textContent = "PDF";
     exportPdfBtn.disabled = false;
   }
 }
@@ -1901,6 +2051,7 @@ async function exportPdf() {
 function clearAll() {
   jobNameInput.value = "";
   printerSelect.selectedIndex = 0;
+  currentBudgetId = null;
   materialSelect.value = "";
   updatePrinterHint();
   syncMaterialUI(false);
@@ -1957,32 +2108,47 @@ function clearAll() {
   // "Limpar tudo" começa um orçamento novo, não desliga os padrões salvos.
   applyStoreSettingsToCalculator(loadStoreSettings());
 
-  el("finalPrice").textContent   = "R$ 0,00";
-  el("totalCost").textContent    = "R$ 0,00";
-  el("profitValue").textContent  = "R$ 0,00";
-  el("filamentCost").textContent = "R$ 0,00";
-  el("energyCost").textContent   = "R$ 0,00";
-  el("filamentGramsSub").textContent = "0 g utilizados";
-  el("energyKwhSub").textContent     = "0,00 kWh consumidos";
-  el("roundingNote").textContent = "";
-
-  el("readoutPie").hidden = true;
-  el("pieChart").innerHTML = "";
-  el("pieLegend").innerHTML = "";
-
-  lastResult = null;
-  copyBtn.disabled = true;
-  copyBtn.classList.remove("copied");
-  copyBtnLabel.textContent = "Copiar orçamento para o WhatsApp";
-  exportPdfBtn.disabled = true;
-  hidePdfExportError();
+  resetReadout();
 
   // Formulário volta a ficar incompleto — o recálculo automático ao vivo só
   // liga de novo depois de validar tudo uma próxima vez.
   clearTimeout(autoCalculateTimer);
   formularioValidado = false;
 
-  jobNameInput.focus();
+  clearDraft();
+  updateStickyBar();
+  el("calcForm").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+/** Volta o painel de resultado ao estado inicial ("aguardando dados"). */
+function resetReadout() {
+  el("finalPrice").textContent   = "R$ 0,00";
+  el("totalCost").textContent    = "R$ 0,00";
+  el("profitValue").textContent  = "R$ 0,00";
+  el("profitPerHour").textContent = "R$ 0,00";
+  el("filamentCost").textContent = "R$ 0,00";
+  el("energyCost").textContent   = "R$ 0,00";
+  el("readoutJobName").textContent = "Preço sugerido";
+  el("roundingNote").textContent = "";
+
+  el("readoutPie").hidden = true;
+  el("pieChart").innerHTML = "";
+  el("pieLegend").innerHTML = "";
+  setReadoutLive(false);
+
+  lastResult = null;
+  copyBtn.disabled = true;
+  copyBtn.classList.remove("copied");
+  copyBtnLabel.textContent = "Copiar";
+  exportPdfBtn.disabled = true;
+  el("saveBtn").disabled = true;
+  el("saveBtnLabel").textContent = "Salvar";
+  hidePdfExportError();
+
+  const whatsappBtn = el("whatsappBtn");
+  whatsappBtn.href = "#";
+  whatsappBtn.classList.add("is-disabled");
+  whatsappBtn.setAttribute("aria-disabled", "true");
 }
 
 // ---------------------------------------------------------
@@ -2047,10 +2213,11 @@ async function copyBudget() {
   }
 
   copyBtn.classList.add("copied");
-  copyBtnLabel.textContent = "Copiado! Cole no WhatsApp";
+  copyBtnLabel.textContent = "Copiado!";
+  saveCurrentBudget({ silent: true });
   setTimeout(() => {
     copyBtn.classList.remove("copied");
-    copyBtnLabel.textContent = "Copiar orçamento para o WhatsApp";
+    copyBtnLabel.textContent = "Copiar";
   }, 2200);
 }
 
@@ -2081,7 +2248,7 @@ function applyTheme(theme) {
 
   // barra do navegador/sistema acompanha o fundo do tema
   const themeColor = document.querySelector('meta[name="theme-color"]');
-  if (themeColor) themeColor.setAttribute("content", theme === "light" ? "#F5F3EE" : "#101014");
+  if (themeColor) themeColor.setAttribute("content", theme === "light" ? "#F6F1E7" : "#0E0B07");
 }
 
 // ---------------------------------------------------------
@@ -2103,10 +2270,14 @@ function bindEvents() {
 
   el("calcBtn").addEventListener("click", () => {
     calculate();
+    if (!lastResult || !formularioValidado) return;
+
+    revealReadout();
     // popup de apoio só no clique explícito (nunca no recálculo ao vivo,
     // pra não interromper quem está digitando) e só se deu um preço
-    if (lastResult) showFreeBanner();
+    showFreeBanner();
   });
+  el("exampleBtn").addEventListener("click", fillExample);
   el("clearBtn").addEventListener("click", clearAll);
   copyBtn.addEventListener("click", copyBudget);
   exportPdfBtn.addEventListener("click", exportPdf);
@@ -2125,12 +2296,486 @@ function bindEvents() {
   enforceIntegerInput(printMinutesInput, 59);
 
   bindMarginExclusivity();
+  bindMarginChips();
+  bindCustomPrinter();
   bindProCostEvents();
   bindAutoWearRecalc();
   bindLaborHintRecalc();
   bindAutoShopeeRecalc();
   bindAutoMeliRecalc();
   bindAutoCalculate();
+}
+
+
+// ---------------------------------------------------------
+// MARGEM DE LUCRO — ATALHOS (30% / 50% / 100% / 150% / 200%)
+// ---------------------------------------------------------
+function syncMarginChips() {
+  const pct = marginPctInput.value.trim();
+  el("marginChips").querySelectorAll(".chip-btn").forEach((btn) => {
+    btn.classList.toggle("active", pct !== "" && btn.dataset.value === pct);
+  });
+}
+
+function bindMarginChips() {
+  el("marginChips").querySelectorAll(".chip-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      // escolher um atalho troca o "valor fixo" pela margem em %
+      if (marginFixedInput.value.trim() !== "") {
+        marginFixedInput.value = "";
+        marginFixedInput.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+      marginPctInput.value = btn.dataset.value;
+      marginPctInput.dispatchEvent(new Event("input", { bubbles: true }));
+    });
+  });
+  [marginPctInput, marginFixedInput].forEach((input) => input.addEventListener("input", syncMarginChips));
+  syncMarginChips();
+}
+
+// ---------------------------------------------------------
+// "OUTRA IMPRESSORA" — potência/preço digitados alimentam as mesmas contas
+// ---------------------------------------------------------
+function bindCustomPrinter() {
+  [customPrinterPowerInput, customPrinterPriceInput].forEach((input) => {
+    input.addEventListener("input", () => {
+      clearFieldError(customPrinterPowerInput);
+      saveCustomPrinter();
+      recalcAutoWear();
+      recalcAutoShopee();
+      recalcAutoMeli();
+      scheduleAutoCalculate();
+    });
+  });
+}
+
+// ---------------------------------------------------------
+// ESTADO DO FORMULÁRIO — captura/restaura tudo o que foi preenchido.
+// Base de "Meus orçamentos" (reabrir um orçamento salvo) e do rascunho
+// automático (nada se perde ao fechar/recarregar a página).
+// ---------------------------------------------------------
+function captureFormState() {
+  const values = {};
+  el("calcForm").querySelectorAll("input[id], select[id]").forEach((input) => {
+    // Taxa Shopee/Mercado Livre são sempre recalculadas a partir da faixa
+    if (input.id === "proShopee" || input.id === "proMeli") return;
+    values[input.id] = input.type === "checkbox" ? input.checked : input.value;
+  });
+  return { mode: currentMode, values, shopeeTier: shopeeSelectedTier, meliTier: meliSelectedTier };
+}
+
+let restoringState = false;
+
+function restoreFormState(state) {
+  if (!state || !state.values) return;
+  restoringState = true;
+
+  const v = state.values;
+  const has = (id) => Object.prototype.hasOwnProperty.call(v, id);
+  const fire = (input) => input.dispatchEvent(new Event(
+    input.type === "checkbox" || input.tagName === "SELECT" ? "change" : "input", { bubbles: true }));
+  const apply = (id) => {
+    const input = el(id);
+    if (!input || !has(id)) return;
+    if (input.type === "checkbox") input.checked = !!v[id];
+    else input.value = v[id];
+    fire(input);
+  };
+
+  if (state.mode) setMode(state.mode);
+
+  // 1) impressora (e potência da "Outra") e material — disparam os
+  //    preenchimentos automáticos, que os valores salvos sobrescrevem depois
+  apply("customPrinterPower");
+  apply("customPrinterPrice");
+  apply("printerSelect");
+  apply("materialSelect");
+
+  // 2) switches dos custos profissionais (abrem/fecham cada campo)
+  const proToggleIds = PRO_COSTS.map((cost) => `${proFieldId(cost)}Toggle`);
+  proToggleIds.forEach((id) => {
+    if (has(id) && el(id).checked !== !!v[id]) apply(id);
+  });
+
+  // 3) todos os outros campos, na ordem do formulário
+  const handled = new Set(["customPrinterPower", "customPrinterPrice", "printerSelect", "materialSelect", ...proToggleIds]);
+  Object.keys(v).forEach((id) => { if (!handled.has(id)) apply(id); });
+
+  // 4) valores dos custos profissionais de novo — o recálculo automático de
+  //    "Desgaste" (ao mudar impressora/tempo) pode ter sobrescrito o salvo
+  PRO_COSTS.forEach((cost) => {
+    if (cost.id === "shopee" || cost.id === "meli") return;
+    apply(proFieldId(cost));
+  });
+
+  // 5) faixas escolhidas da Taxa Shopee / Mercado Livre
+  shopeeSelectedTier = state.shopeeTier ?? null;
+  meliSelectedTier = state.meliTier ?? null;
+  setExpanded(el("proShopeeCustomFields"), shopeeSelectedTier === "custom");
+  setExpanded(el("proMeliCustomFields"), meliSelectedTier === "custom");
+  recalcAutoShopee();
+  recalcAutoMeli();
+
+  syncMarginChips();
+
+  // recalcula ainda com restoringState=true: assim o orçamento que estava
+  // aberto antes não é sobrescrito pelo estado recém-restaurado
+  clearTimeout(autoCalculateTimer);
+  if (!validateAll({ silent: true })) calculate();
+  else { resetReadout(); updateStickyBar(); }
+  clearTimeout(autoCalculateTimer);
+  restoringState = false;
+}
+
+// ---------------------------------------------------------
+// RASCUNHO AUTOMÁTICO — o formulário sobrevive a fechar/recarregar a página
+// ---------------------------------------------------------
+const DRAFT_KEY = "np3d_draft";
+let draftTimer = null;
+
+function saveDraft() {
+  if (restoringState) return;
+  clearTimeout(draftTimer);
+  draftTimer = setTimeout(() => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify({ state: captureFormState(), budgetId: currentBudgetId }));
+    } catch (err) { /* sem problema */ }
+  }, 500);
+}
+
+function clearDraft() {
+  clearTimeout(draftTimer);
+  try { localStorage.removeItem(DRAFT_KEY); } catch (err) { /* sem problema */ }
+}
+
+function restoreDraft() {
+  let draft = null;
+  try { draft = JSON.parse(localStorage.getItem(DRAFT_KEY)); } catch (err) { draft = null; }
+  if (!draft || !draft.state) return;
+
+  restoreFormState(draft.state);
+  if (draft.budgetId && loadHistory().some((b) => b.id === draft.budgetId)) {
+    currentBudgetId = draft.budgetId;
+    if (lastResult) el("saveBtnLabel").textContent = "Salvo";
+  }
+}
+
+function bindDraftAutosave() {
+  const form = el("calcForm");
+  form.addEventListener("input", saveDraft);
+  form.addEventListener("change", saveDraft);
+  // chips e faixas de marketplace são botões — também contam como edição
+  form.addEventListener("click", (event) => {
+    if (event.target.closest(".chip-btn, .tier-option, .mode-switch-btn")) saveDraft();
+  });
+}
+
+// ---------------------------------------------------------
+// MEUS ORÇAMENTOS — histórico salvo no aparelho (localStorage)
+// ---------------------------------------------------------
+const HISTORY_KEY = "np3d_history";
+const HISTORY_LIMIT = 60;
+
+function loadHistory() {
+  try {
+    const list = JSON.parse(localStorage.getItem(HISTORY_KEY));
+    return Array.isArray(list) ? list : [];
+  } catch (err) {
+    return [];
+  }
+}
+
+function storeHistory(list) {
+  try {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(list.slice(0, HISTORY_LIMIT)));
+  } catch (err) { /* armazenamento cheio/bloqueado — segue sem histórico */ }
+  updateHistoryBadge();
+}
+
+function updateHistoryBadge() {
+  const count = loadHistory().length;
+  const badge = el("historyCount");
+  badge.textContent = count > 99 ? "99+" : String(count);
+  badge.hidden = count === 0;
+}
+
+/** Salva (ou atualiza, se já salvo) o orçamento atual em "Meus orçamentos". */
+function saveCurrentBudget({ silent = false } = {}) {
+  if (!lastResult) return;
+  const r = lastResult;
+  const isNew = !currentBudgetId;
+  const entry = {
+    id: currentBudgetId || `b${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+    savedAt: Date.now(),
+    name: r.jobName,
+    price: r.finalPrice,
+    printerName: r.printerName,
+    materialName: r.materialName,
+    time: formatPrintTime(r.hours, r.minutes),
+    grams: r.grams,
+    proMode: r.proMode,
+    state: captureFormState(),
+  };
+
+  const list = loadHistory();
+  const index = list.findIndex((b) => b.id === entry.id);
+  if (index >= 0) list[index] = entry;
+  else list.unshift(entry);
+  storeHistory(list);
+
+  currentBudgetId = entry.id;
+  el("saveBtnLabel").textContent = "Salvo";
+  saveDraft();
+  if (!silent) showQuickToast(isNew ? "Salvo em Meus orçamentos." : "Orçamento atualizado.");
+}
+
+function formatSavedDate(timestamp) {
+  const date = new Date(timestamp);
+  const today = new Date();
+  const sameDay = date.toDateString() === today.toDateString();
+  return sameDay
+    ? `hoje, ${date.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" })}`
+    : date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short" }).replace(".", "");
+}
+
+const escapeHtml = (text) => String(text ?? "").replace(/[&<>"']/g, (ch) => (
+  { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+
+function renderHistory() {
+  const list = loadHistory();
+  const query = el("historySearch").value.trim().toLowerCase();
+  el("historySearchWrap").hidden = list.length < 5;
+
+  const items = query
+    ? list.filter((b) => [b.name, b.materialName, b.printerName].join(" ").toLowerCase().includes(query))
+    : list;
+
+  const listEl = el("historyList");
+  if (!list.length) {
+    listEl.innerHTML = `
+      <div class="history-empty">
+        <strong>Nenhum orçamento salvo ainda</strong>
+        Depois de calcular, toque em <em>Salvar</em> — ou envie pelo WhatsApp,
+        copie ou gere o PDF, que ele é salvo sozinho aqui.
+      </div>`;
+    return;
+  }
+  if (!items.length) {
+    listEl.innerHTML = `<div class="history-empty">Nada encontrado pra “${escapeHtml(query)}”.</div>`;
+    return;
+  }
+
+  listEl.innerHTML = items.map((b) => `
+    <div class="history-item${b.id === currentBudgetId ? " is-current" : ""}">
+      <button type="button" class="history-open" data-id="${b.id}">
+        <span class="history-text">
+          <span class="history-name">${escapeHtml(b.name)}</span>
+          <span class="history-meta">${escapeHtml(b.materialName)} · ${escapeHtml(b.time)} · ${Number(b.grams).toLocaleString("pt-BR")} g · ${formatSavedDate(b.savedAt)}</span>
+        </span>
+        <span class="history-price">${brl(Number(b.price) || 0)}</span>
+      </button>
+      <button type="button" class="history-delete" data-id="${b.id}" aria-label="Excluir ${escapeHtml(b.name)}">
+        <svg viewBox="0 0 24 24" width="16" height="16" aria-hidden="true"><path d="M4 7h16M10 11v6m4-6v6M6 7l1 13h10l1-13M9 7V4h6v3" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+    </div>
+  `).join("");
+}
+
+function openHistory() {
+  el("historySearch").value = "";
+  renderHistory();
+  el("historyModalOverlay").hidden = false;
+}
+
+function closeHistory() {
+  el("historyModalOverlay").hidden = true;
+}
+
+function openSavedBudget(id) {
+  const entry = loadHistory().find((b) => b.id === id);
+  if (!entry) return;
+  restoreFormState(entry.state);
+  currentBudgetId = entry.id;
+  if (lastResult) el("saveBtnLabel").textContent = "Salvo";
+  saveDraft();
+  closeHistory();
+  showQuickToast(`“${entry.name}” aberto — edite à vontade.`);
+  el("calcForm").scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function deleteSavedBudget(id) {
+  const list = loadHistory();
+  const entry = list.find((b) => b.id === id);
+  if (!entry) return;
+  if (!window.confirm(`Excluir “${entry.name}” dos seus orçamentos?`)) return;
+
+  storeHistory(list.filter((b) => b.id !== id));
+  if (currentBudgetId === id) {
+    currentBudgetId = null;
+    if (lastResult) el("saveBtnLabel").textContent = "Salvar";
+    saveDraft();
+  }
+  renderHistory();
+}
+
+function initHistory() {
+  el("historyBtn").addEventListener("click", openHistory);
+  el("closeHistoryBtn").addEventListener("click", closeHistory);
+  el("historySearch").addEventListener("input", renderHistory);
+
+  el("historyList").addEventListener("click", (event) => {
+    const openBtn = event.target.closest(".history-open");
+    const deleteBtn = event.target.closest(".history-delete");
+    if (openBtn) openSavedBudget(openBtn.dataset.id);
+    else if (deleteBtn) deleteSavedBudget(deleteBtn.dataset.id);
+  });
+
+  const overlay = el("historyModalOverlay");
+  overlay.addEventListener("click", (event) => { if (event.target === overlay) closeHistory(); });
+  document.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" && !overlay.hidden) closeHistory();
+  });
+
+  el("saveBtn").addEventListener("click", () => saveCurrentBudget());
+  el("whatsappBtn").addEventListener("click", () => saveCurrentBudget({ silent: true }));
+
+  updateHistoryBadge();
+}
+
+// ---------------------------------------------------------
+// EXEMPLO PREENCHIDO — mostra a calculadora funcionando em 1 toque
+// ---------------------------------------------------------
+function fillExample() {
+  const keepPrinter = printerSelect.value && (printerSelect.value !== CUSTOM_PRINTER_ID || getSelectedPrinter());
+  currentBudgetId = null;
+  restoreFormState({
+    mode: currentMode,
+    values: {
+      printerSelect: keepPrinter ? printerSelect.value : "a1-combo",
+      materialSelect: "pla-basic",
+      pricePerKg: "109.90",
+      kwhPrice: kwhPriceInput.value.trim() || "0.85",
+      jobName: "Suporte de celular",
+      printHours: "2",
+      printMinutes: "30",
+      printGrams: "45",
+      marginPct: marginPctInput.value.trim() || (marginFixedInput.value.trim() ? "" : "100"),
+      roundToggle: roundToggle.checked,
+    },
+    shopeeTier: shopeeSelectedTier,
+    meliTier: meliSelectedTier,
+  });
+  saveDraft();
+  showQuickToast("Exemplo preenchido — troque pelos dados da sua peça.");
+  if (lastResult) revealReadout();
+}
+
+/** No celular o resultado fica abaixo do formulário — leva a pessoa até ele.
+ *  No computador ele já está fixo ao lado, então não rola nada. */
+function revealReadout() {
+  const rect = el("readoutPanel").getBoundingClientRect();
+  if (rect.top > window.innerHeight * 0.6 || rect.bottom < 0) {
+    el("readoutPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+}
+
+// ---------------------------------------------------------
+// PROGRESSO + BARRA FIXA DO CELULAR
+// Mostra o que falta preencher e, quando há resultado, o preço ao vivo.
+// ---------------------------------------------------------
+function getProgressItems() {
+  const pctVal = marginPctInput.value.trim();
+  const fixedVal = marginFixedInput.value.trim();
+  const timeOk = printHoursTest(printHoursInput.value) && printMinutesTest(printMinutesInput.value)
+    && !(Number(printHoursInput.value) === 0 && Number(printMinutesInput.value) === 0);
+  const materialOk = materialSelect.value !== ""
+    && (materialSelect.value !== "outro" || customNameInput.value.trim() !== "");
+
+  return [
+    { label: "Impressora", done: !!getSelectedPrinter() },
+    { label: "Energia", done: Number(kwhPriceInput.value) > 0 },
+    { label: "Material", done: materialOk },
+    { label: "Preço do material", done: Number(pricePerKgInput.value) > 0 },
+    { label: "Tempo", done: timeOk },
+    { label: "Peso", done: Number(printGramsInput.value) > 0 },
+    { label: "Margem", done: (pctVal !== "" && Number(pctVal) >= 0) || (fixedVal !== "" && Number(fixedVal) >= 0) },
+    // custos profissionais ligados também precisam de valor
+    ...(isProMode() ? PRO_COSTS.filter((cost) => el(`${proFieldId(cost)}Toggle`).checked).map((cost) => ({
+      label: cost.label,
+      done: Number(el(proFieldId(cost)).value) > 0,
+    })) : []),
+  ];
+}
+
+function updateStickyBar() {
+  const items = getProgressItems();
+  const missing = items.filter((item) => !item.done);
+
+  el("missingList").innerHTML = items.map((item) =>
+    `<li class="${item.done ? "done" : ""}">${item.label}</li>`).join("");
+
+  const bar = el("stickyBar");
+  const live = !!lastResult;
+  bar.classList.toggle("is-live", live);
+
+  if (live) {
+    el("stickyLabel").textContent = lastResult.hasCustomName ? lastResult.jobName : "Preço sugerido";
+    el("stickyValue").textContent = brl(lastResult.finalPrice);
+    el("stickyBtn").textContent = "Ver orçamento";
+  } else {
+    el("stickyLabel").textContent = missing.length ? `Faltam ${missing.length} de ${items.length}` : "Tudo preenchido";
+    el("stickyValue").textContent = missing.length
+      ? `${missing.slice(0, 2).map((i) => i.label).join(", ")}${missing.length > 2 ? "…" : ""}`
+      : "Pronto pra calcular";
+    el("stickyBtn").textContent = "Calcular";
+  }
+}
+
+function syncStickyHeight() {
+  const bar = el("stickyBar");
+  const visible = getComputedStyle(bar).display !== "none";
+  document.documentElement.style.setProperty("--sticky-h", visible ? `${bar.offsetHeight}px` : "0px");
+}
+
+function initStickyBar() {
+  const bar = el("stickyBar");
+  let readoutVisible = false;
+  let typing = false;
+  const refresh = () => bar.classList.toggle("is-hidden", readoutVisible || typing);
+
+  el("stickyBtn").addEventListener("click", () => {
+    if (lastResult) el("readoutPanel").scrollIntoView({ behavior: "smooth", block: "start" });
+    else el("calcBtn").click();
+  });
+
+  // some quando o painel de resultado já está na tela
+  if ("IntersectionObserver" in window) {
+    new IntersectionObserver((entries) => {
+      readoutVisible = entries[0].isIntersecting;
+      refresh();
+    }, { threshold: 0.25 }).observe(el("readoutPanel"));
+  }
+
+  // no celular, some enquanto o teclado está aberto (campo focado)
+  const coarse = window.matchMedia("(pointer: coarse)").matches;
+  const form = el("calcForm");
+  form.addEventListener("focusin", (event) => {
+    if (coarse && event.target.matches("input:not([type=checkbox]), select")) { typing = true; refresh(); }
+  });
+  form.addEventListener("focusout", () => {
+    setTimeout(() => {
+      typing = coarse && document.activeElement && form.contains(document.activeElement)
+        && document.activeElement.matches("input:not([type=checkbox]), select");
+      refresh();
+    }, 60);
+  });
+
+  form.addEventListener("input", updateStickyBar);
+  form.addEventListener("change", updateStickyBar);
+
+  syncStickyHeight();
+  window.addEventListener("resize", syncStickyHeight);
+  updateStickyBar();
 }
 
 // ---------------------------------------------------------
@@ -2266,4 +2911,9 @@ document.addEventListener("DOMContentLoaded", () => {
   registerServiceWorker();
   initInstallPrompt();
   initFreeBanner();
+  initHistory();
+  restoreDraft();
+  bindDraftAutosave();
+  initStickyBar();
+  if (!lastResult) setReadoutLive(false);
 });
