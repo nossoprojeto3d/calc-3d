@@ -670,6 +670,15 @@ input[type="number"]{
   transition: border-color .15s ease, box-shadow .15s ease;
 }
 
+/* iPhone/iPad dão zoom automático ao focar campo com fonte < 16px (e a
+   tela fica ampliada, pedindo rolagem lateral). Em telas de toque os
+   campos usam 16px; no computador segue o tamanho acima. */
+@media (pointer: coarse){
+  input:not([type="checkbox"]),
+  select,
+  textarea{ font-size: 16px !important; }
+}
+
 .field select:focus,
 .field input:focus{
   outline: none;
