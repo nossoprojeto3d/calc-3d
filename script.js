@@ -1807,7 +1807,9 @@ function renderResult(r) {
   hidePdfExportError();
 
   const whatsappBtn = el("whatsappBtn");
-  whatsappBtn.href = `https://wa.me/?text=${encodeURIComponent(buildWhatsAppText(r))}`;
+  // api.whatsapp.com direto (não wa.me): o redirecionamento do wa.me troca
+  // todo emoji do texto por "�"
+  whatsappBtn.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(buildWhatsAppText(r))}`;
   whatsappBtn.classList.remove("is-disabled");
   whatsappBtn.removeAttribute("aria-disabled");
 
