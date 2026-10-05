@@ -11,7 +11,7 @@
    contra versão antiga.
    ========================================================= */
 
-const CACHE_NAME = "np3d-calc-v3.1";
+const CACHE_NAME = "np3d-calc-v3.2";
 
 const CORE_ASSETS = [
   "./",
@@ -19,6 +19,7 @@ const CORE_ASSETS = [
   "./style.css",
   "./script.js",
   "./manifest.json",
+  "./medicao.js",
   "./assets/logo.png",
   "./assets/favicon.png",
   "./assets/icon-192.png",
@@ -27,7 +28,7 @@ const CORE_ASSETS = [
 
 // Arquivos centrais do app: sempre buscamos a versão mais nova da rede
 // primeiro, pra ninguém ficar preso numa versão antiga depois de um deploy.
-const CORE_FILE_NAMES = ["index.html", "script.js", "style.css", "manifest.json"];
+const CORE_FILE_NAMES = ["index.html", "script.js", "style.css", "manifest.json", "medicao.js"];
 
 function isCoreRequest(request) {
   if (request.mode === "navigate") return true;

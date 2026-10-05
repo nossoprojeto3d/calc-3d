@@ -257,7 +257,10 @@ function setMode(mode) {
 
 function initModeSwitch() {
   document.querySelectorAll(".mode-switch-btn").forEach((btn) => {
-    btn.addEventListener("click", () => setMode(btn.dataset.mode));
+    btn.addEventListener("click", () => {
+      setMode(btn.dataset.mode);
+      if (window.np3dTrack) np3dTrack("modo_alterado", { modo: btn.dataset.mode });
+    });
   });
 
   const saved = localStorage.getItem("np3d_mode");
@@ -2090,6 +2093,7 @@ async function exportPdf() {
   try {
     const JsPDF = await loadJsPDF();
     await buildAndSavePdf(JsPDF, lastResult);
+    if (window.np3dTrack) np3dTrack("pdf_exportado", { modo: currentMode });
     saveCurrentBudget({ silent: true });
   } catch (err) {
     showPdfExportError();
@@ -2249,6 +2253,7 @@ function buildWhatsAppText(r) {
 
 async function copyBudget() {
   if (!lastResult) return;
+  if (window.np3dTrack) np3dTrack("orcamento_copiado", { modo: currentMode });
 
   const text = buildWhatsAppText(lastResult);
 
@@ -2333,11 +2338,15 @@ function bindEvents() {
     if (!lastResult || !formularioValidado) return;
 
     revealReadout();
+    if (window.np3dTrack) np3dTrack("calculo_feito", { modo: currentMode });
     // popup de apoio só no clique explícito (nunca no recálculo ao vivo,
     // pra não interromper quem está digitando) e só se deu um preço
     showFreeBanner();
   });
-  el("exampleBtn").addEventListener("click", fillExample);
+  el("exampleBtn").addEventListener("click", () => {
+    fillExample();
+    if (window.np3dTrack) np3dTrack("exemplo_usado");
+  });
   el("clearBtn").addEventListener("click", clearAll);
   copyBtn.addEventListener("click", copyBudget);
   exportPdfBtn.addEventListener("click", exportPdf);
