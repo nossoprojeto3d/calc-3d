@@ -167,17 +167,16 @@
     var css = document.createElement("style");
     css.textContent =
       "#np3d-cookies{position:fixed;left:12px;right:12px;bottom:max(12px,env(safe-area-inset-bottom));z-index:2147483000;" +
-      "max-width:760px;margin:0 auto;display:flex;flex-wrap:wrap;align-items:center;gap:12px 20px;padding:16px 18px;" +
-      "background:#17130d;color:#f4efe3;border:1px solid #3a3226;border-radius:14px;box-shadow:0 12px 40px rgba(0,0,0,.45);" +
-      "font:14px/1.5 'Work Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}" +
-      "#np3d-cookies p{margin:0;flex:1 1 280px;color:#a69c87}" +
-      "#np3d-cookies div{display:flex;gap:8px;flex:0 0 auto}" +
-      "#np3d-cookies button{font:inherit;font-weight:600;cursor:pointer;border-radius:10px;padding:9px 18px;min-height:40px;" +
+      "max-width:520px;margin:0 auto;display:flex;align-items:center;gap:10px;padding:8px 8px 8px 14px;" +
+      "background:#17130d;color:#f4efe3;border:1px solid #3a3226;border-radius:12px;box-shadow:0 8px 24px rgba(0,0,0,.4);" +
+      "font:12.5px/1.35 'Work Sans',system-ui,-apple-system,Segoe UI,Roboto,sans-serif}" +
+      "#np3d-cookies p{margin:0;flex:1 1 auto;color:#a69c87}" +
+      "#np3d-cookies div{display:flex;gap:6px;flex:0 0 auto}" +
+      "#np3d-cookies button{font:inherit;font-weight:600;cursor:pointer;border-radius:8px;padding:0 12px;min-height:34px;" +
       "border:1px solid #4d4331;background:transparent;color:#f4efe3}" +
       "#np3d-cookies button[data-acao=aceitar]{background:#c9a227;border-color:#c9a227;color:#120e09}" +
       "#np3d-cookies button:hover{filter:brightness(1.1)}" +
-      "#np3d-cookies button:focus-visible{outline:3px solid #e7c873;outline-offset:2px}" +
-      "@media(max-width:520px){#np3d-cookies div{width:100%}#np3d-cookies button{flex:1}}";
+      "#np3d-cookies button:focus-visible{outline:3px solid #e7c873;outline-offset:2px}";
     document.head.appendChild(css);
 
     var box = document.createElement("div");
@@ -185,8 +184,7 @@
     box.setAttribute("role", "region");
     box.setAttribute("aria-label", "Aviso de cookies");
     box.innerHTML =
-      "<p>Usamos o Google Analytics para contar quantas pessoas visitam o site e o que elas mais usam. " +
-      "Você pode recusar e usar tudo normalmente.</p>" +
+      "<p>Usamos cookies para medir as visitas.</p>" +
       '<div><button type="button" data-acao="recusar">Recusar</button>' +
       '<button type="button" data-acao="aceitar">Aceitar</button></div>';
 
