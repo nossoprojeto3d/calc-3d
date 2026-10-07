@@ -361,7 +361,7 @@ export default function App() {
           {/* ===================== ORÇAMENTO =====================
               No computador, coluna fixa com a altura da tela: modo + orçamento
               sempre visíveis; só o formulário ao lado rola. */}
-          <aside className="min-w-0 lg:sticky lg:top-[76px] lg:flex lg:h-[calc(100dvh-92px)] lg:flex-col lg:gap-3 lg:self-start">
+          <aside className="min-w-0 lg:sticky lg:top-[76px] lg:flex lg:h-[calc(100dvh-92px)] lg:flex-col lg:justify-center lg:gap-3 lg:self-start">
             {desktop && <ModeSwitch mode={state.mode} onChange={calc.setMode} compact />}
             <ResultPanel calc={calc} onJumpTo={jumpTo} onOpenSettings={() => setSettingsOpen(true)} />
             <p className="hint rp-hide2 mt-3 px-2 text-center lg:mt-0 lg:text-[12.5px]">Tudo fica salvo só no seu aparelho. Nada é enviado pra lugar nenhum.</p>
