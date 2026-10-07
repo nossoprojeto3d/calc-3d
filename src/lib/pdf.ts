@@ -270,6 +270,16 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
     doc.text(doc.splitTextToSize(d.notes, contentW), marginX, y);
   }
 
+  // divulgação discreta da calculadora (ela é gratuita), no pé da página
+  const pageHeight = doc.internal.pageSize.getHeight();
+  const credit = "Orçamento feito com a calculadora gratuita Nosso Projeto 3D";
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8);
+  doc.setTextColor(150, 156, 165);
+  doc.text(credit, pageWidth / 2, pageHeight - 12, { align: "center" });
+  doc.link((pageWidth - doc.getTextWidth(credit)) / 2, pageHeight - 15, doc.getTextWidth(credit), 4.5,
+    { url: "https://nossoprojeto3d.github.io/calc-3d/" });
+
   const who = d.clientName ? `-${slugify(d.clientName)}` : "";
   doc.save(`orcamento-${slugify(r.jobName)}${who}-${r.calculatedAt.toISOString().slice(0, 10)}.pdf`);
 }
