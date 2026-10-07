@@ -2,7 +2,7 @@
    PDF DO ORÇAMENTO
    O jsPDF agora vem junto com o app (pacote npm), carregado só no primeiro
    clique em "PDF". Funciona offline e não depende mais de CDN.
-   Mesmo conteúdo da V3, com as cores da identidade nova.
+   Dois PDFs com o mesmo estilo: o completo (igual à V3) e o do cliente.
    ========================================================= */
 
 import { brl, buildStoreSignatureLine, type CalcResult, type StoreSettings } from "./calc";
@@ -40,125 +40,13 @@ function loadImageAsDataURL(src: string) {
   });
 }
 
-export async function exportPdf(r: CalcResult, settings: StoreSettings) {
-  const { jsPDF } = await import("jspdf");
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const marginX = 18;
-  let y: number;
-
-  // faixa grafite no topo, com o logo e um fio verde
-  doc.setFillColor(12, 14, 17);
-  doc.rect(0, 0, pageWidth, 30, "F");
-  doc.setFillColor(47, 211, 154);
-  doc.rect(0, 30, pageWidth, 1.2, "F");
-
-  try {
-    const logo = await loadImageAsDataURL(`${import.meta.env.BASE_URL}assets/logo.png`);
-    doc.addImage(logo, "PNG", marginX, 7, 16, 16);
-  } catch { /* segue sem o logo */ }
-
-  doc.setTextColor(236, 238, 241);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.text("Nosso Projeto 3D", marginX + 20, 15);
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(163, 170, 180);
-  doc.text("Orçamento de impressão 3D", marginX + 20, 21);
-
-  y = 44;
-  doc.setTextColor(18, 21, 26);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  const titleLines = doc.splitTextToSize(r.jobName, pageWidth - marginX * 2);
-  doc.text(titleLines, marginX, y);
-
-  y += 7 * titleLines.length;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10);
-  doc.setTextColor(107, 114, 125);
-  const dateLabel = r.calculatedAt.toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" });
-  doc.text(`Gerado em ${dateLabel}`, marginX, y);
-  y += 10;
-
-  const drawSectionTitle = (title: string) => {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11.5);
-    doc.setTextColor(10, 122, 85);
-    doc.text(title.toUpperCase(), marginX, y);
-    y += 1.5;
-    doc.setDrawColor(226, 229, 234);
-    doc.line(marginX, y, pageWidth - marginX, y);
-    y += 6;
-  };
-
-  const drawRow = (label: string, value: string) => {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    doc.setTextColor(75, 82, 93);
-    doc.text(label, marginX, y);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(18, 21, 26);
-    doc.text(String(value), pageWidth - marginX, y, { align: "right" });
-    y += 6.5;
-  };
-
-  drawSectionTitle("Impressora e material");
-  drawRow("Impressora", r.printerName);
-  drawRow("Material", r.materialName);
-  y += 4;
-
-  drawSectionTitle("Tempo e peso");
-  drawRow("Tempo de impressão", `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`);
-  drawRow("Peso do filamento", `${r.grams.toLocaleString("pt-BR")} g`);
-  y += 4;
-
-  drawSectionTitle("Breakdown de custos");
-  drawRow("Filamento", brl(r.filamentCost));
-  drawRow("Energia", brl(r.energyCost));
-  if (r.proMode) {
-    r.proCosts.forEach((c) => {
-      const label = c.id === "meli" ? `${c.label} (${c.adType === "classico" ? "Clássico" : "Premium"})` : c.label;
-      drawRow(label, brl(c.value));
-    });
-  }
-  drawRow("Custo total", brl(r.totalCost));
-  drawRow("Lucro", brl(r.profit));
-  y += 4;
-
-  // preço final em destaque
-  doc.setFillColor(228, 249, 240);
-  doc.roundedRect(marginX, y, pageWidth - marginX * 2, 20, 3, 3, "F");
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
-  doc.setTextColor(107, 114, 125);
-  doc.text("Preço final sugerido", marginX + 6, y + 8);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.setTextColor(10, 122, 85);
-  doc.text(brl(r.finalPrice), marginX + 6, y + 16);
-  y += 30;
-
-  const signature = buildStoreSignatureLine(settings).replace(/^🏪\s*/, "");
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(140, 146, 156);
-  if (signature) {
-    doc.text(signature, marginX, y);
-    y += 6;
-  }
-  doc.text("Orçamento feito com a calculadora Nosso Projeto 3D", marginX, y, { maxWidth: pageWidth - marginX * 2 });
-
-  doc.save(`${exportFileBaseName(r)}.pdf`);
-}
-
 // ---------------------------------------------------------
-// PDF PARA O CLIENTE
-// Só o que interessa pra quem compra, com a marca da loja (logo, nome e
-// contatos). Visual neutro (cinzas), pra combinar com qualquer marca.
-// Sem custos, lucro nem taxas.
+// ESTILO COMUM DOS PDFs (completo e do cliente)
+// Faixa grafite no topo com fio verde, seções com título verde e linha,
+// linhas "rótulo ... valor", cartão verde com o preço e assinatura no fim.
 // ---------------------------------------------------------
+type Doc = InstanceType<typeof import("jspdf").jsPDF>;
+
 function imageSize(dataUrl: string) {
   return new Promise<{ w: number; h: number }>((resolve, reject) => {
     const img = new Image();
@@ -168,118 +56,196 @@ function imageSize(dataUrl: string) {
   });
 }
 
-export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings: StoreSettings, logo: string | null) {
-  const { jsPDF } = await import("jspdf");
-  const doc = new jsPDF({ unit: "mm", format: "a4" });
-  const pageWidth = doc.internal.pageSize.getWidth();
-  const marginX = 20;
-  const contentW = pageWidth - marginX * 2;
-  let y = 22;
+const MARGIN_X = 18;
+const CREDIT = "Orçamento feito com a calculadora Nosso Projeto 3D";
+const CREDIT_URL = "https://nossoprojeto3d.github.io/calc-3d/";
 
-  // cabeçalho da loja: logo + nome + contatos (o que estiver preenchido)
-  const storeName = settings.storeName.trim();
-  const contacts = [settings.city, settings.whatsapp, settings.instagram].map((x) => (x || "").trim()).filter(Boolean).join("  ·  ");
-  let textX = marginX;
-  let headerH = 0;
-  if (logo) {
+async function createPdf(header: { title: string; subtitle: string; logo: string | null; logoOnTile?: boolean }) {
+  const { jsPDF } = await import("jspdf");
+  const doc: Doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+
+  doc.setFillColor(12, 14, 17);
+  doc.rect(0, 0, pageWidth, 30, "F");
+  doc.setFillColor(47, 211, 154);
+  doc.rect(0, 30, pageWidth, 1.2, "F");
+
+  let textX = MARGIN_X;
+  if (header.logo) {
     try {
-      const { w, h } = await imageSize(logo);
-      const maxH = 22;
-      const maxW = 44;
-      const scale = Math.min(maxH / h, maxW / w);
-      doc.addImage(logo, "PNG", marginX, y - 6, w * scale, h * scale, undefined, "FAST");
-      textX = marginX + w * scale + 6;
-      headerH = h * scale;
+      const { w, h } = await imageSize(header.logo);
+      if (header.logoOnTile) {
+        // logo da loja num quadradinho claro: aparece bem sobre o grafite, seja qual for a cor
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(MARGIN_X, 6, 18, 18, 2.5, 2.5, "F");
+        const scale = Math.min(15 / w, 15 / h);
+        doc.addImage(header.logo, "PNG", MARGIN_X + 9 - (w * scale) / 2, 15 - (h * scale) / 2, w * scale, h * scale, undefined, "FAST");
+        textX = MARGIN_X + 23;
+      } else {
+        const scale = Math.min(16 / w, 16 / h);
+        doc.addImage(header.logo, "PNG", MARGIN_X, 7, w * scale, h * scale, undefined, "FAST");
+        textX = MARGIN_X + 20;
+      }
     } catch { /* segue sem o logo */ }
   }
-  if (storeName) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.setTextColor(18, 21, 26);
-    doc.text(storeName, textX, y + (logo ? 2 : 0));
-  }
-  if (contacts) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.setTextColor(107, 114, 125);
-    doc.text(contacts, textX, y + (storeName ? 8 : 0) + (logo ? 2 : 0), { maxWidth: pageWidth - marginX - textX });
-  }
-  if (logo || storeName || contacts) {
-    y += Math.max(headerH, storeName && contacts ? 12 : 6) + 4;
-    doc.setDrawColor(226, 229, 234);
-    doc.line(marginX, y, pageWidth - marginX, y);
-    y += 12;
-  }
 
-  // título
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9.5);
-  doc.setTextColor(107, 114, 125);
-  doc.text("ORÇAMENTO", marginX, y);
-  y += 8;
+  doc.setTextColor(236, 238, 241);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(20);
-  doc.setTextColor(18, 21, 26);
-  const title = doc.splitTextToSize(r.jobName, contentW);
-  doc.text(title, marginX, y);
-  y += 8 * title.length + 4;
+  doc.setFontSize(15);
+  doc.text(header.title, textX, 15, { maxWidth: pageWidth - textX - MARGIN_X });
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.setTextColor(163, 170, 180);
+  doc.text(header.subtitle, textX, 21);
 
-  const row = (label: string, value: string) => {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10.5);
-    doc.setTextColor(107, 114, 125);
-    doc.text(label, marginX, y);
-    doc.setTextColor(18, 21, 26);
-    const lines = doc.splitTextToSize(value, contentW - 45);
-    doc.text(lines, marginX + 45, y);
-    y += 7 * lines.length;
+  let y = 44;
+  const contentW = pageWidth - MARGIN_X * 2;
+
+  const api = {
+    doc,
+    get y() { return y; },
+    gap(mm: number) { y += mm; },
+    /** nome da peça e a data em que o orçamento foi gerado */
+    title(jobName: string, at: Date) {
+      doc.setTextColor(18, 21, 26);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      const lines = doc.splitTextToSize(jobName, contentW);
+      doc.text(lines, MARGIN_X, y);
+      y += 7 * lines.length;
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10);
+      doc.setTextColor(107, 114, 125);
+      doc.text(`Gerado em ${at.toLocaleString("pt-BR", { dateStyle: "long", timeStyle: "short" })}`, MARGIN_X, y);
+      y += 10;
+    },
+    section(title: string) {
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(11.5);
+      doc.setTextColor(10, 122, 85);
+      doc.text(title.toUpperCase(), MARGIN_X, y);
+      y += 1.5;
+      doc.setDrawColor(226, 229, 234);
+      doc.line(MARGIN_X, y, pageWidth - MARGIN_X, y);
+      y += 6;
+    },
+    row(label: string, value: string) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      doc.setTextColor(75, 82, 93);
+      doc.text(label, MARGIN_X, y);
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(18, 21, 26);
+      doc.text(String(value), pageWidth - MARGIN_X, y, { align: "right" });
+      y += 6.5;
+    },
+    paragraph(text: string) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      doc.setTextColor(18, 21, 26);
+      const lines = doc.splitTextToSize(text, contentW);
+      doc.text(lines, MARGIN_X, y);
+      y += 5.2 * lines.length + 1.3;
+    },
+    priceCard(label: string, value: number) {
+      doc.setFillColor(228, 249, 240);
+      doc.roundedRect(MARGIN_X, y, contentW, 20, 3, 3, "F");
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(10.5);
+      doc.setTextColor(107, 114, 125);
+      doc.text(label, MARGIN_X + 6, y + 8);
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(18);
+      doc.setTextColor(10, 122, 85);
+      doc.text(brl(value), MARGIN_X + 6, y + 16);
+      y += 30;
+    },
+    /** assinatura da loja (se houver) + divulgação da calculadora, com link */
+    footer(signature: string) {
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(9.5);
+      doc.setTextColor(140, 146, 156);
+      if (signature) {
+        doc.text(signature, MARGIN_X, y, { maxWidth: contentW });
+        y += 6;
+      }
+      doc.text(CREDIT, MARGIN_X, y);
+      doc.link(MARGIN_X, y - 3.5, doc.getTextWidth(CREDIT), 4.5, { url: CREDIT_URL });
+    },
   };
-  if (d.clientName) row("Para", d.clientName);
-  row("Data", formatDate(r.calculatedAt));
-  row("Material", r.materialName);
-  if (d.deliveryTime) row("Prazo de entrega", d.deliveryTime);
-  y += 6;
+  return api;
+}
 
-  // valor em destaque
-  doc.setFillColor(243, 244, 246);
-  doc.roundedRect(marginX, y, contentW, 26, 3, 3, "F");
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(10.5);
-  doc.setTextColor(107, 114, 125);
-  doc.text("Valor", marginX + 7, y + 9);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(22);
-  doc.setTextColor(18, 21, 26);
-  doc.text(brl(r.finalPrice), marginX + 7, y + 20);
-  if (d.validUntil) {
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(10);
-    doc.setTextColor(107, 114, 125);
-    doc.text(`Válido até ${formatDate(d.validUntil)}`, pageWidth - marginX - 7, y + 20, { align: "right" });
+const storeSignature = (settings: StoreSettings) => buildStoreSignatureLine(settings).replace(/^🏪\s*/, "");
+
+/** PDF completo (pra quem faz o orçamento): todos os custos e o lucro, igual à V3. */
+export async function exportPdf(r: CalcResult, settings: StoreSettings) {
+  let logo: string | null = null;
+  try { logo = await loadImageAsDataURL(`${import.meta.env.BASE_URL}assets/logo.png`); } catch { /* sem logo */ }
+  const pdf = await createPdf({ title: "Nosso Projeto 3D", subtitle: "Orçamento de impressão 3D", logo });
+
+  pdf.title(r.jobName, r.calculatedAt);
+
+  pdf.section("Impressora e material");
+  pdf.row("Impressora", r.printerName);
+  pdf.row("Material", r.materialName);
+  pdf.gap(4);
+
+  pdf.section("Tempo e peso");
+  pdf.row("Tempo de impressão", `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`);
+  pdf.row("Peso do filamento", `${r.grams.toLocaleString("pt-BR")} g`);
+  pdf.gap(4);
+
+  pdf.section("Breakdown de custos");
+  pdf.row("Filamento", brl(r.filamentCost));
+  pdf.row("Energia", brl(r.energyCost));
+  if (r.proMode) {
+    r.proCosts.forEach((c) => {
+      const label = c.id === "meli" ? `${c.label} (${c.adType === "classico" ? "Clássico" : "Premium"})` : c.label;
+      pdf.row(label, brl(c.value));
+    });
   }
-  y += 36;
+  pdf.row("Custo total", brl(r.totalCost));
+  pdf.row("Lucro", brl(r.profit));
+  pdf.gap(4);
+
+  pdf.priceCard("Preço final sugerido", r.finalPrice);
+  pdf.footer(storeSignature(settings));
+
+  pdf.doc.save(`${exportFileBaseName(r)}.pdf`);
+}
+
+/**
+ * PDF para o cliente: mesmo estilo do completo, com a marca da loja no topo
+ * e só o que interessa pra quem compra. Sem custos, lucro nem taxas.
+ */
+export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings: StoreSettings, logo: string | null) {
+  const storeName = settings.storeName.trim();
+  const pdf = await createPdf({
+    title: storeName || "Orçamento",
+    subtitle: storeName ? "Orçamento de impressão 3D" : "Impressão 3D",
+    logo,
+    logoOnTile: true,
+  });
+
+  pdf.title(r.jobName, r.calculatedAt);
+
+  pdf.section("Detalhes");
+  if (d.clientName) pdf.row("Para", d.clientName);
+  pdf.row("Material", r.materialName);
+  if (d.deliveryTime) pdf.row("Prazo de entrega", d.deliveryTime);
+  if (d.validUntil) pdf.row("Validade do orçamento", `até ${formatDate(d.validUntil)}`);
+  pdf.gap(4);
 
   if (d.notes) {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(10.5);
-    doc.setTextColor(18, 21, 26);
-    doc.text("Observações", marginX, y);
-    y += 6;
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(75, 82, 93);
-    doc.text(doc.splitTextToSize(d.notes, contentW), marginX, y);
+    pdf.section("Observações");
+    pdf.paragraph(d.notes);
+    pdf.gap(4);
   }
 
-  // divulgação discreta da calculadora, no pé da página
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const credit = "Orçamento feito com a calculadora Nosso Projeto 3D";
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(150, 156, 165);
-  doc.text(credit, pageWidth / 2, pageHeight - 12, { align: "center" });
-  doc.link((pageWidth - doc.getTextWidth(credit)) / 2, pageHeight - 15, doc.getTextWidth(credit), 4.5,
-    { url: "https://nossoprojeto3d.github.io/calc-3d/" });
+  pdf.priceCard("Preço final", r.finalPrice);
+  pdf.footer(storeSignature(settings));
 
   const who = d.clientName ? `-${slugify(d.clientName)}` : "";
-  doc.save(`orcamento-${slugify(r.jobName)}${who}-${r.calculatedAt.toISOString().slice(0, 10)}.pdf`);
+  pdf.doc.save(`orcamento-${slugify(r.jobName)}${who}-${r.calculatedAt.toISOString().slice(0, 10)}.pdf`);
 }
