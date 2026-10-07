@@ -85,7 +85,7 @@ centavos, como na V3.
 
 ## Orçamento completo x orçamento para o cliente
 
-No painel do orçamento, "Compartilhar orçamento para:" escolhe o que WhatsApp, Copiar e PDF enviam:
+No painel do orçamento, "Compartilhar orçamento com:" escolhe o que WhatsApp, Copiar e PDF enviam:
 
 - **Cliente** (padrão): só o preço final, com peça, material, prazo de
   entrega, validade, observações e a assinatura da loja (nome, contatos e logo

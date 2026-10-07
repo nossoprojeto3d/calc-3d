@@ -66,4 +66,4 @@ Usado pelo `/conferir-site`, no celular e no desktop (automatizado em `tests/e2e
 7. WhatsApp: confira o `href` e os emojis no texto com `evaluate_script`, sem clicar.
 8. PDF: clicar gera o arquivo.
 9. Em 375px, nenhum campo dá zoom e não há rolagem horizontal.
-10. "Compartilhar orçamento para: Cliente" (padrão) não mostra custos, lucro nem taxas; leva nome do cliente, prazo, validade, observações e os dados/logo da loja. "Mim (completo)" é igual à V3.
+10. "Compartilhar orçamento com: Cliente" (padrão) não mostra custos, lucro nem taxas; leva nome do cliente, prazo, validade, observações e os dados/logo da loja. "Mim (completo)" é igual à V3.

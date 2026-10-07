@@ -177,7 +177,7 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
 
           <div className="mt-5 flex flex-col gap-2.5">
             <div className="flex flex-col gap-2">
-              <span id="compartilhar-label" className="px-1 text-[14px] font-medium text-ink-2">Compartilhar orçamento para:</span>
+              <span id="compartilhar-label" className="px-1 text-[14px] font-medium text-ink-2">{forClient ? "Compartilhar orçamento com:" : "Compartilhar orçamento para:"}</span>
               <div className="grid grid-cols-2 gap-1 rounded-full bg-surface-2 p-1" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}
                 role="radiogroup" aria-labelledby="compartilhar-label">
                 {(["cliente", "completo"] as const).map((v) => (
