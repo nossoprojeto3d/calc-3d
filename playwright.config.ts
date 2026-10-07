@@ -12,6 +12,9 @@ export default defineConfig({
     locale: "pt-BR",
     acceptDownloads: true,
     screenshot: "only-on-failure",
+    // sem animações nem rolagem suave (o app respeita "reduzir movimento"): o
+    // teste não toca num campo que ainda está deslizando até o lugar
+    reducedMotion: "reduce",
   },
   projects: [
     { name: "iPhone Safari", use: { ...devices["iPhone 15"] } },

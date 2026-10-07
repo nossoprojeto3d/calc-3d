@@ -67,10 +67,16 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
   };
   useLayoutEffect(() => { fit(); scheduleRefit(); });
   useEffect(() => {
-    const ro = new ResizeObserver(() => { fit(); scheduleRefit(); });
+    // ajusta no próximo quadro: mudar o layout dentro do próprio observador
+    // gera o aviso "ResizeObserver loop" no Safari
+    let frame = 0;
+    const ro = new ResizeObserver(() => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => { fit(); scheduleRefit(); });
+    });
     if (scrollRef.current?.firstElementChild) ro.observe(scrollRef.current.firstElementChild);
     if (sectionRef.current?.parentElement) ro.observe(sectionRef.current.parentElement);
-    return () => { ro.disconnect(); window.clearTimeout(refitTimer.current); };
+    return () => { ro.disconnect(); cancelAnimationFrame(frame); window.clearTimeout(refitTimer.current); };
   }, []);
 
   const copy = async () => {

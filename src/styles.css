@@ -133,6 +133,9 @@
     text-size-adjust: 100%;
     scroll-behavior: smooth;
     scroll-padding-top: 88px;
+    /* a barra fixa do preço (celular) fica no rodapé: o que a tela rolar
+       até (foco, "Preencher", erro) para acima dela, nunca escondido atrás */
+    scroll-padding-bottom: calc(var(--dock-h) + 16px);
   }
   @media (prefers-reduced-motion: reduce) {
     html { scroll-behavior: auto; }
@@ -148,6 +151,7 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
     overscroll-behavior-y: none;
+    padding-bottom: var(--dock-h);
   }
   ::selection { background: var(--accent-soft); color: var(--ink); }
   button, a, [role="button"], label { -webkit-tap-highlight-color: transparent; }
@@ -510,9 +514,15 @@ body #np3d-cookies button[data-acao="aceitar"] {
 }
 body #np3d-cookies button:focus-visible { outline-color: var(--accent); }
 
+/* Reduzir movimento: sem transições nem animações. "0s" e não um valor
+   mínimo: com uma duração mínima, toda mudança de tamanho vira uma
+   transição e a medição da coluna do orçamento lê o tamanho antigo
+   (a coluna ficava alternando entre dois níveis de compactação). */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
-    animation-duration: 0.01ms !important;
-    transition-duration: 0.01ms !important;
+    animation-duration: 0s !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0s !important;
+    transition-delay: 0s !important;
   }
 }

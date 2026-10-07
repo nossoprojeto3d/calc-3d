@@ -260,7 +260,7 @@ export default function App() {
           {/* ===================== FORMULÁRIO (a coluna que rola) ===================== */}
           <div className="flex min-w-0 flex-col gap-4">
             {/* abertura */}
-            <div className="flex flex-col gap-5 pb-2 lg:pt-6">
+            <div id="abertura" className="flex flex-col gap-5 pb-2 lg:pt-6">
               <div className="max-w-[28ch]">
                 <h1 className="text-[34px] font-semibold leading-[1.05] tracking-[-0.035em] sm:text-[44px]">
                   Quanto cobrar pela sua peça<span className="text-accent">?</span>
@@ -502,7 +502,17 @@ function PriceDock({ calc, onCalculate }: { calc: ReturnType<typeof useCalculato
   const [panelVisible, setPanelVisible] = useState(false);
   const [typing, setTyping] = useState(false);
   const missing = progress.filter((p) => !p.done);
-  const hidden = panelVisible || typing;
+  // Na primeira tela a barra não aparece (cobriria o primeiro campo, a
+  // impressora): ela entra quando a abertura sai da tela.
+  const [heroVisible, setHeroVisible] = useState(true);
+  useEffect(() => {
+    const hero = document.getElementById("abertura");
+    if (!hero || !("IntersectionObserver" in window)) return;
+    const io = new IntersectionObserver(([e]) => setHeroVisible(e.isIntersecting), { rootMargin: "-60px 0px 0px 0px" });
+    io.observe(hero);
+    return () => io.disconnect();
+  }, []);
+  const hidden = panelVisible || typing || heroVisible;
 
   useEffect(() => {
     const panel = document.getElementById("orcamento");
