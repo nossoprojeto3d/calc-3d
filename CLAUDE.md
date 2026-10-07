@@ -1,7 +1,7 @@
 # Calculadora 3D (calc-3d)
 
 Calculadora de preço para impressão 3D, publicada no GitHub Pages: https://nossoprojeto3d.github.io/calc-3d/
-Todo push na `main` vai direto pro ar. HTML, CSS e JS puros, sem build e sem dependências. Instalável como PWA.
+Todo push na `main` vai direto pro ar. Hoje é HTML, CSS e JS puros, sem build e sem dependências; libs e frameworks gratuitos podem entrar. Instalável como PWA.
 
 O README.md explica a fórmula de preço e onde ficam os dados. Leia-o antes de mexer no cálculo.
 
