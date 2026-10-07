@@ -9,7 +9,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, LazyMotion, domAnimation, m, useReducedMotion } from "motion/react";
 import {
   ArrowRight, ArrowUpRight, Briefcase, ClockCounterClockwise, Cylinder, DownloadSimple, GearSix, InstagramLogo,
-  Play, Printer, Timer, TrendUp, X,
+  CaretDown, Play, Printer, Timer, TrendUp, UserCircle, X,
 } from "@phosphor-icons/react";
 import { CUSTOM_PRINTER_ID } from "./lib/data";
 import { brl } from "./lib/calc";
@@ -362,19 +362,22 @@ export default function App() {
                 <Switch id="roundToggle" checked={v.roundToggle === true} onChange={(x) => set("roundToggle", x)} label="Arredondar para ,99" />
               </label>
 
-              <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-                <button id="calcBtn" type="button" className="btn btn-primary" onClick={onCalculate}>
-                  Calcular preço
-                  <span className="btn-icon-orb"><ArrowRight size={17} weight="bold" aria-hidden="true" /></span>
-                </button>
-                <button type="button" className="btn btn-secondary" onClick={onClear}>Novo orçamento</button>
-              </div>
             </Section>
+
+            <ClientSection calc={calc} />
+
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
+              <button id="calcBtn" type="button" className="btn btn-primary" onClick={onCalculate}>
+                Calcular preço
+                <span className="btn-icon-orb"><ArrowRight size={17} weight="bold" aria-hidden="true" /></span>
+              </button>
+              <button type="button" className="btn btn-secondary" onClick={onClear}>Novo orçamento</button>
+            </div>
           </div>
 
           {/* ===================== ORÇAMENTO ===================== */}
           <aside className="min-w-0 lg:sticky lg:top-[84px] lg:self-start">
-            <ResultPanel calc={calc} onJumpTo={jumpTo} />
+            <ResultPanel calc={calc} onJumpTo={jumpTo} onOpenSettings={() => setSettingsOpen(true)} />
             <p className="hint mt-3 px-2 text-center">Tudo fica salvo só no seu aparelho. Nada é enviado pra lugar nenhum.</p>
           </aside>
         </div>
@@ -410,6 +413,62 @@ export default function App() {
       <IosInstallDialog open={install.iosOpen} onOpenChange={install.setIosOpen} />
       <QuickToast toast={calc.toast} />
     </LazyMotion>
+  );
+}
+
+// ---------------------------------------------------------
+// DADOS PARA O CLIENTE (opcional, recolhido): vão só no orçamento do
+// cliente, não entram na conta. Abre sozinho se já houver algo preenchido.
+// ---------------------------------------------------------
+function ClientSection({ calc }: { calc: ReturnType<typeof useCalculator> }) {
+  const { state, set } = calc;
+  const v = state.values;
+  const reduce = useReducedMotion();
+  const filled = ["clientName", "deliveryTime", "notes"].some((id) => String(v[id] ?? "").trim() !== "");
+  const [open, setOpen] = useState(filled);
+  useEffect(() => { if (filled) setOpen(true); }, [filled]);
+  const str = (id: string) => String(v[id] ?? "");
+
+  return (
+    <section id="secao-cliente" className="bezel" aria-labelledby="secao-cliente-title">
+      <div className="bezel-core">
+        <button type="button" onClick={() => setOpen((o) => !o)} aria-expanded={open} aria-controls="secao-cliente-campos"
+          className="flex min-h-[64px] w-full items-center gap-3 px-4 text-left sm:px-6">
+          <span className="inline-flex size-9 shrink-0 items-center justify-center rounded-xl bg-surface-2 text-ink-2"
+            style={{ boxShadow: "inset 0 0 0 1px var(--line)" }} aria-hidden="true">
+            <UserCircle size={19} />
+          </span>
+          <span className="flex-1">
+            <span id="secao-cliente-title" className="block text-[17px] font-semibold tracking-[-0.01em]">Dados para o cliente</span>
+            <span className="block text-[13px] text-ink-3">Opcional. Só no orçamento do cliente.</span>
+          </span>
+          <CaretDown size={18} className={`shrink-0 text-ink-3 transition-transform duration-300 ${open ? "rotate-180" : ""}`} aria-hidden="true" />
+        </button>
+        <AnimatePresence initial={false}>
+          {open && (
+            <m.div id="secao-cliente-campos" key="campos" initial={reduce ? false : { height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }}
+              exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }} transition={{ duration: 0.32, ease: [0.32, 0.72, 0, 1] }} className="overflow-hidden">
+              <div className="flex flex-col gap-5 border-t border-line px-4 pb-5 pt-5 sm:px-6 sm:pb-6">
+                <InputField id="clientName" kind="text" label="Para quem é" placeholder="Ex: Maria" autoComplete="off"
+                  value={str("clientName")} onChange={(x) => set("clientName", x)} />
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <InputField id="deliveryTime" kind="text" label="Prazo de entrega" placeholder="Ex: 5 dias úteis"
+                    value={str("deliveryTime")} onChange={(x) => set("deliveryTime", x)} />
+                  <InputField id="validityDays" kind="numeric" label="Validade do orçamento" suffix="dias" placeholder="7"
+                    value={str("validityDays")} onChange={(x) => set("validityDays", x)} hint="Vazio = sem validade." />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label htmlFor="notes" className="label">Observações</label>
+                  <textarea id="notes" rows={3} maxLength={500} placeholder="Ex: cor preta, acabamento lixado, pagamento no Pix."
+                    value={str("notes")} onChange={(e) => set("notes", e.target.value)}
+                    className="field-box min-h-[96px] resize-y py-3 text-[16px] leading-[1.45] text-ink outline-none" />
+                </div>
+              </div>
+            </m.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </section>
   );
 }
 

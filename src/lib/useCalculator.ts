@@ -11,14 +11,15 @@ import {
 } from "./calc";
 import { formReducer, initialFormState, type SavedFormState } from "./form";
 import {
-  KEYS, budgetEntry, loadCustomPrinter, loadHistory, loadMode, loadStoreSettings, newBudgetId, remove,
-  saveCustomPrinter, saveStoreSettings, storeHistory, track, write, type SavedBudget,
+  KEYS, budgetEntry, loadCustomPrinter, loadHistory, loadMode, loadStoreLogo, loadStoreSettings, newBudgetId, remove,
+  saveCustomPrinter, saveStoreLogo, saveStoreSettings, storeHistory, track, write, type SavedBudget,
 } from "./storage";
 
 export type Toast = { text: string; at: number } | null;
 
 export function useCalculator() {
   const [settings, setSettings] = useState<StoreSettings>(() => loadStoreSettings());
+  const [storeLogo, setStoreLogoState] = useState<string | null>(() => loadStoreLogo());
   const [state, dispatch] = useReducer(formReducer, undefined, () =>
     initialFormState(loadStoreSettings(), loadMode(), loadCustomPrinter()));
   const [history, setHistory] = useState<SavedBudget[]>(() => loadHistory());
@@ -173,7 +174,16 @@ export function useCalculator() {
     }
   }, []);
 
+  /** Salva (ou remove) o logo da loja. Devolve false se o aparelho não tiver espaço. */
+  const updateStoreLogo = useCallback((dataUrl: string | null) => {
+    saveStoreLogo(dataUrl);
+    const saved = loadStoreLogo();
+    setStoreLogoState(saved);
+    return dataUrl === null || saved === dataUrl;
+  }, []);
+
   return {
+    storeLogo, updateStoreLogo,
     state, resolved, validation, result, progress, settings, history, budgetId, toast, clearedBackup,
     set, toggle, setMode, submit, clearAll, fillExample, updateSettings,
     setShopeeTier: (tier: typeof state.shopeeTier) => dispatch({ type: "shopeeTier", tier }),

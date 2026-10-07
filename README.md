@@ -83,10 +83,20 @@ centavos, como na V3.
   cd ../calc-3d-v3 && python3 -m http.server 8765
   ```
 
+## Orçamento completo x orçamento para o cliente
+
+No painel do orçamento, um seletor escolhe o que WhatsApp, Copiar e PDF enviam:
+
+- **Para o cliente** (padrão): só o preço final, com peça, material, prazo de
+  entrega, validade, observações e a assinatura da loja (nome, contatos e logo
+  no PDF). Nunca mostra custos, lucro ou taxas. Os dados do cliente ficam na
+  seção recolhida "Dados para o cliente".
+- **Completo**: todos os custos e o lucro, igual à V3.
+
 ## O que fica salvo no aparelho (localStorage)
 
 Nada é enviado para servidor nenhum. Ficam salvos no navegador de quem usa:
-os orçamentos em "Meus orçamentos", as Configurações da loja, o tema, o modo
+os orçamentos em "Meus orçamentos", as Configurações da loja (e o logo), o tema, o modo
 (Básico/Profissional) e a potência da "Outra impressora". As chaves são as mesmas
 da V3, então quem já usava não perde nada. Cada vez que a página é aberta, a
 calculadora começa com um cálculo novo.

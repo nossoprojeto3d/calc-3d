@@ -16,6 +16,8 @@ export const KEYS = {
   installDismissed: "np3d_install_banner_dismissed",
   freePopup: "np3d_free_popup_last_shown",
   legacyDraft: "np3d_draft",
+  storeLogo: "np3d_store_logo",
+  exportMode: "np3d_export_mode",
 } as const;
 
 export function read(key: string): string | null {
@@ -46,6 +48,34 @@ export function saveCustomPrinter(power: string, price: string) {
 }
 
 // ---------------------------------------------------------
+// LOGO DA LOJA (vai no PDF do cliente). Fica só no aparelho, como imagem
+// reduzida (no máximo 480px) pra não pesar no armazenamento.
+// ---------------------------------------------------------
+export const loadStoreLogo = () => read(KEYS.storeLogo);
+export function saveStoreLogo(dataUrl: string | null) {
+  if (dataUrl) write(KEYS.storeLogo, dataUrl); else remove(KEYS.storeLogo);
+}
+
+export function readLogoFile(file: File, maxSide = 480): Promise<string> {
+  return new Promise((resolve, reject) => {
+    if (!file.type.startsWith("image/")) { reject(new Error("Não é uma imagem.")); return; }
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxSide / Math.max(img.naturalWidth, img.naturalHeight));
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
+      canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
+      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      resolve(canvas.toDataURL("image/png"));
+    };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Não foi possível ler a imagem.")); };
+    img.src = url;
+  });
+}
+
+// ---------------------------------------------------------
 // MEUS ORÇAMENTOS (até 60, mais recente primeiro)
 // ---------------------------------------------------------
 export const HISTORY_LIMIT = 60;
@@ -60,6 +90,8 @@ export interface SavedBudget {
   time: string;
   grams: number;
   proMode: boolean;
+  /** nome do cliente, se informado */
+  client?: string;
   state: SavedFormState;
 }
 
@@ -84,6 +116,7 @@ export function budgetEntry(id: string, r: CalcResult, state: SavedFormState): S
     time: formatPrintTime(r.hours, r.minutes),
     grams: r.grams,
     proMode: r.proMode,
+    client: String(state.values.clientName ?? "").trim() || undefined,
     state,
   };
 }

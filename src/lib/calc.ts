@@ -28,6 +28,8 @@ export interface StoreSettings {
   hourlyRate: string; defaultPrinter: string;
   storeName: string; city: string; whatsapp: string; instagram: string;
   roundDefault: boolean;
+  /** validade padrão do orçamento do cliente, em dias ("" = sem validade) */
+  validityDays: string;
 }
 
 export const defaultStoreSettings = (): StoreSettings => ({
@@ -35,6 +37,7 @@ export const defaultStoreSettings = (): StoreSettings => ({
   hourlyRate: "", defaultPrinter: "",
   storeName: "", city: "", whatsapp: "", instagram: "",
   roundDefault: true,
+  validityDays: "7",
 });
 
 /** "wear" -> "proWear" (mesmo id da V3) */
@@ -52,6 +55,8 @@ export function emptyValues(): FormValues {
     proMeliAdType: "premium",
     proShopeeCustomPct: "", proShopeeCustomFixed: "",
     proMeliCustomPct: "", proMeliCustomFixed: "",
+    // dados do orçamento para o cliente (não entram na conta)
+    clientName: "", deliveryTime: "", validityDays: "", notes: "",
   };
   PRO_COSTS.forEach((c) => { v[proToggleId(c.id)] = false; v[proFieldId(c.id)] = ""; });
   return v;

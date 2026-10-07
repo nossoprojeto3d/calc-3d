@@ -1,6 +1,7 @@
 /* Configurações da loja (padrões da calculadora e assinatura do orçamento) + tema e instalação. */
-import { useEffect, useState } from "react";
-import { DownloadSimple, Monitor, Moon, Sun } from "@phosphor-icons/react";
+import { useEffect, useRef, useState } from "react";
+import { DownloadSimple, ImageSquare, Monitor, Moon, Sun, Trash } from "@phosphor-icons/react";
+import { readLogoFile } from "../lib/storage";
 import { PRINTERS } from "../lib/data";
 import { defaultStoreSettings, sanitizeDecimal, type StoreSettings } from "../lib/calc";
 import type { Calculator } from "../lib/useCalculator";
@@ -13,6 +14,21 @@ export function SettingsSheet({ calc, open, onOpenChange, theme, onTheme, canIns
 }) {
   const [draft, setDraft] = useState<StoreSettings>(calc.settings);
   useEffect(() => { if (open) setDraft(calc.settings); }, [open, calc.settings]);
+  const fileRef = useRef<HTMLInputElement>(null);
+  const [logoError, setLogoError] = useState<string | null>(null);
+
+  // o logo é salvo na hora (não espera o "Salvar"), como uma foto de perfil
+  const onLogo = async (file: File | undefined) => {
+    setLogoError(null);
+    if (!file) return;
+    try {
+      const dataUrl = await readLogoFile(file);
+      if (!calc.updateStoreLogo(dataUrl)) setLogoError("Não coube no armazenamento do aparelho. Tente uma imagem menor.");
+    } catch {
+      setLogoError("Não foi possível ler essa imagem. Use PNG ou JPG.");
+    }
+    if (fileRef.current) fileRef.current.value = "";
+  };
 
   const set = (key: keyof StoreSettings, value: string | boolean) => setDraft((d) => ({ ...d, [key]: value }));
   const dec = (key: keyof StoreSettings) => (v: string) => set(key, sanitizeDecimal(v));
@@ -83,6 +99,9 @@ export function SettingsSheet({ calc, open, onOpenChange, theme, onTheme, canIns
               hint="Calcula a mão de obra." />
             <InputField id="settingsFailurePct" label="Margem de falha" suffix="%" placeholder="10" value={draft.failurePct} onChange={dec("failurePct")}
               hint="Quando ligada no Profissional." />
+            <InputField id="settingsValidityDays" kind="numeric" label="Validade do orçamento" suffix="dias" placeholder="7"
+              value={draft.validityDays} onChange={(x) => set("validityDays", x.replace(/[^\d]/g, "").slice(0, 3))}
+              hint="Vai no orçamento do cliente. Vazio = sem validade." />
           </div>
           <label className="flex min-h-[52px] cursor-pointer items-center gap-3">
             <span className="flex-1 text-[15px]">{draft.roundDefault ? "Arredondar para ,99 acima" : "Sem arredondamento"}</span>
@@ -93,8 +112,31 @@ export function SettingsSheet({ calc, open, onOpenChange, theme, onTheme, canIns
         <section className="flex flex-col gap-4">
           <div>
             <h3 className="text-[15px] font-semibold">Sua loja no orçamento</h3>
-            <p className="hint mt-1">Aparece no fim do orçamento do WhatsApp e do PDF.</p>
+            <p className="hint mt-1">Aparece no orçamento do WhatsApp e do PDF. O logo vai no PDF do cliente.</p>
           </div>
+          <div className="flex items-center gap-3 rounded-2xl bg-surface-2 p-3" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
+            <span className="flex size-16 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
+              {calc.storeLogo
+                ? <img src={calc.storeLogo} alt="Logo da sua loja" className="max-h-full max-w-full object-contain p-1.5" />
+                : <ImageSquare size={24} className="text-ink-3" aria-hidden="true" />}
+            </span>
+            <div className="flex min-w-0 flex-1 flex-col items-start gap-1">
+              <span className="text-[15px] font-medium">Logo da loja</span>
+              <div className="flex flex-wrap gap-2">
+                <button type="button" className="btn btn-secondary min-h-[40px] px-4 text-[14px]" onClick={() => fileRef.current?.click()}>
+                  {calc.storeLogo ? "Trocar" : "Enviar imagem"}
+                </button>
+                {calc.storeLogo && (
+                  <button type="button" className="icon-btn hover:text-danger" aria-label="Remover logo" onClick={() => calc.updateStoreLogo(null)}>
+                    <Trash size={18} />
+                  </button>
+                )}
+              </div>
+              <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp" className="sr-only" aria-label="Escolher logo da loja"
+                onChange={(e) => onLogo(e.target.files?.[0])} />
+            </div>
+          </div>
+          {logoError && <p className="error-text" role="alert">{logoError}</p>}
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <InputField id="settingsStoreName" kind="text" label="Nome da loja" placeholder="Ex: Ateliê Camadas" value={draft.storeName} onChange={(v) => set("storeName", v)} />
             <InputField id="settingsCity" kind="text" label="Cidade" placeholder="Ex: Goiânia/GO" value={draft.city} onChange={(v) => set("city", v)} />

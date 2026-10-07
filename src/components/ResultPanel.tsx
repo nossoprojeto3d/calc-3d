@@ -1,10 +1,11 @@
 /* Painel do orçamento: preço ao vivo, composição, ações (WhatsApp, copiar, PDF, salvar). */
 import { useEffect, useState } from "react";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
-import { BookmarkSimple, Check, CheckCircle, Copy, FilePdf, WhatsappLogo } from "@phosphor-icons/react";
+import { BookmarkSimple, Check, CheckCircle, Copy, FilePdf, Storefront, WhatsappLogo } from "@phosphor-icons/react";
 import { brl, buildWhatsAppText, formatPrintTime, whatsAppHref, type CalcResult } from "../lib/calc";
-import { exportPdf } from "../lib/pdf";
-import { track } from "../lib/storage";
+import { buildClientWhatsAppText, clientWhatsAppHref, getClientDetails, hasStoreBranding } from "../lib/cliente";
+import { exportClientPdf, exportPdf } from "../lib/pdf";
+import { KEYS, read, track, write } from "../lib/storage";
 import type { Calculator } from "../lib/useCalculator";
 import { AnimatedPrice } from "./ui";
 
@@ -25,18 +26,25 @@ function buildSlices(r: CalcResult) {
   return slices.filter((s) => s.value > 0);
 }
 
-export function ResultPanel({ calc, onJumpTo }: { calc: Calculator; onJumpTo: (id: string) => void }) {
-  const { result: r, progress, settings, state, budgetId, saveBudget } = calc;
+type ExportVersion = "cliente" | "completo";
+
+export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculator; onJumpTo: (id: string) => void; onOpenSettings: () => void }) {
+  const { result: r, progress, settings, state, budgetId, saveBudget, storeLogo } = calc;
   const reduce = useReducedMotion();
   const [copied, setCopied] = useState(false);
   const [pdfState, setPdfState] = useState<"idle" | "busy" | "error">("idle");
+  // versão do orçamento pra exportar: para o cliente (padrão) ou completa; lembra a última escolha
+  const [version, setVersionState] = useState<ExportVersion>(() => (read(KEYS.exportMode) === "completo" ? "completo" : "cliente"));
+  const setVersion = (v: ExportVersion) => { setVersionState(v); write(KEYS.exportMode, v); };
+  const forClient = version === "cliente";
+  const details = r ? getClientDetails(state.values, r.calculatedAt) : null;
 
   useEffect(() => { setPdfState((s) => (s === "error" ? "idle" : s)); }, [r]);
 
   const copy = async () => {
     if (!r) return;
-    track("orcamento_copiado", { modo: state.mode });
-    const text = buildWhatsAppText(r, settings);
+    track("orcamento_copiado", { modo: state.mode, versao: version });
+    const text = forClient ? buildClientWhatsAppText(r, details!, settings) : buildWhatsAppText(r, settings);
     try {
       await navigator.clipboard.writeText(text);
     } catch {
@@ -58,8 +66,9 @@ export function ResultPanel({ calc, onJumpTo }: { calc: Calculator; onJumpTo: (i
     if (!r) return;
     setPdfState("busy");
     try {
-      await exportPdf(r, settings);
-      track("pdf_exportado", { modo: state.mode });
+      if (forClient) await exportClientPdf(r, details!, settings, storeLogo);
+      else await exportPdf(r, settings);
+      track("pdf_exportado", { modo: state.mode, versao: version });
       saveBudget({ silent: true });
       setPdfState("idle");
     } catch {
@@ -167,16 +176,39 @@ export function ResultPanel({ calc, onJumpTo }: { calc: Calculator; onJumpTo: (i
           </AnimatePresence>
 
           <div className="mt-5 flex flex-col gap-2.5">
+            <div className="grid grid-cols-2 gap-1 rounded-full bg-surface-2 p-1" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}
+              role="radiogroup" aria-label="Versão do orçamento">
+              {(["cliente", "completo"] as const).map((v) => (
+                <button key={v} type="button" role="radio" aria-checked={version === v} onClick={() => setVersion(v)}
+                  className={`min-h-[40px] rounded-full text-[14px] font-medium transition-colors ${version === v ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink"}`}
+                  style={version === v ? { boxShadow: "inset 0 0 0 1px var(--line-strong)" } : undefined}>
+                  {v === "cliente" ? "Para o cliente" : "Completo"}
+                </button>
+              ))}
+            </div>
+            <p className="hint -mt-0.5 px-1">
+              {forClient
+                ? "Só o preço, sem seus custos e lucro, com os dados da sua loja."
+                : "Com todos os custos e o lucro. Pra você conferir ou guardar."}
+            </p>
+            {forClient && !hasStoreBranding(settings, storeLogo) && (
+              <button type="button" onClick={onOpenSettings}
+                className="flex items-center gap-2.5 rounded-xl bg-accent-soft px-3 py-2.5 text-left text-[13.5px] text-ink-2 hover:text-ink">
+                <Storefront size={18} className="shrink-0 text-accent-text" aria-hidden="true" />
+                <span className="flex-1">Coloque o nome e o logo da sua loja no orçamento.</span>
+                <span className="font-semibold text-accent-text">Configurar</span>
+              </button>
+            )}
             <a
               className="btn btn-primary w-full"
-              href={r ? whatsAppHref(r, settings) : undefined}
+              href={r ? (forClient ? clientWhatsAppHref(r, details!, settings) : whatsAppHref(r, settings)) : undefined}
               target="_blank"
               rel="noopener noreferrer"
               aria-disabled={!r}
               onClick={() => saveBudget({ silent: true })}
             >
               <WhatsappLogo size={20} weight="fill" aria-hidden="true" />
-              Enviar no WhatsApp
+              {forClient ? "Enviar ao cliente" : "Enviar no WhatsApp"}
             </a>
             <div className="grid grid-cols-3 gap-2">
               <button type="button" className="btn btn-secondary min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!r} onClick={copy}>

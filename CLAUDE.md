@@ -19,10 +19,11 @@ O README.md explica a fórmula de preço e onde ficam os dados. Leia-o antes de 
 
 - `src/lib/data.ts`: dados (`PRINTERS`, `MATERIALS`, `PRO_COSTS`, `SHOPEE_DEFAULT_TIERS`, `MELI_DEFAULT_SETTINGS`).
 - `src/lib/calc.ts`: motor de cálculo, sem tela (fórmulas, validação, texto do WhatsApp).
+- `src/lib/cliente.ts`: orçamento para o cliente (texto do WhatsApp sem custos/lucro, com os dados da loja).
 - `src/lib/form.ts`: comportamentos automáticos do formulário (preço/kg do material, desgaste, faixas da Shopee/ML).
 - `src/lib/useCalculator.ts`: liga o formulário, as configurações, o resultado e "Meus orçamentos".
 - `src/lib/storage.ts`: localStorage (mesmas chaves da V3) e eventos de medição.
-- `src/lib/pdf.ts`: PDF do orçamento.
+- `src/lib/pdf.ts`: PDFs do orçamento (completo e para o cliente, com o logo da loja).
 - `src/App.tsx` e `src/components/`: telas. `src/styles.css`: identidade visual (tokens de cor, tipografia, componentes).
 - `index.html`: casca da página. A Content Security Policy está em `vite.config.ts` e entra só no build.
 - `public/`: arquivos copiados sem mudança (`assets/`, `medicao.js`, `tema.js`, `sw-limpeza.js`).
@@ -36,6 +37,7 @@ O README.md explica a fórmula de preço e onde ficam os dados. Leia-o antes de 
 - As taxas da Shopee e do Mercado Livre mudam com o tempo. Antes de alterar, confirme as regras atuais no site oficial e cite a fonte.
 - O jsPDF vem do npm e só carrega no primeiro clique em "PDF" (import dinâmico).
 - Se adicionar um script ou domínio externo, atualize a CSP em `vite.config.ts`.
+- O orçamento para o cliente nunca pode mostrar custos, lucro, taxas ou valor-hora (o teste e2e 10 confere).
 - Texto digitado sempre entra como texto no React (nunca `dangerouslySetInnerHTML`). Mantenha isso.
 - Os campos precisam ter fonte de pelo menos 16px, para o iPhone não dar zoom automático.
 - Emojis na mensagem do WhatsApp já quebraram. Teste a codificação do texto ao mexer nela (o teste e2e "WhatsApp" confere).
@@ -64,3 +66,4 @@ Usado pelo `/conferir-site`, no celular e no desktop (automatizado em `tests/e2e
 7. WhatsApp: confira o `href` e os emojis no texto com `evaluate_script`, sem clicar.
 8. PDF: clicar gera o arquivo.
 9. Em 375px, nenhum campo dá zoom e não há rolagem horizontal.
+10. "Para o cliente" (padrão) não mostra custos, lucro nem taxas; leva nome do cliente, prazo, validade, observações e os dados/logo da loja. "Completo" é igual à V3.

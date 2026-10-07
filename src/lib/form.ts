@@ -82,6 +82,7 @@ function applySettings(state: FormState, settings: StoreSettings, onlyIfEmpty: b
   setIfAllowed("kwhPrice", settings.kwhPrice);
   setIfAllowed("marginPct", settings.marginPct);
   setIfAllowed(proFieldId("failure"), settings.failurePct);
+  setIfAllowed("validityDays", settings.validityDays);
 
   // impressora padrão: só ao abrir e em "Novo orçamento", nunca no meio de um
   if (!onlyIfEmpty && settings.defaultPrinter && PRINTERS.some((p) => p.id === settings.defaultPrinter)) {
@@ -99,6 +100,7 @@ function setField(state: FormState, id: string, raw: string | boolean): FormStat
     if (DECIMAL_FIELDS.has(id)) value = sanitizeDecimal(value);
     else if (id === "printHours") value = sanitizeInteger(value);
     else if (id === "printMinutes") value = sanitizeInteger(value, 59);
+    else if (id === "validityDays") value = sanitizeInteger(value, 365);
   }
   values[id] = value;
 

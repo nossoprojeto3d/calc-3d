@@ -13,7 +13,7 @@ export function HistorySheet({ calc, open, onOpenChange, onOpened }: {
   const [query, setQuery] = useState("");
   const q = query.trim().toLowerCase();
   const items = q
-    ? history.filter((b) => [b.name, b.materialName, b.printerName].join(" ").toLowerCase().includes(q))
+    ? history.filter((b) => [b.name, b.materialName, b.printerName, b.client ?? ""].join(" ").toLowerCase().includes(q))
     : history;
 
   const close = (o: boolean) => {
@@ -61,7 +61,7 @@ export function HistorySheet({ calc, open, onOpenChange, onOpened }: {
               <button type="button" className="flex min-w-0 flex-1 items-center gap-3 rounded-2xl py-3 pl-4 pr-2 text-left hover:bg-surface-3"
                 onClick={() => { calc.openBudget(b.id); close(false); onOpened(); }}>
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[15.5px] font-medium">{b.name}</span>
+                  <span className="block truncate text-[15.5px] font-medium">{b.name}{b.client && <span className="font-normal text-ink-3"> · {b.client}</span>}</span>
                   <span className="block truncate text-[13px] text-ink-3">
                     {b.materialName} · {b.time} · {Number(b.grams).toLocaleString("pt-BR")} g · {formatSavedDate(b.savedAt)}
                   </span>

@@ -169,9 +169,10 @@ test("6b. abre orçamentos salvos pela V3", async ({ page }) => {
   await expect(page.locator("#proWear")).toHaveValue("0,42");
 });
 
-test("7. WhatsApp: link e emojis no texto", async ({ page }) => {
+test("7. WhatsApp: link e emojis no texto (versão completa)", async ({ page }) => {
   await page.goto("./");
   await fillBasic(page);
+  await page.getByRole("radio", { name: "Completo" }).click();
   const href = await page.getByRole("link", { name: "Enviar no WhatsApp" }).getAttribute("href");
   expect(href).toMatch(/^https:\/\/api\.whatsapp\.com\/send\?text=/);
   // o real usa espaço não separável depois do "R$", como na V3
@@ -216,4 +217,46 @@ test("validação: Calcular mostra o que falta e leva até o campo", async ({ pa
   await expect(page.locator("#materialSelect")).toBeInViewport();
   await page.fill("#kwhPrice", "0,85");
   await expect(page.getByText("Informe o valor do kWh da sua energia.")).toHaveCount(0);
+});
+
+test("10. orçamento para o cliente: sem custos e com os dados da loja", async ({ page }) => {
+  await page.goto("./");
+  await fillBasic(page);
+  // começa na versão do cliente, com lembrete pra configurar a loja
+  await expect(page.getByRole("radio", { name: "Para o cliente" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByText("Coloque o nome e o logo da sua loja")).toBeVisible();
+
+  await page.getByRole("button", { name: /Dados para o cliente/ }).click();
+  await page.fill("#clientName", "Maria <Souza>");
+  await page.fill("#deliveryTime", "5 dias úteis");
+  await expect(page.locator("#validityDays")).toHaveValue("7");
+  await page.fill("#notes", "Cor preta 🖤");
+
+  const href = await page.getByRole("link", { name: "Enviar ao cliente" }).getAttribute("href");
+  const text = decodeURIComponent(href!.split("text=")[1]).replace(/\u00a0/g, " ");
+  expect(text).toContain("Olá, Maria <Souza>! Segue o orçamento 😊");
+  expect(text).toContain("🧾 *Peça personalizada*");
+  expect(text).toContain("🧵 Material: PLA Matte");
+  expect(text).toContain("📅 Prazo: 5 dias úteis");
+  expect(text).toContain("💰 *Valor: R$ 21,99*");
+  expect(text).toMatch(/⏳ Válido até \d{2}\/\d{2}\/\d{4}/);
+  expect(text).toContain("📝 Cor preta 🖤");
+  for (const internal of ["Custo", "Lucro", "Energia", "Filamento", "Impressora"]) expect(text).not.toContain(internal);
+  expect(text).not.toContain("\uFFFD");
+
+  // loja configurada: o lembrete some e a assinatura entra
+  await page.getByRole("button", { name: "Configurar" }).click();
+  await page.getByLabel("Escolher logo da loja").setInputFiles("public/assets/logo.png");
+  await expect(page.getByRole("img", { name: "Logo da sua loja" })).toBeVisible();
+  await page.fill("#settingsStoreName", "Ateliê Camadas");
+  await page.getByRole("dialog").getByRole("button", { name: "Salvar", exact: true }).click();
+  await expect(page.getByText("Coloque o nome e o logo da sua loja")).toHaveCount(0);
+  const href2 = await page.getByRole("link", { name: "Enviar ao cliente" }).getAttribute("href");
+  expect(decodeURIComponent(href2!)).toContain("🏪 Ateliê Camadas");
+
+  const [download] = await Promise.all([
+    page.waitForEvent("download"),
+    page.getByRole("button", { name: "PDF" }).click(),
+  ]);
+  expect(download.suggestedFilename()).toMatch(/^orcamento-peca-personalizada-maria-souza-\d{4}-\d{2}-\d{2}\.pdf$/);
 });

@@ -6,6 +6,7 @@
    ========================================================= */
 
 import { brl, buildStoreSignatureLine, type CalcResult, type StoreSettings } from "./calc";
+import { formatDate, type ClientDetails } from "./cliente";
 
 function slugify(text: string) {
   const slug = (text || "")
@@ -150,4 +151,125 @@ export async function exportPdf(r: CalcResult, settings: StoreSettings) {
   doc.text("Orçamento gerado com a calculadora Nosso Projeto 3D, gratuita e feita para a comunidade 3D.", marginX, y, { maxWidth: pageWidth - marginX * 2 });
 
   doc.save(`${exportFileBaseName(r)}.pdf`);
+}
+
+// ---------------------------------------------------------
+// PDF PARA O CLIENTE
+// Só o que interessa pra quem compra, com a marca da loja (logo, nome e
+// contatos). Visual neutro (cinzas), pra combinar com qualquer marca.
+// Sem custos, lucro nem taxas.
+// ---------------------------------------------------------
+function imageSize(dataUrl: string) {
+  return new Promise<{ w: number; h: number }>((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
+    img.onerror = () => reject(new Error("Logo inválido."));
+    img.src = dataUrl;
+  });
+}
+
+export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings: StoreSettings, logo: string | null) {
+  const { jsPDF } = await import("jspdf");
+  const doc = new jsPDF({ unit: "mm", format: "a4" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const marginX = 20;
+  const contentW = pageWidth - marginX * 2;
+  let y = 22;
+
+  // cabeçalho da loja: logo + nome + contatos (o que estiver preenchido)
+  const storeName = settings.storeName.trim();
+  const contacts = [settings.city, settings.whatsapp, settings.instagram].map((x) => (x || "").trim()).filter(Boolean).join("  ·  ");
+  let textX = marginX;
+  let headerH = 0;
+  if (logo) {
+    try {
+      const { w, h } = await imageSize(logo);
+      const maxH = 22;
+      const maxW = 44;
+      const scale = Math.min(maxH / h, maxW / w);
+      doc.addImage(logo, "PNG", marginX, y - 6, w * scale, h * scale, undefined, "FAST");
+      textX = marginX + w * scale + 6;
+      headerH = h * scale;
+    } catch { /* segue sem o logo */ }
+  }
+  if (storeName) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(16);
+    doc.setTextColor(18, 21, 26);
+    doc.text(storeName, textX, y + (logo ? 2 : 0));
+  }
+  if (contacts) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(9.5);
+    doc.setTextColor(107, 114, 125);
+    doc.text(contacts, textX, y + (storeName ? 8 : 0) + (logo ? 2 : 0), { maxWidth: pageWidth - marginX - textX });
+  }
+  if (logo || storeName || contacts) {
+    y += Math.max(headerH, storeName && contacts ? 12 : 6) + 4;
+    doc.setDrawColor(226, 229, 234);
+    doc.line(marginX, y, pageWidth - marginX, y);
+    y += 12;
+  }
+
+  // título
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9.5);
+  doc.setTextColor(107, 114, 125);
+  doc.text("ORÇAMENTO", marginX, y);
+  y += 8;
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.setTextColor(18, 21, 26);
+  const title = doc.splitTextToSize(r.jobName, contentW);
+  doc.text(title, marginX, y);
+  y += 8 * title.length + 4;
+
+  const row = (label: string, value: string) => {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10.5);
+    doc.setTextColor(107, 114, 125);
+    doc.text(label, marginX, y);
+    doc.setTextColor(18, 21, 26);
+    const lines = doc.splitTextToSize(value, contentW - 45);
+    doc.text(lines, marginX + 45, y);
+    y += 7 * lines.length;
+  };
+  if (d.clientName) row("Para", d.clientName);
+  row("Data", formatDate(r.calculatedAt));
+  row("Material", r.materialName);
+  if (d.deliveryTime) row("Prazo de entrega", d.deliveryTime);
+  y += 6;
+
+  // valor em destaque
+  doc.setFillColor(243, 244, 246);
+  doc.roundedRect(marginX, y, contentW, 26, 3, 3, "F");
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10.5);
+  doc.setTextColor(107, 114, 125);
+  doc.text("Valor", marginX + 7, y + 9);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(22);
+  doc.setTextColor(18, 21, 26);
+  doc.text(brl(r.finalPrice), marginX + 7, y + 20);
+  if (d.validUntil) {
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(10);
+    doc.setTextColor(107, 114, 125);
+    doc.text(`Válido até ${formatDate(d.validUntil)}`, pageWidth - marginX - 7, y + 20, { align: "right" });
+  }
+  y += 36;
+
+  if (d.notes) {
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(10.5);
+    doc.setTextColor(18, 21, 26);
+    doc.text("Observações", marginX, y);
+    y += 6;
+    doc.setFont("helvetica", "normal");
+    doc.setTextColor(75, 82, 93);
+    doc.text(doc.splitTextToSize(d.notes, contentW), marginX, y);
+  }
+
+  const who = d.clientName ? `-${slugify(d.clientName)}` : "";
+  doc.save(`orcamento-${slugify(r.jobName)}${who}-${r.calculatedAt.toISOString().slice(0, 10)}.pdf`);
 }

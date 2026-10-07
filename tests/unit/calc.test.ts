@@ -5,6 +5,7 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { calculate, defaultStoreSettings, sanitizeDecimal, smartRoundUp, whatsAppHref, type StoreSettings } from "../../src/lib/calc";
 import { formReducer, initialFormState, type FormAction, type FormState } from "../../src/lib/form";
+import { buildClientWhatsAppText, getClientDetails } from "../../src/lib/cliente";
 
 const amostra: { scenario: { settings: StoreSettings | null; actions: any[] }; v3: any }[] =
   JSON.parse(readFileSync(new URL("./v3-amostra.json", import.meta.url), "utf8"));
@@ -51,5 +52,29 @@ describe("motor de cálculo", () => {
         .toEqual(v3.result.proCosts.map((c: any) => ({ ...c, adType: c.adType ?? undefined })));
       expect(href).toBe(v3.href);
     }
+  });
+});
+
+describe("orçamento para o cliente", () => {
+  const settings = { ...defaultStoreSettings(), storeName: "Ateliê Camadas", city: "Goiânia/GO" };
+  const base = { ...amostra.find((a) => a.v3.valid)!.scenario };
+  const { r } = run(base);
+
+  it("mostra só preço e dados do cliente, nunca custos ou lucro", () => {
+    const at = new Date(2026, 9, 7, 10, 0);
+    const d = getClientDetails({ clientName: " Maria ", deliveryTime: "5 dias", validityDays: "7", notes: "" }, at);
+    const text = buildClientWhatsAppText({ ...r!, calculatedAt: at }, d, settings);
+    expect(text.split("\n")[0]).toBe("Olá, Maria! Segue o orçamento 😊");
+    expect(text).toContain("⏳ Válido até 14/10/2026");
+    expect(text).toContain("🏪 Ateliê Camadas · Goiânia/GO");
+    expect(text).not.toMatch(/Custo|Lucro|Energia|Filamento:|Taxa|Impostos/);
+  });
+
+  it("sem validade e sem nome, sai neutro", () => {
+    const d = getClientDetails({ clientName: "", deliveryTime: "", validityDays: "", notes: "" }, new Date());
+    const text = buildClientWhatsAppText(r!, d, defaultStoreSettings());
+    expect(text.split("\n")[0]).toBe("Olá! Segue o orçamento 😊");
+    expect(text).not.toContain("Válido");
+    expect(text).not.toContain("🏪");
   });
 });
