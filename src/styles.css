@@ -458,6 +458,33 @@
   [data-density="3"] .rp-btnrow .rp-btn { padding: 0; }
   [data-density="3"] .rp-btnlabel { display: none; }
   [data-density="3"] .rp-hide3 { display: none; }
+
+  /* botões só com ícone: etiqueta com o nome ao passar o mouse ou focar */
+  [data-density="3"] .rp-btnrow .rp-btn { position: relative; }
+  [data-density="3"] .rp-btnrow .rp-btn::after {
+    content: attr(data-tip);
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    z-index: 5;
+    padding: 5px 9px;
+    border-radius: 8px;
+    background: var(--ink);
+    color: var(--bg);
+    font-size: 12.5px;
+    font-weight: 500;
+    white-space: nowrap;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 4px);
+    transition: opacity 0.15s var(--ease-out-soft), transform 0.15s var(--ease-out-soft);
+  }
+  /* o último botão fica no canto: a etiqueta alinha pela direita pra não sair do painel */
+  [data-density="3"] .rp-btnrow .rp-btn:last-child::after { left: auto; right: 0; transform: translate(0, 4px); }
+  [data-density="3"] .rp-btnrow .rp-btn:hover::after,
+  [data-density="3"] .rp-btnrow .rp-btn:focus-visible::after { opacity: 1; transform: translate(-50%, 0); }
+  [data-density="3"] .rp-btnrow .rp-btn:last-child:hover::after,
+  [data-density="3"] .rp-btnrow .rp-btn:last-child:focus-visible::after { transform: translate(0, 0); }
 }
 
 /* logo verde um pouco mais fechado sobre o fundo claro */

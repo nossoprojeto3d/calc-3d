@@ -258,17 +258,17 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
             </a>
             <div className="rp-btnrow grid grid-cols-3 gap-2">
               <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!ready} onClick={copy}
-                aria-label={copied ? "Copiado" : "Copiar"} title={copied ? "Copiado" : "Copiar"}>
+                aria-label={copied ? "Copiado" : "Copiar"} data-tip={copied ? "Copiado" : "Copiar"}>
                 {copied ? <Check size={17} weight="bold" className="text-ok" aria-hidden="true" /> : <Copy size={17} aria-hidden="true" />}
                 <span className="rp-btnlabel">{copied ? "Copiado" : "Copiar"}</span>
               </button>
               <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!ready || pdfState === "busy"} onClick={pdf}
-                aria-label={pdfState === "busy" ? "Gerando PDF" : "PDF"} title="PDF">
+                aria-label={pdfState === "busy" ? "Gerando PDF" : "PDF"} data-tip={pdfState === "busy" ? "Gerando PDF" : "Baixar PDF"}>
                 <FilePdf size={17} aria-hidden="true" />
                 <span className="rp-btnlabel">{pdfState === "busy" ? "Gerando" : "PDF"}</span>
               </button>
               <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!ready} onClick={() => saveBudget()}
-                aria-label={budgetId ? "Salvo" : "Salvar"} title={budgetId ? "Salvo" : "Salvar"}>
+                aria-label={budgetId ? "Salvo" : "Salvar"} data-tip={budgetId ? "Salvo em Meus orçamentos" : "Salvar em Meus orçamentos"}>
                 <BookmarkSimple size={17} weight={budgetId ? "fill" : "regular"} className={budgetId ? "text-accent-text" : undefined} aria-hidden="true" />
                 <span className="rp-btnlabel">{budgetId ? "Salvo" : "Salvar"}</span>
               </button>
