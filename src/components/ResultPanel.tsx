@@ -176,21 +176,19 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
           </AnimatePresence>
 
           <div className="mt-5 flex flex-col gap-2.5">
-            <div className="grid grid-cols-2 gap-1 rounded-full bg-surface-2 p-1" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}
-              role="radiogroup" aria-label="Versão do orçamento">
-              {(["cliente", "completo"] as const).map((v) => (
-                <button key={v} type="button" role="radio" aria-checked={version === v} onClick={() => setVersion(v)}
-                  className={`min-h-[40px] rounded-full text-[14px] font-medium transition-colors ${version === v ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink"}`}
-                  style={version === v ? { boxShadow: "inset 0 0 0 1px var(--line-strong)" } : undefined}>
-                  {v === "cliente" ? "Para o cliente" : "Completo"}
-                </button>
-              ))}
+            <div className="flex flex-col gap-2">
+              <span id="compartilhar-label" className="px-1 text-[14px] font-medium text-ink-2">Compartilhar orçamento para:</span>
+              <div className="grid grid-cols-2 gap-1 rounded-full bg-surface-2 p-1" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}
+                role="radiogroup" aria-labelledby="compartilhar-label">
+                {(["cliente", "completo"] as const).map((v) => (
+                  <button key={v} type="button" role="radio" aria-checked={version === v} onClick={() => setVersion(v)}
+                    className={`min-h-[40px] rounded-full text-[14px] font-medium transition-colors ${version === v ? "bg-surface text-ink shadow-sm" : "text-ink-3 hover:text-ink"}`}
+                    style={version === v ? { boxShadow: "inset 0 0 0 1px var(--line-strong)" } : undefined}>
+                    {v === "cliente" ? "Cliente" : "Mim (completo)"}
+                  </button>
+                ))}
+              </div>
             </div>
-            <p className="hint -mt-0.5 px-1">
-              {forClient
-                ? "Só o preço, sem seus custos e lucro, com os dados da sua loja."
-                : "Com todos os custos e o lucro. Pra você conferir ou guardar."}
-            </p>
             {forClient && !hasStoreBranding(settings, storeLogo) && (
               <button type="button" onClick={onOpenSettings}
                 className="flex items-center gap-2.5 rounded-xl bg-accent-soft px-3 py-2.5 text-left text-[13.5px] text-ink-2 hover:text-ink">

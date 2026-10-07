@@ -172,7 +172,7 @@ test("6b. abre orçamentos salvos pela V3", async ({ page }) => {
 test("7. WhatsApp: link e emojis no texto (versão completa)", async ({ page }) => {
   await page.goto("./");
   await fillBasic(page);
-  await page.getByRole("radio", { name: "Completo" }).click();
+  await page.getByRole("radio", { name: "Mim (completo)" }).click();
   const href = await page.getByRole("link", { name: "Enviar no WhatsApp" }).getAttribute("href");
   expect(href).toMatch(/^https:\/\/api\.whatsapp\.com\/send\?text=/);
   // o real usa espaço não separável depois do "R$", como na V3
@@ -223,7 +223,7 @@ test("10. orçamento para o cliente: sem custos e com os dados da loja", async (
   await page.goto("./");
   await fillBasic(page);
   // começa na versão do cliente, com lembrete pra configurar a loja
-  await expect(page.getByRole("radio", { name: "Para o cliente" })).toHaveAttribute("aria-checked", "true");
+  await expect(page.getByRole("radio", { name: "Cliente", exact: true })).toHaveAttribute("aria-checked", "true");
   await expect(page.getByText("Coloque o nome e o logo da sua loja")).toBeVisible();
 
   await page.getByRole("button", { name: /Dados para o cliente/ }).click();
