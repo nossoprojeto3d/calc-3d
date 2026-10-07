@@ -4,29 +4,45 @@ Calculadora gratuita de preço para impressão 3D (filamento): material, energia
 desgaste da máquina, mão de obra, embalagem, taxas da Shopee e do Mercado Livre,
 frete, impostos e lucro. Gera o orçamento pronto para o WhatsApp e em PDF.
 
-Publicada em **https://nossoprojeto3d.github.io/calc-3d/**, com a mesma identidade
-visual do [site](https://nossoprojeto3d.github.io/site/) e do
-[catálogo](https://nossoprojeto3d.github.io/catalogo/).
+Publicada em **https://nossoprojeto3d.github.io/calc-3d/**. Funciona sem servidor:
+tudo fica no aparelho de quem usa.
 
-HTML + CSS + JavaScript puro: sem build, sem dependências e sem servidor.
+V4: Vite + React + TypeScript + Tailwind v4, com identidade própria
+("Grafite e Brasa") e o logo da Nosso Projeto 3D.
 
 ---
+
+## Rodar no computador
+
+```
+npm install
+npm run dev        # http://localhost:5173/calc-3d/ (e no celular, pelo IP da rede)
+npm run build      # gera a pasta dist/
+npm run preview    # serve o dist/ em http://localhost:4173/calc-3d/ (com a CSP ligada)
+```
 
 ## Estrutura
 
 ```
 calc-3d/
-├── index.html          → estrutura da página e modais
-├── style.css           → identidade visual (tokens de cor, tipografia, componentes)
-├── script.js           → dados, cálculo, histórico, WhatsApp/PDF e interações
-├── manifest.json       → app instalável (PWA)
-├── service-worker.js   → cache offline (rede primeiro para os arquivos do app)
-└── assets/             → logo, favicon e ícones do app
+├── index.html              → casca da página
+├── vite.config.ts          → build, CSP e app instalável (PWA)
+├── src/
+│   ├── lib/data.ts         → impressoras, filamentos, custos PRO e taxas
+│   ├── lib/calc.ts         → motor de cálculo (sem tela)
+│   ├── lib/form.ts         → comportamentos automáticos do formulário
+│   ├── lib/useCalculator.ts→ estado, resultado e "Meus orçamentos"
+│   ├── lib/storage.ts      → localStorage
+│   ├── lib/pdf.ts          → PDF do orçamento
+│   ├── App.tsx, components/→ telas
+│   └── styles.css          → identidade visual
+├── public/                 → logo, ícones, medicao.js, tema.js
+└── tests/                  → testes do cálculo, paridade com a V3 e roteiro e2e
 ```
 
 ### Onde editar os dados
 
-No topo do `script.js`:
+Em `src/lib/data.ts`:
 
 - `PRINTERS`: impressoras agrupadas por marca. `power` é a potência (W) usada no
   cálculo de energia; `avgPurchasePrice` e `avgLifespanHours` alimentam o cálculo
@@ -49,30 +65,47 @@ No topo do `script.js`:
    `preço = (custos + lucro + taxa fixa) ÷ (1 − comissão − imposto)`
 6. **Arredondamento** opcional para o próximo ",99"
 
+Desgaste, Taxa Shopee e Taxa Mercado Livre entram na conta arredondados em
+centavos, como na V3.
+
+## Testes
+
+- `npm test`: o motor contra uma amostra de resultados gravados da V3
+  (`tests/unit`). Roda também no GitHub Actions antes de publicar.
+- `npm run test:e2e`: o roteiro de teste (CLAUDE.md) no iPhone (Safari/WebKit),
+  iPhone SE 375px, Android (Chrome), desktop Chrome e desktop Safari. Precisa do
+  `npm run preview` rodando.
+- `npm run paridade`: compara o motor com a **V3 original** rodando no navegador,
+  em 2.000 cenários aleatórios. Antes, sirva a V3 da tag de backup:
+
+  ```
+  git worktree add ../calc-3d-v3 backup-pre-redesign-20261007
+  cd ../calc-3d-v3 && python3 -m http.server 8765
+  ```
+
 ## O que fica salvo no aparelho (localStorage)
 
 Nada é enviado para servidor nenhum. Ficam salvos no navegador de quem usa:
 os orçamentos em "Meus orçamentos", as Configurações da loja, o tema, o modo
-(Básico/Profissional) e a potência da "Outra impressora". Cada vez que a página
-é aberta, a calculadora começa com um cálculo novo.
+(Básico/Profissional) e a potência da "Outra impressora". As chaves são as mesmas
+da V3, então quem já usava não perde nada. Cada vez que a página é aberta, a
+calculadora começa com um cálculo novo.
 
 ## Segurança
 
-- Content Security Policy no `index.html`: só roda script do próprio site, do
-  cdnjs (gerador de PDF) e das estatísticas da Cloudflare.
-- O jsPDF é carregado só no primeiro clique em "PDF", com verificação de
-  integridade (SRI). **Ao trocar a versão do jsPDF, atualize `JSPDF_SRI`** no
-  `script.js` (o hash oficial está em cdnjs.com).
-- Todo texto digitado que aparece na tela ou no histórico passa por escape.
+- Content Security Policy (em `vite.config.ts`, entra no build): só roda script do
+  próprio site e das estatísticas (Cloudflare e Google, este só com consentimento).
+- O jsPDF vem junto com o app e só carrega no primeiro clique em "PDF".
+- Texto digitado é sempre exibido como texto, nunca como HTML.
 
 ## Publicar uma atualização
 
-Basta enviar as alterações para a branch `main`: o GitHub Pages publica sozinho
-em 1 ou 2 minutos. O service worker busca os arquivos do app na rede primeiro,
-então quem já usa recebe a versão nova sem precisar limpar o cache. Ao mudar
-ícones ou imagens, troque o `CACHE_NAME` no `service-worker.js`.
+Enviar para a branch `main`: o GitHub Actions roda os testes, gera o build e
+publica no GitHub Pages em 1 ou 2 minutos. O service worker é gerado no build e
+atualiza sozinho quem já tem o app instalado (a página continua "rede primeiro").
 
 ## Versões salvas (tags do Git)
 
 - `estavel-2026-09-23`: V1, paleta violeta/ciano original
 - `backup-tons-dourados`: V2, preto e dourado
+- `backup-pre-redesign-20261007`: V3, HTML/CSS/JS puros, antes da V4

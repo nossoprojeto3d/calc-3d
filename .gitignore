@@ -1,4 +1,9 @@
-# macOS
+node_modules/
+dist/
+test-results/
+playwright-report/
+tests/parity/scenarios.json
+tests/parity/v3-results.json
 .DS_Store
 
 # arquivos temporários de teste/preview

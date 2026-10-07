@@ -1,0 +1,45 @@
+{
+  "name": "calc-3d",
+  "private": true,
+  "version": "4.0.0",
+  "description": "Calculadora gratuita de preço para impressão 3D: material, energia, desgaste, mão de obra, taxas da Shopee e do Mercado Livre, impostos e lucro. Orçamento pronto pro WhatsApp e em PDF.",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host",
+    "build": "vite build",
+    "preview": "vite preview --host",
+    "test": "vitest run tests/unit",
+    "test:e2e": "playwright test",
+    "paridade": "node tests/parity/scenarios.mjs 2000 && node tests/parity/run-v3.mjs http://localhost:8765/index.html && vitest run tests/parity"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nossoprojeto3d/calc-3d.git"
+  },
+  "dependencies": {
+    "@fontsource-variable/geist": "^5.3.0",
+    "@fontsource-variable/geist-mono": "^5.3.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "@radix-ui/react-dialog": "^1.2.0",
+    "@radix-ui/react-switch": "^1.3.8",
+    "jspdf": "^4.2.1",
+    "motion": "^14.0.0",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "vaul": "^1.1.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/node": "^26.6.4",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "tailwindcss": "^4.3.3",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.3",
+    "vite-plugin-pwa": "^2.0.0",
+    "vitest": "^5.0.3",
+    "workbox-window": "^7.4.1"
+  }
+}
