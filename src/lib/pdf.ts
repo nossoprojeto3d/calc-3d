@@ -148,7 +148,7 @@ export async function exportPdf(r: CalcResult, settings: StoreSettings) {
     doc.text(signature, marginX, y);
     y += 6;
   }
-  doc.text("Orçamento gerado com a calculadora Nosso Projeto 3D, gratuita e feita para a comunidade 3D.", marginX, y, { maxWidth: pageWidth - marginX * 2 });
+  doc.text("Orçamento feito com a calculadora Nosso Projeto 3D", marginX, y, { maxWidth: pageWidth - marginX * 2 });
 
   doc.save(`${exportFileBaseName(r)}.pdf`);
 }
@@ -270,9 +270,9 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
     doc.text(doc.splitTextToSize(d.notes, contentW), marginX, y);
   }
 
-  // divulgação discreta da calculadora (ela é gratuita), no pé da página
+  // divulgação discreta da calculadora, no pé da página
   const pageHeight = doc.internal.pageSize.getHeight();
-  const credit = "Orçamento feito com a calculadora gratuita Nosso Projeto 3D";
+  const credit = "Orçamento feito com a calculadora Nosso Projeto 3D";
   doc.setFont("helvetica", "normal");
   doc.setFontSize(8);
   doc.setTextColor(150, 156, 165);
