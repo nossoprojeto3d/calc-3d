@@ -47,6 +47,7 @@ O README.md explica a fórmula de preço e onde ficam os dados. Leia-o antes de 
 ## Imagens
 
 - Ficam em `public/assets/`: `logo.png`, `favicon.png` e os ícones do app `icon-192.png` e `icon-512.png` (PNG, quadrados).
+- `compartilhar.jpg` (1200×630) é a prévia do link no WhatsApp e redes. Gerada por `node scripts/gerar-imagem-compartilhamento.mjs`; refaça se o logo ou a identidade mudarem.
 - O service worker é gerado no build (vite-plugin-pwa) e reconhece arquivos novos sozinho; não há `CACHE_NAME` pra trocar à mão.
 
 ## Versões salvas
