@@ -116,6 +116,21 @@ export default function App() {
   const [bannerDismissed, setBannerDismissed] = useState(() => read(KEYS.installDismissed) === "1");
   const supportScheduled = useRef(false);
 
+  // orçamento fixo ao lado (computador): se ele for mais alto que a tela,
+  // gruda pela parte de baixo (com respiro) em vez de ficar cortado
+  const asideRef = useRef<HTMLElement>(null);
+  const [asideTop, setAsideTop] = useState(84);
+  useEffect(() => {
+    const el = asideRef.current;
+    if (!el) return;
+    const fit = () => setAsideTop(Math.min(84, window.innerHeight - el.offsetHeight - 24));
+    fit();
+    const ro = new ResizeObserver(fit);
+    ro.observe(el);
+    window.addEventListener("resize", fit);
+    return () => { ro.disconnect(); window.removeEventListener("resize", fit); };
+  }, []);
+
   const err = (id: string) => (state.errors.includes(id) ? ERRORS[id] ?? null : null);
   const str = (id: string) => String(v[id] ?? "");
 
@@ -376,7 +391,7 @@ export default function App() {
           </div>
 
           {/* ===================== ORÇAMENTO ===================== */}
-          <aside className="min-w-0 lg:sticky lg:top-[84px] lg:self-start">
+          <aside ref={asideRef} className="min-w-0 lg:sticky lg:self-start" style={{ top: asideTop }}>
             <ResultPanel calc={calc} onJumpTo={jumpTo} onOpenSettings={() => setSettingsOpen(true)} />
             <p className="hint mt-3 px-2 text-center">Tudo fica salvo só no seu aparelho. Nada é enviado pra lugar nenhum.</p>
           </aside>
