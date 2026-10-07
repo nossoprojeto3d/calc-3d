@@ -116,21 +116,6 @@ export default function App() {
   const [bannerDismissed, setBannerDismissed] = useState(() => read(KEYS.installDismissed) === "1");
   const supportScheduled = useRef(false);
 
-  // orçamento fixo ao lado (computador): se ele for mais alto que a tela,
-  // gruda pela parte de baixo (com respiro) em vez de ficar cortado
-  const asideRef = useRef<HTMLElement>(null);
-  const [asideTop, setAsideTop] = useState(84);
-  useEffect(() => {
-    const el = asideRef.current;
-    if (!el) return;
-    const fit = () => setAsideTop(Math.min(84, window.innerHeight - el.offsetHeight - 24));
-    fit();
-    const ro = new ResizeObserver(fit);
-    ro.observe(el);
-    window.addEventListener("resize", fit);
-    return () => { ro.disconnect(); window.removeEventListener("resize", fit); };
-  }, []);
-
   const err = (id: string) => (state.errors.includes(id) ? ERRORS[id] ?? null : null);
   const str = (id: string) => String(v[id] ?? "");
 
@@ -249,45 +234,27 @@ export default function App() {
       </AnimatePresence>
 
       <main className="relative mx-auto max-w-[1180px] px-4 pb-10 sm:px-6" style={{ zIndex: 2 }}>
-        {/* ===================== ABERTURA ===================== */}
-        <div className="flex flex-col gap-5 pb-6 pt-7 sm:pt-10 lg:flex-row lg:items-end lg:justify-between lg:pb-8">
-          <div className="max-w-[28ch]">
-            <h1 className="text-[34px] font-semibold leading-[1.05] tracking-[-0.035em] sm:text-[44px]">
-              Quanto cobrar pela sua peça<span className="text-accent">?</span>
-            </h1>
-            <button type="button" onClick={onExample}
-              className="group mt-3 inline-flex min-h-[40px] items-center gap-2 text-[15px] font-medium text-ink-2 hover:text-ink">
-              <span className="flex size-7 items-center justify-center rounded-full bg-surface-2 transition-transform group-hover:scale-105" style={{ boxShadow: "inset 0 0 0 1px var(--line-strong)" }}>
-                <Play size={12} weight="fill" className="text-accent-text" aria-hidden="true" />
-              </span>
-              Ver um exemplo preenchido
-            </button>
-          </div>
-
-          {/* Básico / Profissional */}
-          <div className="w-full lg:w-[420px]">
-            <div className="relative grid grid-cols-2 rounded-full bg-surface-2 p-1" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}
-              role="tablist" aria-label="Modo da calculadora">
-              <span aria-hidden="true" className="absolute bottom-1 left-1 top-1 w-[calc(50%-4px)] rounded-full bg-accent transition-transform duration-500 ease-[var(--ease-spring)]"
-                style={{ transform: isPro ? "translateX(100%)" : "translateX(0)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.28)" }} />
-              {(["basico", "profissional"] as const).map((mode) => (
-                <button key={mode} type="button" role="tab" aria-selected={state.mode === mode} onClick={() => calc.setMode(mode)}
-                  className={`relative min-h-[46px] rounded-full text-[15px] font-semibold transition-colors duration-300 ${state.mode === mode ? "text-accent-ink" : "text-ink-2 hover:text-ink"}`}>
-                  {mode === "basico" ? "Básico" : "Profissional"}
-                </button>
-              ))}
-            </div>
-            <p className="hint mt-2 px-2">
-              {isPro
-                ? "Tudo do Básico + desgaste, mão de obra, embalagem, taxas de marketplace e impostos."
-                : "Material, energia e lucro: o essencial pra precificar."}
-            </p>
-          </div>
-        </div>
-
-        <div id="calculadora" className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-6">
-          {/* ===================== FORMULÁRIO ===================== */}
+        <div id="calculadora" className="grid grid-cols-1 gap-4 pt-7 sm:pt-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-6 lg:pt-4">
+          {/* ===================== FORMULÁRIO (a coluna que rola) ===================== */}
           <div className="flex min-w-0 flex-col gap-4">
+            {/* abertura */}
+            <div className="flex flex-col gap-5 pb-2 lg:pt-6">
+              <div className="max-w-[28ch]">
+                <h1 className="text-[34px] font-semibold leading-[1.05] tracking-[-0.035em] sm:text-[44px]">
+                  Quanto cobrar pela sua peça<span className="text-accent">?</span>
+                </h1>
+                <button type="button" onClick={onExample}
+                  className="group mt-3 inline-flex min-h-[40px] items-center gap-2 text-[15px] font-medium text-ink-2 hover:text-ink">
+                  <span className="flex size-7 items-center justify-center rounded-full bg-surface-2 transition-transform group-hover:scale-105" style={{ boxShadow: "inset 0 0 0 1px var(--line-strong)" }}>
+                    <Play size={12} weight="fill" className="text-accent-text" aria-hidden="true" />
+                  </span>
+                  Ver um exemplo preenchido
+                </button>
+              </div>
+              {/* no celular o modo fica aqui; no computador, no alto da coluna fixa */}
+              {!desktop && <ModeSwitch mode={state.mode} onChange={calc.setMode} />}
+            </div>
+
             <Section id="secao-impressora" icon={<Printer size={19} />} title="Impressora e energia">
               <PrinterPicker value={str("printerSelect")} customPower={str("customPrinterPower")} onChange={(id) => set("printerSelect", id)} />
               <AnimatePresence initial={false}>
@@ -391,9 +358,13 @@ export default function App() {
           </div>
 
           {/* ===================== ORÇAMENTO ===================== */}
-          <aside ref={asideRef} className="min-w-0 lg:sticky lg:self-start" style={{ top: asideTop }}>
+          {/* ===================== ORÇAMENTO =====================
+              No computador, coluna fixa com a altura da tela: modo + orçamento
+              sempre visíveis; só o formulário ao lado rola. */}
+          <aside className="min-w-0 lg:sticky lg:top-[76px] lg:flex lg:h-[calc(100dvh-92px)] lg:flex-col lg:gap-3 lg:self-start">
+            {desktop && <ModeSwitch mode={state.mode} onChange={calc.setMode} compact />}
             <ResultPanel calc={calc} onJumpTo={jumpTo} onOpenSettings={() => setSettingsOpen(true)} />
-            <p className="hint mt-3 px-2 text-center">Tudo fica salvo só no seu aparelho. Nada é enviado pra lugar nenhum.</p>
+            <p className="hint rp-hide2 mt-3 px-2 text-center lg:mt-0 lg:text-[12.5px]">Tudo fica salvo só no seu aparelho. Nada é enviado pra lugar nenhum.</p>
           </aside>
         </div>
 
@@ -428,6 +399,33 @@ export default function App() {
       <IosInstallDialog open={install.iosOpen} onOpenChange={install.setIosOpen} />
       <QuickToast toast={calc.toast} />
     </LazyMotion>
+  );
+}
+
+// ---------------------------------------------------------
+// BÁSICO / PROFISSIONAL
+// ---------------------------------------------------------
+function ModeSwitch({ mode, onChange, compact }: { mode: "basico" | "profissional"; onChange: (m: "basico" | "profissional") => void; compact?: boolean }) {
+  const isPro = mode === "profissional";
+  return (
+    <div className="flex-none">
+      <div className="relative grid grid-cols-2 rounded-full bg-surface-2 p-1" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}
+        role="tablist" aria-label="Modo da calculadora">
+        <span aria-hidden="true" className="absolute bottom-1 left-1 top-1 w-[calc(50%-4px)] rounded-full bg-accent transition-transform duration-500 ease-[var(--ease-spring)]"
+          style={{ transform: isPro ? "translateX(100%)" : "translateX(0)", boxShadow: "inset 0 1px 0 rgba(255,255,255,.28)" }} />
+        {(["basico", "profissional"] as const).map((m) => (
+          <button key={m} type="button" role="tab" aria-selected={mode === m} onClick={() => onChange(m)}
+            className={`relative rounded-full text-[15px] font-semibold transition-colors duration-300 ${compact ? "min-h-[42px]" : "min-h-[46px]"} ${mode === m ? "text-accent-ink" : "text-ink-2 hover:text-ink"}`}>
+            {m === "basico" ? "Básico" : "Profissional"}
+          </button>
+        ))}
+      </div>
+      <p className={`hint px-2 ${compact ? "rp-hide2 mt-1.5 text-[12.5px]" : "mt-2"}`}>
+        {isPro
+          ? "Tudo do Básico + desgaste, mão de obra, embalagem, taxas de marketplace e impostos."
+          : "Material, energia e lucro: o essencial pra precificar."}
+      </p>
+    </div>
   );
 }
 

@@ -416,6 +416,50 @@
   [data-theme="light"] .grain { opacity: 0.025; }
 }
 
+/* Painel do orçamento na coluna fixa (computador): níveis de compactação
+   aplicados quando o conteúdo não cabe na altura da tela (ResultPanel). */
+@media (min-width: 1024px) {
+  [data-density="1"] .rp-pad { padding-top: 16px; padding-bottom: 16px; }
+  [data-density="1"] .rp-price { font-size: 42px; }
+  [data-density="1"] .rp-mt { margin-top: 14px; }
+  [data-density="1"] .rp-stat { padding: 9px 12px; }
+  [data-density="1"] .rp-row { min-height: 25px; font-size: 13.5px; }
+  [data-density="1"] .rp-check { min-height: 30px; }
+  [data-density="1"] .rp-btn { min-height: 44px; }
+  [data-density="1"] .rp-actions { gap: 8px; }
+
+  [data-density="2"] .rp-pad { padding-top: 12px; padding-bottom: 12px; }
+  [data-density="2"] .rp-price { font-size: 34px; }
+  [data-density="2"] .rp-mt { margin-top: 10px; }
+  [data-density="2"] .rp-stat { padding: 6px 10px; }
+  [data-density="2"] .rp-row { min-height: 21px; font-size: 13px; }
+  [data-density="2"] .rp-check { min-height: 26px; font-size: 13.5px; }
+  [data-density="2"] .rp-btn { min-height: 40px; font-size: 14px; }
+  [data-density="2"] .rp-actions { gap: 6px; }
+  [data-density="2"] .rp-hide2 { display: none; }
+
+  /* nível 3 (telas baixas): também o que vale do 2, mais compartilhar em linhas únicas */
+  [data-density="3"] .rp-pad { padding-top: 12px; padding-bottom: 12px; }
+  [data-density="3"] .rp-price { font-size: 30px; }
+  [data-density="3"] .rp-mt { margin-top: 8px; }
+  [data-density="3"] .rp-stat { padding: 4px 10px; }
+  [data-density="3"] .rp-row { min-height: 19px; font-size: 12.5px; }
+  [data-density="3"] .rp-check { min-height: 24px; font-size: 13px; }
+  [data-density="3"] .rp-btn { min-height: 40px; font-size: 14px; }
+  [data-density="3"] .rp-actions { gap: 6px; }
+  [data-density="3"] .rp-hide2 { display: none; }
+  [data-density="3"] .rp-share { flex-direction: row; align-items: center; gap: 8px; }
+  [data-density="3"] .rp-sharelabel { flex: none; padding: 0; font-size: 13px; }
+  [data-density="3"] .rp-sharetoggle { flex: 1; }
+  [data-density="3"] .rp-sharebtn { min-height: 32px; font-size: 13px; }
+  [data-density="3"] .rp-reminder { padding: 6px 10px; font-size: 12.5px; }
+  [data-density="3"] .rp-sendrow { display: grid; grid-template-columns: 1fr auto; gap: 6px; }
+  [data-density="3"] .rp-btnrow { grid-template-columns: repeat(3, 42px); gap: 6px; }
+  [data-density="3"] .rp-btnrow .rp-btn { padding: 0; }
+  [data-density="3"] .rp-btnlabel { display: none; }
+  [data-density="3"] .rp-hide3 { display: none; }
+}
+
 /* logo verde um pouco mais fechado sobre o fundo claro */
 [data-theme="light"] .brand-logo { filter: brightness(0.78) saturate(1.3); }
 

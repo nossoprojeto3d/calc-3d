@@ -222,8 +222,9 @@ test("validação: Calcular mostra o que falta e leva até o campo", async ({ pa
 test("10. orçamento para o cliente: sem custos e com os dados da loja", async ({ page }) => {
   await page.goto("./");
   await fillBasic(page);
-  // começa na versão do cliente, com lembrete pra configurar a loja
-  await expect(page.getByRole("radio", { name: "Cliente", exact: true })).toHaveAttribute("aria-checked", "true");
+  // começa na versão completa (Mim); ao escolher Cliente, aparece o lembrete da loja
+  await expect(page.getByRole("radio", { name: "Mim (completo)" })).toHaveAttribute("aria-checked", "true");
+  await page.getByRole("radio", { name: "Cliente", exact: true }).click();
   await expect(page.getByText("Coloque o nome e o logo da sua loja")).toBeVisible();
 
   await page.getByRole("button", { name: /Dados para o cliente/ }).click();

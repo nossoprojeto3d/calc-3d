@@ -87,11 +87,11 @@ centavos, como na V3.
 
 No painel do orçamento, "Compartilhar orçamento com:" escolhe o que WhatsApp, Copiar e PDF enviam:
 
-- **Cliente** (padrão): só o preço final, com peça, material, prazo de
+- **Cliente**: só o preço final, com peça, material, prazo de
   entrega, validade, observações e a assinatura da loja (nome, contatos e logo
   no PDF). Nunca mostra custos, lucro ou taxas. Os dados do cliente ficam na
   seção recolhida "Dados para o cliente".
-- **Mim (completo)**: todos os custos e o lucro, igual à V3.
+- **Mim (completo)** (padrão): todos os custos e o lucro, igual à V3.
 
 ## O que fica salvo no aparelho (localStorage)
 
