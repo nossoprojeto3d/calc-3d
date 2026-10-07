@@ -177,6 +177,28 @@ export default function App() {
   const fixedFilled = str("marginFixed").trim() !== "";
   const isPro = state.mode === "profissional";
 
+  // ===================== RODAPÉ =====================
+  const footer = (
+    <footer className="mt-16 flex lg:mt-12 lg:pb-4 flex-col items-center gap-5 border-t border-line pt-8 text-center">
+      <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[14.5px] font-medium text-ink-2" aria-label="Outros projetos">
+        <a className="inline-flex min-h-[40px] items-center gap-1 hover:text-ink" href="https://nossoprojeto3d.github.io/site/" target="_blank" rel="noopener noreferrer">
+          Nosso site <ArrowUpRight size={14} aria-hidden="true" />
+        </a>
+        <a className="inline-flex min-h-[40px] items-center gap-1 hover:text-ink" href="https://nossoprojeto3d.github.io/catalogo/" target="_blank" rel="noopener noreferrer">
+          Catálogo <ArrowUpRight size={14} aria-hidden="true" />
+        </a>
+        <a className="inline-flex min-h-[40px] items-center gap-1.5 hover:text-ink" href={`https://www.instagram.com/${instagramHandle}`} target="_blank" rel="noopener noreferrer">
+          <InstagramLogo size={17} aria-hidden="true" />@{instagramHandle}
+        </a>
+      </nav>
+      <p className="max-w-[46ch] text-[14.5px] italic leading-[1.55] text-ink-2">
+        “Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos.”
+        <span className="mt-1 block not-italic text-[13px] text-ink-3">Provérbios 16:3</span>
+      </p>
+      <span className="text-[12.5px] text-ink-3">© 2026 Nosso Projeto 3D · Feita com amor pra quem vive de impressão 3D</span>
+    </footer>
+  );
+
   return (
     <LazyMotion features={domAnimation} strict>
       <div className="grain" aria-hidden="true" />
@@ -233,7 +255,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <main className="relative mx-auto max-w-[1180px] px-4 pb-10 sm:px-6" style={{ zIndex: 2 }}>
+      <main className="relative mx-auto max-w-[1180px] px-4 pb-10 sm:px-6 lg:pb-4" style={{ zIndex: 2 }}>
         <div id="calculadora" className="grid grid-cols-1 gap-4 pt-7 sm:pt-10 lg:grid-cols-[minmax(0,1fr)_420px] lg:gap-6 lg:pt-4">
           {/* ===================== FORMULÁRIO (a coluna que rola) ===================== */}
           <div className="flex min-w-0 flex-col gap-4">
@@ -355,9 +377,9 @@ export default function App() {
               </button>
               <button type="button" className="btn btn-secondary" onClick={onClear}>Novo orçamento</button>
             </div>
+            {desktop && footer}
           </div>
 
-          {/* ===================== ORÇAMENTO ===================== */}
           {/* ===================== ORÇAMENTO =====================
               No computador, coluna fixa com a altura da tela: modo + orçamento
               sempre visíveis; só o formulário ao lado rola. */}
@@ -368,25 +390,9 @@ export default function App() {
           </aside>
         </div>
 
-        {/* ===================== RODAPÉ ===================== */}
-        <footer className="mt-16 flex flex-col items-center gap-5 border-t border-line pt-8 text-center">
-          <nav className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-[14.5px] font-medium text-ink-2" aria-label="Outros projetos">
-            <a className="inline-flex min-h-[40px] items-center gap-1 hover:text-ink" href="https://nossoprojeto3d.github.io/site/" target="_blank" rel="noopener noreferrer">
-              Nosso site <ArrowUpRight size={14} aria-hidden="true" />
-            </a>
-            <a className="inline-flex min-h-[40px] items-center gap-1 hover:text-ink" href="https://nossoprojeto3d.github.io/catalogo/" target="_blank" rel="noopener noreferrer">
-              Catálogo <ArrowUpRight size={14} aria-hidden="true" />
-            </a>
-            <a className="inline-flex min-h-[40px] items-center gap-1.5 hover:text-ink" href={`https://www.instagram.com/${instagramHandle}`} target="_blank" rel="noopener noreferrer">
-              <InstagramLogo size={17} aria-hidden="true" />@{instagramHandle}
-            </a>
-          </nav>
-          <p className="max-w-[46ch] text-[14.5px] italic leading-[1.55] text-ink-2">
-            “Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos.”
-            <span className="mt-1 block not-italic text-[13px] text-ink-3">Provérbios 16:3</span>
-          </p>
-          <span className="text-[12.5px] text-ink-3">© 2026 Nosso Projeto 3D · Feita com amor pra quem vive de impressão 3D</span>
-        </footer>
+        {/* no celular o rodapé fica no fim da página; no computador, no fim da
+            coluna do formulário (a do resumo fica parada até o fim) */}
+        {!desktop && footer}
       </main>
 
       <PriceDock calc={calc} onCalculate={onCalculate} />
