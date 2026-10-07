@@ -8,7 +8,7 @@ Publicada em **https://nossoprojeto3d.github.io/calc-3d/**. Funciona sem servido
 tudo fica no aparelho de quem usa.
 
 V4: Vite + React + TypeScript + Tailwind v4, com identidade própria
-("Grafite e Brasa") e o logo da Nosso Projeto 3D.
+("Grafite e Esmeralda") e o logo da Nosso Projeto 3D recolorido em verde.
 
 ---
 

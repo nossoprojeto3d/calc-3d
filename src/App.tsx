@@ -183,7 +183,7 @@ export default function App() {
         }}>
         <div className="mx-auto flex h-[60px] max-w-[1180px] items-center gap-2 px-4 sm:px-6">
           <a href="./" className="flex min-w-0 flex-1 items-center gap-2.5">
-            <img src={`${import.meta.env.BASE_URL}assets/logo.png`} alt="" width={30} height={36} className="h-9 w-auto" />
+            <img src={`${import.meta.env.BASE_URL}assets/logo.png`} alt="" width={30} height={36} className="brand-logo h-9 w-auto" />
             <span className="flex min-w-0 flex-col leading-tight">
               <span className="truncate text-[15px] font-semibold tracking-[-0.01em]">Nosso Projeto 3D</span>
               <span className="text-[12.5px] text-ink-3">Calculadora de impressão 3D</span>

@@ -46,10 +46,10 @@ export async function exportPdf(r: CalcResult, settings: StoreSettings) {
   const marginX = 18;
   let y: number;
 
-  // faixa grafite no topo, com o logo e um fio laranja
+  // faixa grafite no topo, com o logo e um fio verde
   doc.setFillColor(12, 14, 17);
   doc.rect(0, 0, pageWidth, 30, "F");
-  doc.setFillColor(255, 107, 44);
+  doc.setFillColor(47, 211, 154);
   doc.rect(0, 30, pageWidth, 1.2, "F");
 
   try {
@@ -84,7 +84,7 @@ export async function exportPdf(r: CalcResult, settings: StoreSettings) {
   const drawSectionTitle = (title: string) => {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(11.5);
-    doc.setTextColor(194, 65, 12);
+    doc.setTextColor(10, 122, 85);
     doc.text(title.toUpperCase(), marginX, y);
     y += 1.5;
     doc.setDrawColor(226, 229, 234);
@@ -127,7 +127,7 @@ export async function exportPdf(r: CalcResult, settings: StoreSettings) {
   y += 4;
 
   // preço final em destaque
-  doc.setFillColor(255, 240, 232);
+  doc.setFillColor(228, 249, 240);
   doc.roundedRect(marginX, y, pageWidth - marginX * 2, 20, 3, 3, "F");
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10.5);
@@ -135,7 +135,7 @@ export async function exportPdf(r: CalcResult, settings: StoreSettings) {
   doc.text("Preço final sugerido", marginX + 6, y + 8);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(18);
-  doc.setTextColor(194, 65, 12);
+  doc.setTextColor(10, 122, 85);
   doc.text(brl(r.finalPrice), marginX + 6, y + 16);
   y += 30;
 
