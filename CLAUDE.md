@@ -67,4 +67,5 @@ Usado pelo `/conferir-site`, no celular e no desktop (automatizado em `tests/e2e
 8. PDF: clicar gera o arquivo.
 9. Em 375px, nenhum campo dá zoom e não há rolagem horizontal.
 10. "Compartilhar orçamento": "Mim (completo)" é o padrão e é igual à V3; "Cliente" não mostra custos, lucro nem taxas e leva nome do cliente, prazo, validade, observações e os dados/logo da loja.
+12. Profissional: ligar um custo e deixar vazio mantém o preço (sem esse custo), mostra "Falta preencher" e bloqueia WhatsApp/Copiar/PDF/Salvar; "Calcular" marca o campo em vermelho.
 11. No computador, a coluna da direita (modo + orçamento) fica fixa e cabe na tela; ela compacta em até 3 níveis (`data-density`) conforme o conteúdo cresce.

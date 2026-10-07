@@ -5,9 +5,9 @@
    ========================================================= */
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
-import type { ProCostId } from "./data";
+import { PRO_COSTS, type ProCostId } from "./data";
 import {
-  calculate, getProgressItems, resolveDerived, validateAll, type Mode, type StoreSettings,
+  calculate, getProgressItems, proFieldId, proToggleId, resolveDerived, validateAll, type Mode, type StoreSettings,
 } from "./calc";
 import { formReducer, initialFormState, type SavedFormState } from "./form";
 import {
@@ -50,10 +50,26 @@ export function useCalculator() {
     [state.values, state.mode, settings, state.shopeeTier, state.meliTier],
   );
   const validation = useMemo(() => validateAll(resolved, state.mode), [resolved, state.mode]);
-  const result = useMemo(
+  // Orçamento completo (todos os campos ligados preenchidos), igual à V3.
+  const fullResult = useMemo(
     () => calculate(state.values, state.mode, settings, state.shopeeTier, state.meliTier),
     [state.values, state.mode, settings, state.shopeeTier, state.meliTier],
   );
+  // Custos PRO ligados mas ainda sem valor. Enquanto houver algum, o preço
+  // continua na tela calculado sem eles (como se estivessem desligados), mas
+  // o orçamento fica "incompleto": nada é enviado nem salvo até preencher.
+  const pendingPro = useMemo(() => {
+    if (state.mode !== "profissional" || validation.printTimeZero || validation.marginInvalid) return [];
+    if (validation.invalid.some((id) => !PRO_COSTS.some((c) => proFieldId(c.id) === id))) return [];
+    return PRO_COSTS.filter((c) => validation.invalid.includes(proFieldId(c.id)));
+  }, [state.mode, validation]);
+  const result = useMemo(() => {
+    if (fullResult || !pendingPro.length) return fullResult;
+    const values = { ...state.values };
+    pendingPro.forEach((c) => { values[proToggleId(c.id)] = false; });
+    return calculate(values, state.mode, settings, state.shopeeTier, state.meliTier);
+  }, [fullResult, pendingPro, state.values, state.mode, settings, state.shopeeTier, state.meliTier]);
+  const complete = !!fullResult;
   const progress = useMemo(() => getProgressItems(resolved, state.mode), [resolved, state.mode]);
 
   const captureState = useCallback((): SavedFormState => {
@@ -72,7 +88,7 @@ export function useCalculator() {
   }, []);
 
   const saveBudget = useCallback(({ silent = false } = {}) => {
-    if (!result) return;
+    if (!result || !complete) return;
     const isNew = !budgetId;
     const id = budgetId || newBudgetId();
     const entry = budgetEntry(id, result, captureState());
@@ -82,11 +98,11 @@ export function useCalculator() {
     persistHistory(list);
     setBudgetId(id);
     if (!silent) showToast(isNew ? "Salvo em Meus orçamentos." : "Orçamento atualizado.");
-  }, [result, budgetId, captureState, persistHistory, showToast]);
+  }, [result, complete, budgetId, captureState, persistHistory, showToast]);
 
   // orçamento já salvo: cada recálculo mantém o salvo atualizado
   useEffect(() => {
-    if (!budgetId || !result || restoring.current) return;
+    if (!budgetId || !result || !complete || restoring.current) return;
     const t = setTimeout(() => saveBudget({ silent: true }), 400);
     return () => clearTimeout(t);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -184,7 +200,7 @@ export function useCalculator() {
 
   return {
     storeLogo, updateStoreLogo,
-    state, resolved, validation, result, progress, settings, history, budgetId, toast, clearedBackup,
+    state, resolved, validation, result, complete, pendingPro, progress, settings, history, budgetId, toast, clearedBackup,
     set, toggle, setMode, submit, clearAll, fillExample, updateSettings,
     setShopeeTier: (tier: typeof state.shopeeTier) => dispatch({ type: "shopeeTier", tier }),
     setMeliTier: (tier: typeof state.meliTier) => dispatch({ type: "meliTier", tier }),

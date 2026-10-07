@@ -1,7 +1,7 @@
 /* Painel do orçamento: preço ao vivo, composição, ações (WhatsApp, copiar, PDF, salvar). */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
-import { BookmarkSimple, Check, CheckCircle, Copy, FilePdf, Storefront, WhatsappLogo } from "@phosphor-icons/react";
+import { BookmarkSimple, Check, CheckCircle, Copy, FilePdf, Storefront, Warning, WhatsappLogo } from "@phosphor-icons/react";
 import { brl, buildWhatsAppText, formatPrintTime, whatsAppHref, type CalcResult } from "../lib/calc";
 import { buildClientWhatsAppText, clientWhatsAppHref, getClientDetails, hasStoreBranding } from "../lib/cliente";
 import { exportClientPdf, exportPdf } from "../lib/pdf";
@@ -29,7 +29,9 @@ function buildSlices(r: CalcResult) {
 type ExportVersion = "cliente" | "completo";
 
 export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculator; onJumpTo: (id: string) => void; onOpenSettings: () => void }) {
-  const { result: r, progress, settings, state, budgetId, saveBudget, storeLogo } = calc;
+  const { result: r, progress, settings, state, budgetId, saveBudget, storeLogo, complete, pendingPro } = calc;
+  // pronto pra compartilhar: com preço e sem custo PRO ligado vazio
+  const ready = !!r && complete;
   const reduce = useReducedMotion();
   const [copied, setCopied] = useState(false);
   const [pdfState, setPdfState] = useState<"idle" | "busy" | "error">("idle");
@@ -72,7 +74,7 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
   }, []);
 
   const copy = async () => {
-    if (!r) return;
+    if (!r || !ready) return;
     track("orcamento_copiado", { modo: state.mode, versao: version });
     const text = forClient ? buildClientWhatsAppText(r, details!, settings) : buildWhatsAppText(r, settings);
     try {
@@ -93,7 +95,7 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
   };
 
   const pdf = async () => {
-    if (!r) return;
+    if (!r || !ready) return;
     setPdfState("busy");
     try {
       if (forClient) await exportClientPdf(r, details!, settings, storeLogo);
@@ -122,8 +124,8 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
           <div>
           <div className="flex items-center justify-between gap-3">
             <span className="inline-flex items-center gap-2 text-[13px] font-medium text-ink-2">
-              <span className={`size-2 rounded-full ${r ? "bg-ok" : "bg-line-strong"}`} aria-hidden="true" />
-              {r ? "Orçamento pronto" : "Aguardando dados"}
+              <span className={`size-2 rounded-full ${ready ? "bg-ok" : r ? "bg-[var(--c-energy)]" : "bg-line-strong"}`} aria-hidden="true" />
+              {r ? (ready ? "Orçamento pronto" : "Falta preencher") : "Aguardando dados"}
             </span>
             {!r && <span className="num text-[13px] text-ink-3">{done}/{progress.length}</span>}
           </div>
@@ -211,6 +213,15 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
           </div>
 
           <div className="mt-5 flex flex-none flex-col gap-2.5 rp-mt rp-actions">
+            {r && !ready && pendingPro.length > 0 && (
+              <button type="button" onClick={() => onJumpTo(`pro${pendingPro[0].id[0].toUpperCase()}${pendingPro[0].id.slice(1)}`)}
+                className="rp-reminder flex items-center gap-2.5 rounded-xl px-3 py-2.5 text-left text-[13.5px] text-ink-2 hover:text-ink"
+                style={{ background: "color-mix(in oklab, var(--c-energy) 14%, transparent)" }}>
+                <Warning size={18} className="shrink-0 text-[var(--c-energy)]" aria-hidden="true" />
+                <span className="flex-1">Falta preencher: {pendingPro.map((c) => c.label).join(", ")}. O preço ainda não conta {pendingPro.length > 1 ? "esses custos" : "esse custo"}.</span>
+                <span className="font-semibold text-ink">Preencher</span>
+              </button>
+            )}
             <div className="rp-share flex flex-col gap-2">
               <span id="compartilhar-label" className="rp-sharelabel px-1 text-[14px] font-medium text-ink-2">Compartilhar <span className="rp-hide3">orçamento </span>{forClient ? "com:" : "para:"}</span>
               <div className="rp-sharetoggle grid grid-cols-2 gap-1 rounded-full bg-surface-2 p-1" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}
@@ -235,27 +246,28 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
             <div className="rp-sendrow flex flex-col gap-2.5">
             <a
               className="btn btn-primary rp-btn w-full"
-              href={r ? (forClient ? clientWhatsAppHref(r, details!, settings) : whatsAppHref(r, settings)) : undefined}
+              href={ready ? (forClient ? clientWhatsAppHref(r!, details!, settings) : whatsAppHref(r!, settings)) : undefined}
               target="_blank"
               rel="noopener noreferrer"
-              aria-disabled={!r}
+              role="link"
+              aria-disabled={!ready}
               onClick={() => saveBudget({ silent: true })}
             >
               <WhatsappLogo size={20} weight="fill" aria-hidden="true" />
               {forClient ? "Enviar ao cliente" : "Enviar no WhatsApp"}
             </a>
             <div className="rp-btnrow grid grid-cols-3 gap-2">
-              <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!r} onClick={copy}
+              <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!ready} onClick={copy}
                 aria-label={copied ? "Copiado" : "Copiar"} title={copied ? "Copiado" : "Copiar"}>
                 {copied ? <Check size={17} weight="bold" className="text-ok" aria-hidden="true" /> : <Copy size={17} aria-hidden="true" />}
                 <span className="rp-btnlabel">{copied ? "Copiado" : "Copiar"}</span>
               </button>
-              <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!r || pdfState === "busy"} onClick={pdf}
+              <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!ready || pdfState === "busy"} onClick={pdf}
                 aria-label={pdfState === "busy" ? "Gerando PDF" : "PDF"} title="PDF">
                 <FilePdf size={17} aria-hidden="true" />
                 <span className="rp-btnlabel">{pdfState === "busy" ? "Gerando" : "PDF"}</span>
               </button>
-              <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!r} onClick={() => saveBudget()}
+              <button type="button" className="btn btn-secondary rp-btn min-h-[48px] gap-1.5 px-2 text-[14px]" disabled={!ready} onClick={() => saveBudget()}
                 aria-label={budgetId ? "Salvo" : "Salvar"} title={budgetId ? "Salvo" : "Salvar"}>
                 <BookmarkSimple size={17} weight={budgetId ? "fill" : "regular"} className={budgetId ? "text-accent-text" : undefined} aria-hidden="true" />
                 <span className="rp-btnlabel">{budgetId ? "Salvo" : "Salvar"}</span>

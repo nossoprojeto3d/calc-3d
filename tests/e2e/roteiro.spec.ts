@@ -261,3 +261,24 @@ test("10. orçamento para o cliente: sem custos e com os dados da loja", async (
   ]);
   expect(download.suggestedFilename()).toMatch(/^orcamento-peca-personalizada-maria-souza-\d{4}-\d{2}-\d{2}\.pdf$/);
 });
+
+test("11. custo PRO ligado e vazio: mantém o preço, bloqueia o envio e alerta ao calcular", async ({ page }) => {
+  await page.goto("./");
+  await fillBasic(page);
+  await page.locator("#roundToggle").click();
+  const before = await price(page);
+  await page.getByRole("tab", { name: "Profissional" }).click();
+  await page.locator("#proLaborToggle").click();
+  // o preço continua (sem a mão de obra), mas nada pode ser enviado
+  expect(await price(page)).toBeCloseTo(before, 10);
+  await expect(page.getByText(/Falta preencher: Mão de obra/)).toBeVisible();
+  await expect(page.getByRole("link", { name: "Enviar no WhatsApp" })).toHaveAttribute("aria-disabled", "true");
+  await expect(page.getByRole("button", { name: "PDF" })).toBeDisabled();
+  // ao calcular, o campo vazio fica em vermelho
+  await page.locator("#calcBtn").click();
+  await expect(page.getByText("Informe o tempo de preparo, em minutos.")).toBeVisible();
+  await page.fill("#proLabor", "20");
+  await expect(page.getByText(/Falta preencher/)).toHaveCount(0);
+  await expect(page.getByRole("link", { name: "Enviar no WhatsApp" })).not.toHaveAttribute("aria-disabled", "true");
+  expect(await price(page)).toBeCloseTo(before + 10 * 2.5, 10); // R$ 10 de mão de obra × 2,5 (150% de lucro)
+});
