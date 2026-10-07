@@ -127,6 +127,12 @@ export default function App() {
     // foco antes da rolagem: no Safari, focar depois cancela a rolagem suave
     if (!(target instanceof HTMLInputElement && target.disabled)) (target as HTMLElement).focus?.({ preventScroll: true });
     requestAnimationFrame(() => block.scrollIntoView({ behavior: reduce ? "auto" : "smooth", block: "center" }));
+    // garantia: o Safari às vezes descarta a rolagem suave quando a tela muda de
+    // tamanho logo em seguida (as mensagens de erro aparecem nessa hora)
+    setTimeout(() => {
+      const r = block.getBoundingClientRect();
+      if (r.bottom < 0 || r.top > window.innerHeight) block.scrollIntoView({ behavior: "auto", block: "center" });
+    }, 600);
   }, [reduce]);
 
   const revealResult = useCallback(() => {

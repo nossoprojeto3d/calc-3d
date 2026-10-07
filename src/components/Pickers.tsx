@@ -107,25 +107,99 @@ export function PrinterPicker({ value, customPower, onChange }: {
 }
 
 export function MaterialPicker({ value, onChange, error }: { value: string; onChange: (id: string) => void; error?: string | null }) {
-  const groups = [...new Set(MATERIALS.map((m) => m.group))];
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const selected = MATERIALS.find((m) => m.id === value);
+
+  const groups = useMemo(() => {
+    const q = normalize(query.trim());
+    const list = MATERIALS.filter((m) => m.id !== "outro" && (!q || normalize(`${m.name} ${m.group}`).includes(q)));
+    return [...new Set(list.map((m) => m.group))].map((group) => ({ group, items: list.filter((m) => m.group === group) }));
+  }, [query]);
+
+  const choose = (id: string) => {
+    onChange(id);
+    setOpen(false);
+    setQuery("");
+  };
+
   return (
-    <fieldset className="flex flex-col gap-2" id="materialSelect" tabIndex={-1} aria-describedby={error ? "materialSelect-error" : undefined}>
-      <legend className="label mb-2">Tipo</legend>
-      <div className="flex flex-col gap-3">
-        {groups.map((group) => (
-          <div key={group} className="flex flex-wrap gap-2" role="group" aria-label={group}>
-            {MATERIALS.filter((m) => m.group === group).map((m) => (
-              <button key={m.id} type="button" className="chip" aria-pressed={m.id === value} onClick={() => onChange(m.id)}>
-                <span>{m.id === "outro" ? "Outro" : m.name.replace(" (fibra de carbono)", "").replace(" (policarbonato)", "")}</span>
-                {m.pricePerKg !== null && (
-                  <span className="num text-[12px] text-ink-3" aria-label={`${brl(m.pricePerKg)} o kg`}>{m.pricePerKg.toFixed(2).replace(".", ",")}</span>
-                )}
-              </button>
-            ))}
-          </div>
-        ))}
-      </div>
+    <div className="flex flex-col gap-2" data-field="materialSelect">
+      <span className="label" id="materialSelect-label">Tipo de filamento</span>
+      <button
+        id="materialSelect"
+        type="button"
+        className="field-box w-full text-left"
+        data-invalid={!!error}
+        aria-haspopup="dialog"
+        aria-labelledby="materialSelect-label materialSelect"
+        aria-describedby={error ? "materialSelect-error" : undefined}
+        onClick={() => setOpen(true)}
+      >
+        <span className="flex min-w-0 flex-1 flex-col py-2">
+          {selected ? (
+            <>
+              <span className="truncate text-[16px] font-medium">{selected.name}</span>
+              <span className="truncate text-[13px] text-ink-3">
+                {selected.pricePerKg !== null ? `${selected.group} · média de ${brl(selected.pricePerKg)}/kg` : "Você informa o nome e o preço"}
+              </span>
+            </>
+          ) : (
+            <span className="truncate py-2.5 text-[16px] text-ink-3">Escolha o filamento</span>
+          )}
+        </span>
+        <CaretDown size={18} className="shrink-0 text-ink-3" aria-hidden="true" />
+      </button>
       {error && <p id="materialSelect-error" className="error-text" role="alert">{error}</p>}
-    </fieldset>
+
+      <Sheet open={open} onOpenChange={(o) => { setOpen(o); if (!o) setQuery(""); }} title="Escolha o filamento"
+        description="O preço do kg vem com a média do mercado. Dá pra ajustar depois.">
+        <div className="sticky top-0 z-10 -mx-1 bg-surface px-1 pb-3">
+          <label className="field-box">
+            <MagnifyingGlass size={18} className="text-ink-3" aria-hidden="true" />
+            <input
+              className="text"
+              type="search"
+              inputMode="search"
+              placeholder="Buscar filamento"
+              aria-label="Buscar filamento"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+            />
+          </label>
+        </div>
+        <div className="flex flex-col gap-5">
+          {groups.map((g) => (
+            <div key={g.group}>
+              <p className="mb-1.5 px-1 text-[13px] font-medium text-ink-3">{g.group}</p>
+              <ul className="overflow-hidden rounded-2xl bg-surface-2" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
+                {g.items.map((m, i) => (
+                  <li key={m.id} className={i ? "border-t border-line" : undefined}>
+                    <button type="button" onClick={() => choose(m.id)} aria-pressed={m.id === value}
+                      className="flex min-h-[56px] w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-surface-3">
+                      <span className="min-w-0 flex-1 truncate text-[15.5px] font-medium">{m.name}</span>
+                      <span className="num shrink-0 text-[13px] text-ink-2">{brl(m.pricePerKg as number)}/kg</span>
+                      <span className="flex size-5 shrink-0 items-center justify-center text-accent-text" aria-hidden="true">
+                        {m.id === value && <Check size={18} weight="bold" />}
+                      </span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
+          {!groups.length && <p className="hint px-1">Nenhum filamento com “{query}”. Use “Outro” abaixo.</p>}
+          <button type="button" onClick={() => choose("outro")} aria-pressed={value === "outro"}
+            className="flex min-h-[56px] items-center gap-3 rounded-2xl px-4 text-left transition-colors hover:bg-surface-3"
+            style={{ boxShadow: "inset 0 0 0 1px var(--line-strong)" }}>
+            <span className="flex-1">
+              <span className="block text-[15.5px] font-medium">Outro filamento</span>
+              <span className="block text-[13px] text-ink-3">Você informa o nome e o preço do kg</span>
+            </span>
+            {value === "outro" && <Check size={18} weight="bold" className="text-accent-text" />}
+          </button>
+        </div>
+      </Sheet>
+    </div>
   );
 }

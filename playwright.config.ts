@@ -11,6 +11,7 @@ export default defineConfig({
     baseURL: process.env.BASE_URL || "http://localhost:4173/calc-3d/",
     locale: "pt-BR",
     acceptDownloads: true,
+    screenshot: "only-on-failure",
   },
   projects: [
     { name: "iPhone Safari", use: { ...devices["iPhone 15"] } },

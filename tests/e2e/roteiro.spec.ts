@@ -39,7 +39,11 @@ async function pickPrinter(page: Page, search: string, name: RegExp) {
 
 async function fillBasic(page: Page) {
   await pickPrinter(page, "P1S", /P1S/);
-  await page.getByRole("button", { name: /PLA Matte/ }).click();
+  await page.locator("#materialSelect").click();
+  await page.getByRole("searchbox", { name: "Buscar filamento" }).fill("matte");
+  await page.getByRole("dialog").getByRole("button", { name: /PLA Matte/ }).click();
+  await expect(page.getByRole("dialog")).toBeHidden();
+  await expect(page.locator("#pricePerKg")).toHaveValue("119,90");
   await page.fill("#kwhPrice", "0,92");
   await page.fill("#printHours", "3");
   await page.fill("#printMinutes", "15");
