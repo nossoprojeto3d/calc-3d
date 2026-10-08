@@ -3,9 +3,10 @@
 @import "@fontsource-variable/geist-mono";
 
 /* =========================================================
-   IDENTIDADE V4: "Grafite e Esmeralda"
-   Neutros grafite frios + um único acento verde esmeralda (lucro, "ok").
-   O logo da Nosso Projeto 3D foi recolorido nesse verde (só na calculadora).
+   IDENTIDADE V4: "Grafite e Violeta"
+   Neutros grafite frios + um único acento violeta. O verde fica só no
+   status "ok" (orçamento pronto), que é sinal e não cor da marca.
+   O logo da Nosso Projeto 3D foi recolorido nesse violeta (só na calculadora).
    Raios: campos 12px, cartões 20px (moldura 24px), botões em pílula.
    ========================================================= */
 
@@ -14,7 +15,7 @@
 :root,
 [data-theme="dark"] {
   --bg: #0c0e11;
-  --bg-glow: rgba(47, 211, 154, 0.07);
+  --bg-glow: rgba(164, 139, 255, 0.08);
   --surface: #14171b;
   --surface-2: #1b1f24;
   --surface-3: #232830;
@@ -23,26 +24,26 @@
   --ink: #eceef1;
   --ink-2: #a3aab4;
   --ink-3: #8b939e;
-  --accent: #2fd39a;
-  --accent-hover: #4fdeac;
-  --accent-ink: #03140d;
-  --accent-text: #52e0ae;
-  --accent-soft: rgba(47, 211, 154, 0.13);
-  --accent-line: rgba(47, 211, 154, 0.4);
-  --accent-glow: rgba(47, 211, 154, 0.55);
+  --accent: #a48bff;
+  --accent-hover: #b6a1ff;
+  --accent-ink: #160b33;
+  --accent-text: #bba8ff;
+  --accent-soft: rgba(164, 139, 255, 0.15);
+  --accent-line: rgba(164, 139, 255, 0.45);
+  --accent-glow: rgba(164, 139, 255, 0.55);
   --danger: #ff6b6b;
   --danger-soft: rgba(255, 107, 107, 0.12);
-  --ok: #45d39a;
+  --ok: var(--accent-text);
   --shadow-tint: 4 6 9;
   --highlight: rgba(255, 255, 255, 0.05);
 
   /* composição do preço: uma cor fixa por parte */
   --c-filament: #6ea8fe;
   --c-energy: #f2c94c;
-  --c-wear: #9b8cff;
+  --c-wear: #e5e7eb;
   --c-labor: #fb923c;
   --c-failure: #c99a6b;
-  --c-packaging: #c084fc;
+  --c-packaging: #38bdf8;
   --c-materials: #d6c26e;
   --c-shopee: #ff7a7a;
   --c-meli: #67e8f9;
@@ -54,7 +55,7 @@
 
 [data-theme="light"] {
   --bg: #f3f4f6;
-  --bg-glow: rgba(34, 197, 139, 0.09);
+  --bg-glow: rgba(123, 92, 250, 0.09);
   --surface: #ffffff;
   --surface-2: #f6f7f9;
   --surface-3: #eceef2;
@@ -63,28 +64,28 @@
   --ink: #12151a;
   --ink-2: #4b525d;
   --ink-3: #636a75;
-  --accent: #22c58b;
-  --accent-hover: #1bb47e;
-  --accent-ink: #03140d;
-  --accent-text: #0a7a55;
-  --accent-soft: rgba(34, 197, 139, 0.13);
-  --accent-line: rgba(10, 122, 85, 0.4);
-  --accent-glow: rgba(34, 197, 139, 0.55);
+  --accent: #7b5cfa;
+  --accent-hover: #6a48f0;
+  --accent-ink: #ffffff;
+  --accent-text: #5b3fd9;
+  --accent-soft: rgba(123, 92, 250, 0.12);
+  --accent-line: rgba(91, 63, 217, 0.4);
+  --accent-glow: rgba(123, 92, 250, 0.5);
   --danger: #d92d2d;
   --danger-soft: rgba(217, 45, 45, 0.08);
-  --ok: #138a5b;
+  --ok: var(--accent-text);
   --shadow-tint: 30 38 52;
   --highlight: rgba(255, 255, 255, 0.9);
 
   --c-filament: #3b7be0;
   --c-energy: #d9a30f;
-  --c-wear: #6d5ce8;
+  --c-wear: #a1a1aa;
   --c-labor: #ea7a1c;
   --c-failure: #9a6a3a;
-  --c-packaging: #a855f7;
+  --c-packaging: #0284c7;
   --c-materials: #9a8a2e;
   --c-shopee: #e5484d;
-  --c-meli: #0891b2;
+  --c-meli: #06b6d4;
   --c-shipping: #64748b;
   --c-taxes: #d6457f;
   color-scheme: light;
@@ -491,7 +492,7 @@
   [data-density="3"] .rp-btnrow .rp-btn:last-child:focus-visible::after { transform: translate(0, 0); }
 }
 
-/* logo verde um pouco mais fechado sobre o fundo claro */
+/* logo um pouco mais fechado sobre o fundo claro */
 [data-theme="light"] .brand-logo { filter: brightness(0.78) saturate(1.3); }
 
 /* Aviso de cookies: vem do medicao.js, que é o mesmo arquivo em todos os

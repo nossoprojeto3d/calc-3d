@@ -42,8 +42,8 @@ function loadImageAsDataURL(src: string) {
 
 // ---------------------------------------------------------
 // ESTILO COMUM DOS PDFs (completo e do cliente)
-// Faixa grafite no topo com fio verde, seções com título verde e linha,
-// linhas "rótulo ... valor", cartão verde com o preço e assinatura no fim.
+// Faixa grafite no topo com fio violeta, seções com título violeta e linha,
+// linhas "rótulo ... valor", cartão violeta com o preço e assinatura no fim.
 // ---------------------------------------------------------
 type Doc = InstanceType<typeof import("jspdf").jsPDF>;
 
@@ -67,7 +67,7 @@ async function createPdf(header: { title: string; subtitle: string; logo: string
 
   doc.setFillColor(12, 14, 17);
   doc.rect(0, 0, pageWidth, 30, "F");
-  doc.setFillColor(47, 211, 154);
+  doc.setFillColor(164, 139, 255);
   doc.rect(0, 30, pageWidth, 1.2, "F");
 
   let textX = MARGIN_X;
@@ -122,7 +122,7 @@ async function createPdf(header: { title: string; subtitle: string; logo: string
     section(title: string) {
       doc.setFont("helvetica", "bold");
       doc.setFontSize(11.5);
-      doc.setTextColor(10, 122, 85);
+      doc.setTextColor(91, 63, 217);
       doc.text(title.toUpperCase(), MARGIN_X, y);
       y += 1.5;
       doc.setDrawColor(226, 229, 234);
@@ -148,7 +148,7 @@ async function createPdf(header: { title: string; subtitle: string; logo: string
       y += 5.2 * lines.length + 1.3;
     },
     priceCard(label: string, value: number) {
-      doc.setFillColor(228, 249, 240);
+      doc.setFillColor(240, 236, 255);
       doc.roundedRect(MARGIN_X, y, contentW, 20, 3, 3, "F");
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10.5);
@@ -156,7 +156,7 @@ async function createPdf(header: { title: string; subtitle: string; logo: string
       doc.text(label, MARGIN_X + 6, y + 8);
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
-      doc.setTextColor(10, 122, 85);
+      doc.setTextColor(91, 63, 217);
       doc.text(brl(value), MARGIN_X + 6, y + 16);
       y += 30;
     },

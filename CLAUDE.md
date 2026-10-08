@@ -41,8 +41,8 @@ O README.md explica a fórmula de preço e onde ficam os dados. Leia-o antes de 
 - Texto digitado sempre entra como texto no React (nunca `dangerouslySetInnerHTML`). Mantenha isso.
 - Os campos precisam ter fonte de pelo menos 16px, para o iPhone não dar zoom automático.
 - Emojis na mensagem do WhatsApp já quebraram. Teste a codificação do texto ao mexer nela (o teste e2e "WhatsApp" confere).
-- Identidade V4 "Grafite e Esmeralda": neutros grafite + um único acento verde esmeralda (`--accent`, #2FD39A). Geist no texto e nos números, Geist Mono só em detalhes técnicos. Laranja é a cor do Ajuste 3MF e dourado a do site/catálogo: não use aqui.
-- O logo, o favicon e os ícones do app foram recoloridos em verde (`node scripts/recolorir-logo.mjs`, a partir dos originais em `scripts/logo-dourado/`). As cores do aviso de cookies são trocadas em `src/styles.css`, sem mexer no `medicao.js` compartilhado.
+- Identidade V4 "Grafite e Violeta": neutros grafite + um único acento violeta (`--accent`: #A48BFF no escuro, #7B5CFA no claro). Nada de verde na interface, nem no "ok". Geist no texto e nos números, Geist Mono só em detalhes técnicos. Laranja é a cor do Ajuste 3MF e dourado a do site/catálogo: não use aqui.
+- O logo, o favicon e os ícones do app foram recoloridos em violeta (`node scripts/recolorir-logo.mjs`, a partir dos originais em `scripts/logo-dourado/`). As cores do aviso de cookies são trocadas em `src/styles.css`, sem mexer no `medicao.js` compartilhado.
 
 ## Imagens
 

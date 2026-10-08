@@ -1,5 +1,5 @@
 // Gera a imagem que aparece ao compartilhar o link (WhatsApp, Instagram etc.):
-// 1200x630, no visual da calculadora (grafite + verde esmeralda, logo verde).
+// 1200x630, no visual da calculadora (grafite + violeta, logo violeta).
 // Uso: node scripts/gerar-imagem-compartilhamento.mjs
 import sharp from "sharp";
 
@@ -11,17 +11,17 @@ const fundo = Buffer.from(`
 <svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}">
   <defs>
     <radialGradient id="brilho" cx="78%" cy="0%" r="70%">
-      <stop offset="0" stop-color="#2FD39A" stop-opacity="0.22"/>
-      <stop offset="1" stop-color="#2FD39A" stop-opacity="0"/>
+      <stop offset="0" stop-color="#A48BFF" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#A48BFF" stop-opacity="0"/>
     </radialGradient>
   </defs>
   <rect width="100%" height="100%" fill="#0C0E11"/>
   <rect width="100%" height="100%" fill="url(#brilho)"/>
-  <rect x="0" y="${H - 10}" width="${W}" height="10" fill="#2FD39A"/>
+  <rect x="0" y="${H - 10}" width="${W}" height="10" fill="#A48BFF"/>
   <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
     <text x="430" y="220" fill="#A3AAB4" font-size="32" font-weight="500">Nosso Projeto 3D</text>
     <text x="430" y="300" fill="#ECEEF1" font-size="64" font-weight="700" letter-spacing="-1.5">Quanto cobrar pela</text>
-    <text x="430" y="374" fill="#ECEEF1" font-size="64" font-weight="700" letter-spacing="-1.5">sua peça<tspan fill="#2FD39A">?</tspan></text>
+    <text x="430" y="374" fill="#ECEEF1" font-size="64" font-weight="700" letter-spacing="-1.5">sua peça<tspan fill="#A48BFF">?</tspan></text>
     <text x="430" y="446" fill="#A3AAB4" font-size="30">Calculadora de impressão 3D. Grátis, sem cadastro.</text>
   </g>
 </svg>`);
