@@ -261,9 +261,9 @@ export default function App() {
           <div className="flex min-w-0 flex-col gap-4">
             {/* abertura */}
             <div id="abertura" className="flex flex-col gap-5 pb-2 lg:pt-6">
-              <div className="max-w-[28ch]">
+              <div className="max-w-[34ch]">
                 <h1 className="text-[34px] font-semibold leading-[1.05] tracking-[-0.035em] sm:text-[44px]">
-                  Quanto cobrar pela sua peça<span className="text-accent">?</span>
+                  Quanto cobrar pela sua peça 3D<span className="text-accent">?</span>
                 </h1>
                 <button type="button" onClick={onExample}
                   className="group mt-3 inline-flex min-h-[40px] items-center gap-2 text-[15px] font-medium text-ink-2 hover:text-ink">

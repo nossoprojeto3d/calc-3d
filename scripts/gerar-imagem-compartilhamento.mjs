@@ -21,7 +21,7 @@ const fundo = Buffer.from(`
   <g font-family="Helvetica Neue, Helvetica, Arial, sans-serif">
     <text x="430" y="220" fill="#A3AAB4" font-size="32" font-weight="500">Nosso Projeto 3D</text>
     <text x="430" y="300" fill="#ECEEF1" font-size="64" font-weight="700" letter-spacing="-1.5">Quanto cobrar pela</text>
-    <text x="430" y="374" fill="#ECEEF1" font-size="64" font-weight="700" letter-spacing="-1.5">sua peça<tspan fill="#A48BFF">?</tspan></text>
+    <text x="430" y="374" fill="#ECEEF1" font-size="64" font-weight="700" letter-spacing="-1.5">sua peça 3D<tspan fill="#A48BFF">?</tspan></text>
     <text x="430" y="446" fill="#A3AAB4" font-size="30">Calculadora de impressão 3D. Grátis, sem cadastro.</text>
   </g>
 </svg>`);
