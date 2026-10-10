@@ -9,10 +9,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, LazyMotion, domAnimation, m, useReducedMotion } from "motion/react";
 import {
   ArrowRight, ArrowUpRight, Briefcase, ClockCounterClockwise, Cylinder, DownloadSimple, GearSix, InstagramLogo,
-  CaretDown, Play, Printer, Timer, TrendUp, UserCircle, X,
+  CaretDown, Minus, Play, Plus, Printer, Timer, TrendUp, UserCircle, X,
 } from "@phosphor-icons/react";
 import { CUSTOM_PRINTER_ID } from "./lib/data";
-import { brl } from "./lib/calc";
+import { PLATE_QTY_MAX, brl, formatDuration, formatGrams, getPlateQty } from "./lib/calc";
 import { KEYS, read, track, write } from "./lib/storage";
 import { useCalculator } from "./lib/useCalculator";
 import { InputField, Section, Switch, useIsDesktop } from "./components/ui";
@@ -176,6 +176,12 @@ export default function App() {
   const pctFilled = str("marginPct").trim() !== "";
   const fixedFilled = str("marginFixed").trim() !== "";
   const isPro = state.mode === "profissional";
+  // várias peças na mesa: tempo e peso passam a ser da mesa inteira
+  const qty = getPlateQty(v);
+  const plate = qty > 1;
+  const plateMinutes = (parseInt(str("printHours"), 10) || 0) * 60 + (parseInt(str("printMinutes"), 10) || 0);
+  const plateGrams = parseFloat(str("printGrams")) || 0;
+  const perPiece = [plateMinutes > 0 && formatDuration(plateMinutes / qty), plateGrams > 0 && `${formatGrams(plateGrams / qty)} g`].filter(Boolean).join(" · ");
 
   // ===================== RODAPÉ =====================
   const footer = (
@@ -312,8 +318,9 @@ export default function App() {
             <Section id="secao-peca" icon={<Timer size={19} />} title="A peça">
               <InputField id="jobName" kind="text" label={<>Nome da peça <span className="optional">opcional</span></>} placeholder="Ex: Suporte de celular"
                 value={str("jobName")} onChange={(x) => set("jobName", x)} />
+              <PlateQty value={str("plateQty")} onChange={(x) => set("plateQty", x)} />
               <div className="flex flex-col gap-2" data-field="printHours">
-                <span className="label">Tempo de impressão <span className="optional">está no fatiador</span></span>
+                <span className="label">{plate ? "Tempo da mesa inteira" : "Tempo de impressão"} <span className="optional">está no fatiador</span></span>
                 <div className="grid grid-cols-2 gap-3">
                   <InputField id="printHours" ariaLabel="Horas de impressão" kind="numeric" suffix="h" placeholder="2"
                     value={str("printHours")} onChange={(x) => set("printHours", x)} error={err("printHours") ?? (state.errors.includes("printTime") ? " " : null)} />
@@ -322,8 +329,9 @@ export default function App() {
                 </div>
                 {err("printTime") && <p className="error-text" role="alert">{err("printTime")}</p>}
               </div>
-              <InputField id="printGrams" label="Peso do filamento usado" suffix="g" placeholder="45"
-                value={str("printGrams")} onChange={(x) => set("printGrams", x)} error={err("printGrams")} hint="Também está no fatiador." />
+              <InputField id="printGrams" label={plate ? "Peso da mesa inteira" : "Peso do filamento usado"} suffix="g" placeholder="45"
+                value={str("printGrams")} onChange={(x) => set("printGrams", x)} error={err("printGrams")}
+                hint={plate && perPiece ? `Também está no fatiador. Por peça: ${perPiece}.` : "Também está no fatiador."} />
             </Section>
 
             <AnimatePresence initial={false}>
@@ -431,6 +439,37 @@ function ModeSwitch({ mode, onChange, compact }: { mode: "basico" | "profissiona
           ? "Tudo do Básico + desgaste, mão de obra, embalagem, taxas de marketplace e impostos."
           : "Material, energia e lucro: o essencial pra precificar."}
       </p>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------
+// PEÇAS NA MESA: contador discreto. Com 1, a calculadora segue igual; com
+// mais, tempo e peso viram os da mesa inteira e o preço sai por peça.
+// ---------------------------------------------------------
+function PlateQty({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const n = parseInt(value, 10) || 0;
+  const qty = n > 1 ? n : 1;
+  return (
+    <div className="flex min-h-[56px] items-center gap-3 rounded-2xl bg-surface-2 py-1.5 pl-4 pr-1.5" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }} data-field="plateQty">
+      <span className="min-w-0 flex-1">
+        <label htmlFor="plateQty" className="block text-[15px] font-medium">Peças na mesa</label>
+        <span className="block text-[13px] text-ink-3">{qty > 1 ? "Preço sai por peça" : "Várias iguais de uma vez?"}</span>
+      </span>
+      <div className="flex shrink-0 items-center rounded-full bg-surface" style={{ boxShadow: "inset 0 0 0 1px var(--line-strong)" }}>
+        <button type="button" className="icon-btn" aria-label="Uma peça a menos" disabled={qty <= 1}
+          onClick={() => onChange(String(qty - 1))}>
+          <Minus size={16} weight="bold" />
+        </button>
+        <input id="plateQty" type="text" inputMode="numeric" autoComplete="off" enterKeyHint="next"
+          className="num w-11 bg-transparent text-center text-[16px] font-semibold text-ink outline-none"
+          value={value} onChange={(e) => onChange(e.target.value)}
+          onBlur={() => { if (!(n >= 1)) onChange("1"); }} />
+        <button type="button" className="icon-btn" aria-label="Uma peça a mais" disabled={qty >= PLATE_QTY_MAX}
+          onClick={() => onChange(String(qty + 1))}>
+          <Plus size={16} weight="bold" />
+        </button>
+      </div>
     </div>
   );
 }
@@ -569,7 +608,7 @@ function PriceDock({ calc, onCalculate }: { calc: ReturnType<typeof useCalculato
       <div className="mx-3 flex items-center gap-3 rounded-[22px] border border-line bg-surface/[0.97] py-2 pl-4 pr-2 shadow-[0_18px_40px_-16px_rgb(var(--shadow-tint)/0.7)] backdrop-blur-xl">
         <div className="min-w-0 flex-1">
           <p className="truncate text-[12.5px] text-ink-3">
-            {result ? (result.hasCustomName ? result.jobName : "Preço sugerido") : missing.length ? `Faltam ${missing.length} de ${progress.length}` : "Tudo preenchido"}
+            {result ? (result.quantity > 1 ? `${result.hasCustomName ? result.jobName : "Preço"} · por peça` : result.hasCustomName ? result.jobName : "Preço sugerido") : missing.length ? `Faltam ${missing.length} de ${progress.length}` : "Tudo preenchido"}
           </p>
           <p className={`truncate ${result ? "num text-[21px] font-semibold tracking-[-0.03em]" : "text-[14.5px] font-medium"}`}>
             {result ? brl(result.finalPrice) : missing.length ? missing.slice(0, 2).map((m) => m.label).join(", ") + (missing.length > 2 ? "…" : "") : "Pronto pra calcular"}

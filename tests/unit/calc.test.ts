@@ -78,3 +78,99 @@ describe("orçamento para o cliente", () => {
     expect(text).not.toContain("🏪");
   });
 });
+
+describe("peças na mesa", () => {
+  const settings = { ...defaultStoreSettings(), hourlyRate: "30" };
+  function plate(qty: string, extra: FormAction[] = [], mode: "basico" | "profissional" = "basico") {
+    let state: FormState = initialFormState(settings, mode, {});
+    const d = (a: FormAction) => { state = formReducer(state, a); };
+    d({ type: "set", id: "printerSelect", value: "a1-combo" });
+    d({ type: "set", id: "kwhPrice", value: "0.85" });
+    d({ type: "set", id: "materialSelect", value: "pla-basic" });
+    d({ type: "set", id: "printHours", value: "5" });
+    d({ type: "set", id: "printMinutes", value: "0" });
+    d({ type: "set", id: "printGrams", value: "120" });
+    d({ type: "set", id: "marginPct", value: "100" });
+    d({ type: "set", id: "plateQty", value: qty });
+    extra.forEach(d);
+    return { r: calculate(state.values, state.mode, settings, state.shopeeTier, state.meliTier)!, state };
+  }
+  const piece = (extra: FormAction[] = [], mode: "basico" | "profissional" = "basico") => {
+    // a mesma peça calculada sozinha: 1/20 do tempo (15 min) e do peso (6 g)
+    let state: FormState = initialFormState(settings, mode, {});
+    const d = (a: FormAction) => { state = formReducer(state, a); };
+    d({ type: "set", id: "printerSelect", value: "a1-combo" });
+    d({ type: "set", id: "kwhPrice", value: "0.85" });
+    d({ type: "set", id: "materialSelect", value: "pla-basic" });
+    d({ type: "set", id: "printHours", value: "0" });
+    d({ type: "set", id: "printMinutes", value: "15" });
+    d({ type: "set", id: "printGrams", value: "6" });
+    d({ type: "set", id: "marginPct", value: "100" });
+    extra.forEach(d);
+    return calculate(state.values, state.mode, settings, state.shopeeTier, state.meliTier)!;
+  };
+
+  it("vazio ou 1 é igual ao cálculo de sempre", () => {
+    expect(plate("").r.finalPrice).toBe(plate("1").r.finalPrice);
+    expect(plate("1").r.quantity).toBe(1);
+    expect(whatsAppHref(plate("1").r, settings)).not.toContain(encodeURIComponent("por peça"));
+  });
+
+  it("20 peças: cada uma custa 1/20 da mesa, e o total é preço × 20", () => {
+    const { r } = plate("20");
+    const one = piece();
+    expect(r.quantity).toBe(20);
+    expect(r.filamentCost).toBeCloseTo(one.filamentCost, 10);
+    expect(r.energyCost).toBeCloseTo(one.energyCost, 10);
+    expect(r.finalPrice).toBe(one.finalPrice);
+    expect(r.plateTotal).toBe(Math.round(r.finalPrice * 20 * 100) / 100);
+    expect(r.pieceGrams).toBe(6);
+    expect(r.pieceMinutes).toBeCloseTo(15, 10);
+  });
+
+  it("profissional: preparo é da mesa (dividido); embalagem e taxa da Shopee são por peça", () => {
+    const pro = (s: FormAction[]) => s;
+    const costs = pro([
+      { type: "toggle", cost: "labor", on: true, settings },
+      { type: "set", id: "proLabor", value: "20" },
+      { type: "toggle", cost: "packaging", on: true, settings },
+      { type: "set", id: "proPackaging", value: "1.5" },
+      { type: "toggle", cost: "shopee", on: true, settings },
+    ]);
+    const { r } = plate("20", costs, "profissional");
+    const one = piece([
+      { type: "toggle", cost: "labor", on: true, settings },
+      { type: "set", id: "proLabor", value: "1" },
+      { type: "toggle", cost: "packaging", on: true, settings },
+      { type: "set", id: "proPackaging", value: "1.5" },
+      { type: "toggle", cost: "shopee", on: true, settings },
+    ], "profissional");
+    const value = (x: typeof r, id: string) => x.proCosts.find((c) => c.id === id)!.value;
+    expect(value(r, "labor")).toBeCloseTo(0.5, 10); // 20min × R$30/h ÷ 20
+    expect(value(r, "packaging")).toBe(1.5);
+    expect(value(r, "shopee")).toBe(value(one, "shopee"));
+    expect(r.finalPrice).toBe(one.finalPrice);
+  });
+
+  it("desgaste automático é dividido entre as peças", () => {
+    const wear = [{ type: "toggle", cost: "wear", on: true, settings }] as FormAction[];
+    const a = plate("1", wear, "profissional").state.values.proWear;
+    const b = plate("4", wear, "profissional").state.values.proWear;
+    expect(Number(b)).toBeCloseTo(Number(a) / 4, 2);
+  });
+
+  it("textos: completo por peça com total; cliente com quantidade e total, sem custos", () => {
+    const { r } = plate("20");
+    const full = decodeURIComponent(whatsAppHref(r, settings).split("text=")[1]);
+    expect(full).toContain("🔢 Peças na mesa: 20");
+    expect(full).toContain("15min por peça");
+    expect(full).toContain(`✅ *Preço por peça: `);
+    expect(full).toContain(`🧮 *Total (20 peças): `);
+    const d = getClientDetails({ clientName: "", deliveryTime: "", validityDays: "", notes: "" }, new Date());
+    const client = buildClientWhatsAppText(r, d, settings);
+    expect(client).toContain("🔢 Quantidade: 20 peças");
+    expect(client).toContain("💵 Valor por peça: ");
+    expect(client).toContain("💰 *Total: ");
+    expect(client).not.toMatch(/Custo|Lucro|Energia|Filamento:|Taxa|Impostos|preparo/);
+  });
+});

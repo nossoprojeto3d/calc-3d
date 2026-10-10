@@ -2,7 +2,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { BookmarkSimple, Check, CheckCircle, Copy, FilePdf, Storefront, Warning, WhatsappLogo } from "@phosphor-icons/react";
-import { brl, buildWhatsAppText, formatPrintTime, whatsAppHref, type CalcResult } from "../lib/calc";
+import { brl, buildWhatsAppText, formatGrams, formatPrintTime, piecesLabel, whatsAppHref, type CalcResult } from "../lib/calc";
 import { buildClientWhatsAppText, clientWhatsAppHref, getClientDetails, hasStoreBranding } from "../lib/cliente";
 import { exportClientPdf, exportPdf } from "../lib/pdf";
 import { KEYS, read, track, write } from "../lib/storage";
@@ -136,9 +136,16 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
             {!r && <span className="num text-[13px] text-ink-3">{done}/{progress.length}</span>}
           </div>
 
-          <p className="mt-4 truncate text-[14px] text-ink-2 rp-mt">{r?.hasCustomName ? r.jobName : "Preço sugerido"}</p>
+          <p className="mt-4 truncate text-[14px] text-ink-2 rp-mt">
+            {r && r.quantity > 1 ? `${r.hasCustomName ? r.jobName : "Preço"} · por peça` : r?.hasCustomName ? r.jobName : "Preço sugerido"}
+          </p>
           <AnimatedPrice value={r ? r.finalPrice : 0} id="precoFinal"
             className={`num rp-price mt-1 block text-[44px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[52px] ${r ? "text-ink" : "text-ink-3"}`} />
+          {r && r.quantity > 1 && (
+            <p className="mt-1.5 text-[14px] text-ink-2">
+              {piecesLabel(r.quantity)} = <span className="num font-semibold text-ink">{brl(r.plateTotal)}</span>
+            </p>
+          )}
           {r && r.shouldRound && r.roundingDiff > 0.001 && (
             <p className="mt-1.5 text-[13px] text-ink-3">
               Calculado <span className="num">{brl(r.calculatedPrice)}</span>, arredondado <span className="num">+{brl(r.roundingDiff)}</span>
@@ -209,7 +216,9 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
                 )}
 
                 <p className="mono mt-4 text-[12px] text-ink-3 rp-mt rp-hide2">
-                  {r.grams.toLocaleString("pt-BR")} g · {r.energyKwh.toFixed(2).replace(".", ",")} kWh · {formatPrintTime(r.hours, r.minutes)}
+                  {r.quantity > 1
+                    ? `Mesa: ${piecesLabel(r.quantity)} · ${formatGrams(r.grams)} g · ${formatPrintTime(r.hours, r.minutes)}`
+                    : `${r.grams.toLocaleString("pt-BR")} g · ${r.energyKwh.toFixed(2).replace(".", ",")} kWh · ${formatPrintTime(r.hours, r.minutes)}`}
                 </p>
               </m.div>
             )}

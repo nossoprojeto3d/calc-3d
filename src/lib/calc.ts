@@ -50,7 +50,7 @@ export function emptyValues(): FormValues {
     customPrinterPower: "", customPrinterPrice: "",
     printerSelect: PRINTERS[0].id, kwhPrice: "",
     materialSelect: "", pricePerKg: "", customMaterialName: "",
-    jobName: "", printHours: "", printMinutes: "", printGrams: "",
+    jobName: "", plateQty: "1", printHours: "", printMinutes: "", printGrams: "",
     marginPct: "", marginFixed: "", roundToggle: true,
     proMeliAdType: "premium",
     proShopeeCustomPct: "", proShopeeCustomFixed: "",
@@ -87,6 +87,18 @@ export function sanitizeInteger(raw: string, maxValue?: number): string {
 }
 
 // ---------------------------------------------------------
+// PEÇAS NA MESA: tempo e peso digitados são da mesa inteira; a conta é
+// feita por peça (tempo e peso divididos). Com 1 peça, nada muda.
+// ---------------------------------------------------------
+export const PLATE_QTY_MAX = 999;
+
+/** Quantas peças saem na mesma impressão. Vazio ou inválido conta como 1. */
+export function getPlateQty(v: FormValues) {
+  const n = parseInt(str(v, "plateQty"), 10);
+  return n > 1 ? Math.min(n, PLATE_QTY_MAX) : 1;
+}
+
+// ---------------------------------------------------------
 // IMPRESSORA, VALOR-HORA, DESGASTE
 // ---------------------------------------------------------
 export interface SelectedPrinter {
@@ -116,7 +128,7 @@ export function getEffectiveHourlyRate(settings: StoreSettings) {
     : { rate: DEFAULT_HOURLY_RATE, isDefault: true };
 }
 
-/** (preço médio ÷ vida útil) × horas dessa impressão; null se não dá pra calcular. */
+/** (preço médio ÷ vida útil) × horas dessa impressão ÷ peças na mesa; null se não dá pra calcular. */
 export function computeAutoWearValue(v: FormValues) {
   const printer = getSelectedPrinter(v);
   if (!printer || !(printer.avgPurchasePrice > 0)) return null;
@@ -126,8 +138,9 @@ export function computeAutoWearValue(v: FormValues) {
   const totalHours = hours + minutes / 60;
   if (totalHours <= 0) return null;
 
-  const value = (printer.avgPurchasePrice / printer.avgLifespanHours) * totalHours;
-  return { printer, hours, minutes, value };
+  const qty = getPlateQty(v);
+  const value = (printer.avgPurchasePrice / printer.avgLifespanHours) * totalHours / qty;
+  return { printer, hours, minutes, qty, value };
 }
 
 // ---------------------------------------------------------
@@ -141,10 +154,14 @@ export function getTaxRate(v: FormValues, mode: Mode) {
   return Math.min(Math.max(pct, 0), 99) / 100;
 }
 
-/** Valor em R$ de um custo profissional digitado (sem Shopee/ML/Impostos). */
-function proCostValue(cost: ProCost, rawValue: number, baseCost: number, hourlyRate: number) {
+/**
+ * Valor em R$ (por peça) de um custo profissional digitado (sem Shopee/ML/Impostos).
+ * O tempo de preparo é da mesa inteira e se divide entre as peças; os demais
+ * custos já são digitados por peça.
+ */
+function proCostValue(cost: ProCost, rawValue: number, baseCost: number, hourlyRate: number, qty: number) {
   return cost.unit === "percent" ? baseCost * (rawValue / 100)
-    : cost.unit === "laborMinutes" ? (hourlyRate / 60) * rawValue
+    : cost.unit === "laborMinutes" ? (hourlyRate / 60) * rawValue / qty
     : rawValue;
 }
 
@@ -157,10 +174,11 @@ export function computeMarketplaceFeeBase(v: FormValues, mode: Mode, settings: S
   const printer = getSelectedPrinter(v);
   if (!printer) return null;
 
+  const qty = getPlateQty(v);
   const hours = parseInt(str(v, "printHours"), 10) || 0;
   const minutes = parseInt(str(v, "printMinutes"), 10) || 0;
-  const totalHours = hours + minutes / 60;
-  const grams = parseFloat(str(v, "printGrams")) || 0;
+  const totalHours = (hours + minutes / 60) / qty;
+  const grams = (parseFloat(str(v, "printGrams")) || 0) / qty;
   const pricePerKg = parseFloat(str(v, "pricePerKg")) || 0;
   const kwhPrice = parseFloat(str(v, "kwhPrice")) || 0;
 
@@ -177,7 +195,7 @@ export function computeMarketplaceFeeBase(v: FormValues, mode: Mode, settings: S
       if (cost.id === "shopee" || cost.id === "meli" || cost.id === "taxes") return;
       if (!bool(v, proToggleId(cost.id))) return;
       const rawValue = parseFloat(str(v, proFieldId(cost.id))) || 0;
-      const value = proCostValue(cost, rawValue, baseCost, hourlyRate);
+      const value = proCostValue(cost, rawValue, baseCost, hourlyRate, qty);
       if (GROUP1_PRO_COST_IDS.includes(cost.id)) group1Total += value;
       else group2NonFeeTotal += value;
     });
@@ -405,7 +423,13 @@ export interface ProCostLine extends ProCost {
 export interface CalcResult {
   jobName: string;
   hasCustomName: boolean;
+  /** horas por peça (com 1 peça na mesa, as da impressão) */
   totalHours: number;
+  /** peças na mesa; hours, minutes e grams são da mesa inteira, como digitados */
+  quantity: number;
+  pieceMinutes: number; pieceGrams: number;
+  /** preço final (por peça) × quantidade */
+  plateTotal: number;
   printerName: string;
   materialName: string;
   hours: number; minutes: number; grams: number;
@@ -423,16 +447,19 @@ export function calculate(rawValues: FormValues, mode: Mode, settings: StoreSett
 
   const proMode = mode === "profissional";
   const printer = getSelectedPrinter(v)!;
+  const qty = getPlateQty(v);
   const hours = parseInt(str(v, "printHours"), 10) || 0;
   const minutes = parseInt(str(v, "printMinutes"), 10) || 0;
-  const totalHours = hours + (minutes / 60);
+  // tempo e peso da mesa inteira, divididos pelas peças (com 1 peça, iguais)
+  const totalHours = (hours + (minutes / 60)) / qty;
   const grams = parseFloat(str(v, "printGrams")) || 0;
+  const pieceGrams = grams / qty;
   const pricePerKg = parseFloat(str(v, "pricePerKg")) || 0;
   const kwhPrice = parseFloat(str(v, "kwhPrice")) || 0;
   const shouldRound = bool(v, "roundToggle");
 
   // 1) filamento = (gramas / 1000) × preço por kg
-  const filamentCost = (grams / 1000) * pricePerKg;
+  const filamentCost = (pieceGrams / 1000) * pricePerKg;
   // 2) energia (kWh) = (potência / 1000) × horas
   const energyKwh = (printer.power / 1000) * totalHours;
   // 3) custo de energia = kWh × valor do kWh
@@ -451,7 +478,7 @@ export function calculate(rawValues: FormValues, mode: Mode, settings: StoreSett
       if (!bool(v, proToggleId(cost.id))) return;
       if (cost.id === "taxes") return; // calculado no fim, sobre o preço final
       const rawValue = parseFloat(str(v, proFieldId(cost.id))) || 0;
-      const value = proCostValue(cost, rawValue, baseCost, hourlyRate);
+      const value = proCostValue(cost, rawValue, baseCost, hourlyRate, qty);
       proCostsTotal += value;
       if (GROUP1_PRO_COST_IDS.includes(cost.id)) group1ProCostsTotal += value;
       const extra = cost.id === "meli" ? { adType: str(v, "proMeliAdType") } : {};
@@ -497,6 +524,10 @@ export function calculate(rawValues: FormValues, mode: Mode, settings: StoreSett
     jobName: str(v, "jobName").trim() || DEFAULT_JOB_NAME,
     hasCustomName: str(v, "jobName").trim() !== "",
     totalHours,
+    quantity: qty,
+    pieceMinutes: totalHours * 60,
+    pieceGrams,
+    plateTotal: Math.round(finalPrice * qty * 100) / 100,
     printerName: printer.name,
     materialName,
     hours, minutes, grams,
@@ -515,6 +546,21 @@ export const brl = (n: number) => n.toLocaleString("pt-BR", { style: "currency",
 /** "2h30", "0h45" */
 export const formatPrintTime = (hours: number, minutes: number) => `${hours}h${String(minutes).padStart(2, "0")}`;
 
+/** Tempo por peça, que pode ter fração de minuto: "9min", "1h 05min". */
+export function formatDuration(totalMinutes: number) {
+  const rounded = Math.round(totalMinutes);
+  if (rounded < 1) return "menos de 1min";
+  const h = Math.floor(rounded / 60);
+  const m = rounded % 60;
+  return h ? `${h}h ${String(m).padStart(2, "0")}min` : `${m}min`;
+}
+
+/** Gramas com no máximo 1 casa: "6", "2,3". */
+export const formatGrams = (g: number) => g.toLocaleString("pt-BR", { maximumFractionDigits: 1 });
+
+/** "20 peças" */
+export const piecesLabel = (qty: number) => `${qty} ${qty === 1 ? "peça" : "peças"}`;
+
 /** Assinatura da loja: só o que estiver preenchido. */
 export function buildStoreSignatureLine(settings: StoreSettings) {
   const parts = [settings.storeName, settings.city, settings.whatsapp, settings.instagram]
@@ -523,19 +569,45 @@ export function buildStoreSignatureLine(settings: StoreSettings) {
   return parts.length ? `🏪 ${parts.join(" · ")}` : "";
 }
 
-/** Mesmo texto da V3, linha por linha. */
+/**
+ * Mesmo texto da V3, linha por linha. Com várias peças na mesa, os custos
+ * saem por peça e entram a quantidade e o total.
+ */
 export function buildWhatsAppText(r: CalcResult, settings: StoreSettings) {
   const timeLabel = `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`;
+  const plate = r.quantity > 1;
 
   const proLines = r.proMode
     ? r.proCosts.map((c) => {
-        if (c.unit === "laborMinutes") return `${c.emoji} ${c.label}: ${brl(c.value)} (${c.rawValue}min de preparo × ${brl(c.hourlyRate)}/h)`;
+        if (c.unit === "laborMinutes") {
+          return plate
+            ? `${c.emoji} ${c.label}: ${brl(c.value)} (${c.rawValue}min de preparo da mesa × ${brl(c.hourlyRate)}/h ÷ ${piecesLabel(r.quantity)})`
+            : `${c.emoji} ${c.label}: ${brl(c.value)} (${c.rawValue}min de preparo × ${brl(c.hourlyRate)}/h)`;
+        }
         if (c.id === "meli") return `${c.emoji} ${c.label}: ${brl(c.value)} (anúncio ${c.adType === "classico" ? "Clássico" : "Premium"})`;
         return `${c.emoji} ${c.label}: ${brl(c.value)}`;
       })
     : [];
 
-  const lines = [
+  const lines = plate ? [
+    `🧾 *Orçamento — ${r.jobName}*`,
+    ``,
+    `🖨️ Impressora: ${r.printerName}`,
+    `🧵 Material: ${r.materialName}`,
+    `🔢 Peças na mesa: ${r.quantity}`,
+    `⏱️ Tempo da mesa: ${timeLabel} (${formatDuration(r.pieceMinutes)} por peça)`,
+    `⚖️ Peso da mesa: ${formatGrams(r.grams)} g (${formatGrams(r.pieceGrams)} g por peça)`,
+    ``,
+    `*Custos por peça*`,
+    `🧵 Filamento: ${brl(r.filamentCost)}`,
+    `⚡ Energia: ${brl(r.energyCost)} (${r.energyKwh.toFixed(2).replace(".", ",")} kWh)`,
+    ...proLines,
+    `📦 Custo total: ${brl(r.totalCost)}`,
+    `📈 Lucro: ${brl(r.profit)}`,
+    ``,
+    `✅ *Preço por peça: ${brl(r.finalPrice)}*`,
+    `🧮 *Total (${piecesLabel(r.quantity)}): ${brl(r.plateTotal)}*`,
+  ] : [
     `🧾 *Orçamento — ${r.jobName}*`,
     ``,
     `🖨️ Impressora: ${r.printerName}`,

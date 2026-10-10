@@ -3,7 +3,7 @@ import { AnimatePresence, m, useReducedMotion } from "motion/react";
 import { GearSix, Warning } from "@phosphor-icons/react";
 import { PRO_COSTS, SHOPEE_TIER_OPTION_LABELS, type ProCost } from "../lib/data";
 import {
-  brl, computeAutoWearValue, computeMeliFee, computeShopeeFee, getEffectiveHourlyRate, getEffectiveShopeeTiers,
+  getPlateQty, brl, computeAutoWearValue, computeMeliFee, computeShopeeFee, getEffectiveHourlyRate, getEffectiveShopeeTiers,
   getMeliAdTypeRate, proFieldId, proToggleId,
 } from "../lib/calc";
 import type { Calculator } from "../lib/useCalculator";
@@ -69,7 +69,7 @@ function CostBody({ cost, calc, hasError, onOpenSettings }: { cost: ProCost; cal
   if (cost.id === "wear") {
     const d = computeAutoWearValue(v);
     if (d) {
-      hint = `Estimativa: R$ ${d.printer.avgPurchasePrice.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} (preço médio) ÷ ${d.printer.avgLifespanHours.toLocaleString("pt-BR")}h (vida útil) × ${d.hours}h${String(d.minutes).padStart(2, "0")} = ${brl(d.value)}. Pode editar.`;
+      hint = `Estimativa: R$ ${d.printer.avgPurchasePrice.toLocaleString("pt-BR", { maximumFractionDigits: 0 })} (preço médio) ÷ ${d.printer.avgLifespanHours.toLocaleString("pt-BR")}h (vida útil) × ${d.hours}h${String(d.minutes).padStart(2, "0")}${d.qty > 1 ? ` ÷ ${d.qty} peças` : ""} = ${brl(d.value)}${d.qty > 1 ? " por peça" : ""}. Pode editar.`;
     } else if (v.printerSelect === "custom" && !(parseFloat(String(v.customPrinterPrice)) > 0)) {
       hint = "Pra calcular sozinho, informe quanto a impressora custou (em “Outra impressora”), ou digite o valor.";
     }
@@ -77,16 +77,19 @@ function CostBody({ cost, calc, hasError, onOpenSettings }: { cost: ProCost; cal
   if (cost.id === "labor") {
     const { rate, isDefault } = getEffectiveHourlyRate(settings);
     const minutes = parseFloat(String(v[fieldId])) || 0;
-    const total = brl((rate / 60) * minutes);
+    const qty = getPlateQty(v);
+    const total = brl((rate / 60) * minutes / qty);
+    // várias peças na mesa: o preparo é da mesa inteira e se divide entre elas
+    const perPlate = qty > 1 ? <> ÷ {qty} peças</> : null;
     hint = isDefault ? (
       <>
-        {minutes}min × {brl(rate)}/h = <strong className="font-medium text-ink-2">{total}</strong>. Usando o valor-hora padrão de {brl(rate)}, que pode estar longe da sua realidade.{" "}
+        {minutes}min × {brl(rate)}/h{perPlate} = <strong className="font-medium text-ink-2">{total}</strong>. Usando o valor-hora padrão de {brl(rate)}, que pode estar longe da sua realidade.{" "}
         <button type="button" onClick={onOpenSettings} className="inline-flex items-center gap-1 font-medium text-accent-text underline-offset-4 hover:underline">
           <GearSix size={14} aria-hidden="true" />Configurar meu valor-hora
         </button>
       </>
     ) : (
-      <>{minutes}min × {brl(rate)}/h (seu valor-hora) = <strong className="font-medium text-ink-2">{total}</strong> de mão de obra.</>
+      <>{minutes}min × {brl(rate)}/h (seu valor-hora){perPlate} = <strong className="font-medium text-ink-2">{total}</strong> de mão de obra{qty > 1 ? " por peça" : ""}.</>
     );
   }
 
@@ -97,7 +100,7 @@ function CostBody({ cost, calc, hasError, onOpenSettings }: { cost: ProCost; cal
     <>
       <InputField
         id={fieldId}
-        label={cost.fieldLabel}
+        label={cost.id === "labor" && getPlateQty(v) > 1 ? "Tempo de preparo da mesa" : cost.fieldLabel}
         ariaLabel={cost.fieldLabel ? undefined : cost.label}
         value={String(v[fieldId] ?? "")}
         onChange={(x) => set(fieldId, x)}

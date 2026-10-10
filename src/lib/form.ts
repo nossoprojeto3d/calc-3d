@@ -11,7 +11,7 @@
 
 import { MATERIALS, PRINTERS, PRO_COSTS, type ProCostId } from "./data";
 import {
-  computeAutoWearValue, computeMarketplaceFeeBase, emptyValues, getMeliAdTypeRate, hasCalculablePrintJob,
+  PLATE_QTY_MAX, computeAutoWearValue, computeMarketplaceFeeBase, emptyValues, getMeliAdTypeRate, hasCalculablePrintJob,
   pickMeliTier, pickShopeeTier, proFieldId, proToggleId, sanitizeDecimal, sanitizeInteger,
   type FormValues, type MeliTier, type Mode, type ShopeeTier, type StoreSettings,
 } from "./calc";
@@ -37,7 +37,7 @@ export const DECIMAL_FIELDS = new Set([
 ]);
 
 /** Campos que, ao mudar, fazem o desgaste ser recalculado. */
-const WEAR_TRIGGERS = new Set(["printerSelect", "printHours", "printMinutes", "customPrinterPower", "customPrinterPrice"]);
+const WEAR_TRIGGERS = new Set(["printerSelect", "printHours", "printMinutes", "plateQty", "customPrinterPower", "customPrinterPrice"]);
 
 export type FormAction =
   | { type: "set"; id: string; value: string | boolean }
@@ -101,6 +101,7 @@ function setField(state: FormState, id: string, raw: string | boolean): FormStat
     else if (id === "printHours") value = sanitizeInteger(value);
     else if (id === "printMinutes") value = sanitizeInteger(value, 59);
     else if (id === "validityDays") value = sanitizeInteger(value, 365);
+    else if (id === "plateQty") value = sanitizeInteger(value, PLATE_QTY_MAX);
   }
   values[id] = value;
 
@@ -259,6 +260,7 @@ export function formReducer(state: FormState, action: FormAction): FormState {
       set("pricePerKg", "109.90");
       set("kwhPrice", String(v.kwhPrice || "").trim() || "0.85");
       set("jobName", "Suporte de celular");
+      set("plateQty", "1");
       set("printHours", "2");
       set("printMinutes", "30");
       set("printGrams", "45");

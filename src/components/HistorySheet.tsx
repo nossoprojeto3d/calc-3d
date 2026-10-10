@@ -63,10 +63,12 @@ export function HistorySheet({ calc, open, onOpenChange, onOpened }: {
                 <span className="min-w-0 flex-1">
                   <span className="block truncate text-[15.5px] font-medium">{b.name}{b.client && <span className="font-normal text-ink-3"> · {b.client}</span>}</span>
                   <span className="block truncate text-[13px] text-ink-3">
-                    {b.materialName} · {b.time} · {Number(b.grams).toLocaleString("pt-BR")} g · {formatSavedDate(b.savedAt)}
+                    {(b.qty ?? 1) > 1 && `${b.qty} peças · `}{b.materialName} · {b.time} · {Number(b.grams).toLocaleString("pt-BR")} g · {formatSavedDate(b.savedAt)}
                   </span>
                 </span>
-                <span className="num shrink-0 text-[15px] font-medium">{brl(Number(b.price) || 0)}</span>
+                <span className="num shrink-0 text-[15px] font-medium">
+                  {brl(Number(b.price) || 0)}{(b.qty ?? 1) > 1 && <span className="text-[12.5px] font-normal text-ink-3">/peça</span>}
+                </span>
               </button>
               <button type="button" className="icon-btn my-auto mr-1 shrink-0 hover:text-danger" aria-label={`Excluir ${b.name}`}
                 onClick={() => calc.deleteBudget(b.id)}>

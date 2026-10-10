@@ -89,6 +89,8 @@ export interface SavedBudget {
   materialName: string;
   time: string;
   grams: number;
+  /** peças na mesa (orçamentos antigos não têm: 1) */
+  qty?: number;
   proMode: boolean;
   /** nome do cliente, se informado */
   client?: string;
@@ -115,6 +117,7 @@ export function budgetEntry(id: string, r: CalcResult, state: SavedFormState): S
     materialName: r.materialName,
     time: formatPrintTime(r.hours, r.minutes),
     grams: r.grams,
+    qty: r.quantity > 1 ? r.quantity : undefined,
     proMode: r.proMode,
     client: String(state.values.clientName ?? "").trim() || undefined,
     state,

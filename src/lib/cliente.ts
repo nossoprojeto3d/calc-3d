@@ -6,7 +6,7 @@
    A versão completa (calc.ts → buildWhatsAppText) continua igual à V3.
    ========================================================= */
 
-import { brl, buildStoreSignatureLine, type CalcResult, type FormValues, type StoreSettings } from "./calc";
+import { brl, buildStoreSignatureLine, piecesLabel, type CalcResult, type FormValues, type StoreSettings } from "./calc";
 
 export interface ClientDetails {
   clientName: string;
@@ -39,8 +39,10 @@ export function buildClientWhatsAppText(r: CalcResult, d: ClientDetails, setting
     `🧾 *${r.jobName}*`,
     `🧵 Material: ${r.materialName}`,
   ];
+  if (r.quantity > 1) lines.push(`🔢 Quantidade: ${piecesLabel(r.quantity)}`);
   if (d.deliveryTime) lines.push(`📅 Prazo: ${d.deliveryTime}`);
-  lines.push(``, `💰 *Valor: ${brl(r.finalPrice)}*`);
+  if (r.quantity > 1) lines.push(``, `💵 Valor por peça: ${brl(r.finalPrice)}`, `💰 *Total: ${brl(r.plateTotal)}*`);
+  else lines.push(``, `💰 *Valor: ${brl(r.finalPrice)}*`);
   if (d.validUntil) lines.push(`⏳ Válido até ${formatDate(d.validUntil)}`);
   if (d.notes) lines.push(``, `📝 ${d.notes}`);
 

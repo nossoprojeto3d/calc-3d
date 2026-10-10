@@ -5,7 +5,7 @@
    Dois PDFs com o mesmo estilo: o completo (igual à V3) e o do cliente.
    ========================================================= */
 
-import { brl, buildStoreSignatureLine, type CalcResult, type StoreSettings } from "./calc";
+import { brl, buildStoreSignatureLine, formatDuration, formatGrams, piecesLabel, type CalcResult, type StoreSettings } from "./calc";
 import { formatDate, type ClientDetails } from "./cliente";
 
 function slugify(text: string) {
@@ -147,17 +147,24 @@ async function createPdf(header: { title: string; subtitle: string; logo: string
       doc.text(lines, MARGIN_X, y);
       y += 5.2 * lines.length + 1.3;
     },
-    priceCard(label: string, value: number) {
+    /** cartão do preço; "side" (opcional) vai à direita, ex.: o preço por peça ao lado do total */
+    priceCard(label: string, value: number, side?: { label: string; value: number }) {
       doc.setFillColor(240, 236, 255);
       doc.roundedRect(MARGIN_X, y, contentW, 20, 3, 3, "F");
       doc.setFont("helvetica", "normal");
       doc.setFontSize(10.5);
       doc.setTextColor(107, 114, 125);
       doc.text(label, MARGIN_X + 6, y + 8);
+      if (side) doc.text(side.label, pageWidth - MARGIN_X - 6, y + 8, { align: "right" });
       doc.setFont("helvetica", "bold");
       doc.setFontSize(18);
       doc.setTextColor(91, 63, 217);
       doc.text(brl(value), MARGIN_X + 6, y + 16);
+      if (side) {
+        doc.setFontSize(13);
+        doc.setTextColor(75, 82, 93);
+        doc.text(brl(side.value), pageWidth - MARGIN_X - 6, y + 16, { align: "right" });
+      }
       y += 30;
     },
     /** assinatura da loja (se houver) + divulgação da calculadora, com link */
@@ -191,17 +198,26 @@ export async function exportPdf(r: CalcResult, settings: StoreSettings) {
   pdf.row("Material", r.materialName);
   pdf.gap(4);
 
+  const plate = r.quantity > 1;
   pdf.section("Tempo e peso");
-  pdf.row("Tempo de impressão", `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`);
-  pdf.row("Peso do filamento", `${r.grams.toLocaleString("pt-BR")} g`);
+  if (plate) {
+    pdf.row("Peças na mesa", String(r.quantity));
+    pdf.row("Tempo da mesa", `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`);
+    pdf.row("Peso da mesa", `${formatGrams(r.grams)} g`);
+    pdf.row("Por peça", `${formatDuration(r.pieceMinutes)} · ${formatGrams(r.pieceGrams)} g`);
+  } else {
+    pdf.row("Tempo de impressão", `${r.hours}h ${String(r.minutes).padStart(2, "0")}min`);
+    pdf.row("Peso do filamento", `${r.grams.toLocaleString("pt-BR")} g`);
+  }
   pdf.gap(4);
 
-  pdf.section("Breakdown de custos");
+  pdf.section(plate ? "Breakdown de custos por peça" : "Breakdown de custos");
   pdf.row("Filamento", brl(r.filamentCost));
   pdf.row("Energia", brl(r.energyCost));
   if (r.proMode) {
     r.proCosts.forEach((c) => {
-      const label = c.id === "meli" ? `${c.label} (${c.adType === "classico" ? "Clássico" : "Premium"})` : c.label;
+      const label = c.id === "meli" ? `${c.label} (${c.adType === "classico" ? "Clássico" : "Premium"})`
+        : plate && c.id === "labor" ? `${c.label} (preparo da mesa ÷ ${r.quantity})` : c.label;
       pdf.row(label, brl(c.value));
     });
   }
@@ -209,7 +225,8 @@ export async function exportPdf(r: CalcResult, settings: StoreSettings) {
   pdf.row("Lucro", brl(r.profit));
   pdf.gap(4);
 
-  pdf.priceCard("Preço final sugerido", r.finalPrice);
+  if (plate) pdf.priceCard("Preço por peça sugerido", r.finalPrice, { label: `Total (${piecesLabel(r.quantity)})`, value: r.plateTotal });
+  else pdf.priceCard("Preço final sugerido", r.finalPrice);
   pdf.footer(storeSignature(settings));
 
   pdf.doc.save(`${exportFileBaseName(r)}.pdf`);
@@ -233,6 +250,7 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
   pdf.section("Detalhes");
   if (d.clientName) pdf.row("Para", d.clientName);
   pdf.row("Material", r.materialName);
+  if (r.quantity > 1) pdf.row("Quantidade", piecesLabel(r.quantity));
   if (d.deliveryTime) pdf.row("Prazo de entrega", d.deliveryTime);
   if (d.validUntil) pdf.row("Validade do orçamento", `até ${formatDate(d.validUntil)}`);
   pdf.gap(4);
@@ -243,7 +261,8 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
     pdf.gap(4);
   }
 
-  pdf.priceCard("Preço final", r.finalPrice);
+  if (r.quantity > 1) pdf.priceCard("Total", r.plateTotal, { label: "Valor por peça", value: r.finalPrice });
+  else pdf.priceCard("Preço final", r.finalPrice);
   pdf.footer(storeSignature(settings));
 
   const who = d.clientName ? `-${slugify(d.clientName)}` : "";

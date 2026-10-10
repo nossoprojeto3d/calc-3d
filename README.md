@@ -65,6 +65,13 @@ Em `src/lib/data.ts`:
    `preço = (custos + lucro + taxa fixa) ÷ (1 − comissão − imposto)`
 6. **Arredondamento** opcional para o próximo ",99"
 
+**Peças na mesa**: quando várias peças iguais saem na mesma impressão, o tempo e
+o peso digitados são os da mesa inteira. A conta é feita por peça (tempo e peso
+÷ quantidade, e o desgaste automático também). O tempo de preparo (mão de obra)
+é da mesa e se divide entre as peças; embalagem, insumos, frete, lucro fixo e as
+taxas de marketplace são por peça. O preço final é por peça, e o total é
+`preço por peça (já arredondado) × quantidade`. Com 1 peça, nada muda.
+
 Desgaste, Taxa Shopee e Taxa Mercado Livre entram na conta arredondados em
 centavos, como na V3.
 
