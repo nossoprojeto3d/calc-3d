@@ -122,6 +122,7 @@
 :root {
   --z-dock: 30;
   --z-header: 40;
+  --z-mini-calc: 45; /* calculadoras flutuantes do computador: acima do cabeçalho, abaixo dos avisos */
   --z-toast: 70;
   --dock-h: 0px;
   --safe-b: env(safe-area-inset-bottom, 0px);
@@ -407,6 +408,59 @@
     border-radius: 999px;
     background: var(--line-strong);
     flex: 0 0 auto;
+  }
+
+  /* calculadoras de apoio (só no computador) */
+  .mini-calc-botao[aria-pressed="true"] {
+    background: var(--accent-soft);
+    color: var(--accent-text);
+    box-shadow: inset 0 0 0 1.5px var(--accent-line);
+  }
+  .mini-calc .bezel-core {
+    box-shadow:
+      inset 0 1px 0 var(--highlight),
+      0 1px 2px rgb(var(--shadow-tint) / 0.08),
+      0 24px 48px -20px rgb(var(--shadow-tint) / 0.55);
+  }
+  .mini-calc-visor {
+    display: block;
+    width: 100%;
+    padding: 8px 12px 6px;
+    border-radius: 14px;
+    background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--line);
+    color: var(--ink);
+    text-align: left;
+    transition: box-shadow 0.2s;
+  }
+  .mini-calc-visor:hover { box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .mini-calc-tecla {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 40px;
+    border-radius: 12px;
+    background: var(--surface-2);
+    box-shadow: inset 0 0 0 1px var(--line);
+    color: var(--ink);
+    font-size: 17px;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    transition: background-color 0.15s, box-shadow 0.15s, transform 0.12s var(--ease-out-soft);
+  }
+  .mini-calc-tecla:hover { background: var(--surface-3); box-shadow: inset 0 0 0 1px var(--line-strong); }
+  .mini-calc-tecla:active { transform: scale(0.96); }
+  .mini-calc-igual {
+    background: var(--accent);
+    color: var(--accent-ink);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28), 0 8px 18px -10px var(--accent-glow);
+    font-weight: 600;
+  }
+  .mini-calc-igual:hover { background: var(--accent-hover); box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.28); }
+  .mini-calc-lista {
+    border-radius: 12px;
+    box-shadow: inset 0 0 0 1px var(--line);
+    padding: 2px 2px;
   }
 
   /* textura de grão bem leve, fixa (não repinta na rolagem) */

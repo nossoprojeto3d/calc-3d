@@ -22,6 +22,7 @@ import { ResultPanel } from "./components/ResultPanel";
 import { HistorySheet } from "./components/HistorySheet";
 import { SettingsSheet } from "./components/SettingsSheet";
 import { IosInstallDialog, QuickToast, SupportDialog } from "./components/Overlays";
+import { BotoesMiniCalc, MiniCalcs, type QualCalc } from "./components/MiniCalcs";
 
 export type Theme = "system" | "light" | "dark";
 
@@ -108,6 +109,8 @@ export default function App() {
   const v = state.values;
   const reduce = useReducedMotion();
   const desktop = useIsDesktop();
+  // calculadoras de apoio do computador: começam desligadas a cada abertura
+  const [miniCalcs, setMiniCalcs] = useState<Record<QualCalc, boolean>>({ simples: false, horas: false });
   const [theme, setTheme] = useTheme();
   const install = useInstall();
   const [historyOpen, setHistoryOpen] = useState(false);
@@ -228,6 +231,7 @@ export default function App() {
               <DownloadSimple size={17} aria-hidden="true" />Instalar app
             </button>
           )}
+          {desktop && <BotoesMiniCalc abertas={miniCalcs} alternar={q => setMiniCalcs(a => ({ ...a, [q]: !a[q] }))} />}
           <button type="button" className="icon-btn" aria-label="Meus orçamentos" title="Meus orçamentos" onClick={() => setHistoryOpen(true)}>
             <ClockCounterClockwise size={21} />
             {calc.history.length > 0 && (
@@ -411,6 +415,7 @@ export default function App() {
         canInstall={install.canInstall} onInstall={install.install} />
       <SupportDialog open={supportOpen} onOpenChange={setSupportOpen} instagram="https://www.instagram.com/nossoprojeto3d" />
       <IosInstallDialog open={install.iosOpen} onOpenChange={install.setIosOpen} />
+      {desktop && <MiniCalcs abertas={miniCalcs} fechar={q => setMiniCalcs(a => ({ ...a, [q]: false }))} />}
       <QuickToast toast={calc.toast} />
     </LazyMotion>
   );

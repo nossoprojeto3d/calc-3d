@@ -282,3 +282,42 @@ test("11. custo PRO ligado e vazio: mantém o preço, bloqueia o envio e alerta 
   await expect(page.getByRole("link", { name: "Enviar no WhatsApp" })).not.toHaveAttribute("aria-disabled", "true");
   expect(await price(page)).toBeCloseTo(before + 10 * 2.5, 10); // R$ 10 de mão de obra × 2,5 (150% de lucro)
 });
+
+test("12. calculadoras de apoio: só no computador, desligadas ao abrir e sem atrapalhar o formulário", async ({ page, isMobile }) => {
+  await page.goto("./");
+  const simplesBtn = page.getByRole("button", { name: "Calculadora", exact: true });
+  const horasBtn = page.getByRole("button", { name: "Calculadora de horas", exact: true });
+  const largura = page.viewportSize()?.width ?? 0;
+  if (isMobile || largura < 1024) {
+    // no celular nada muda
+    await expect(simplesBtn).toHaveCount(0);
+    await expect(horasBtn).toHaveCount(0);
+    return;
+  }
+  await expect(simplesBtn).toHaveAttribute("aria-pressed", "false");
+  await expect(page.getByRole("dialog", { name: /^Calculadora/ })).toHaveCount(0);
+
+  await simplesBtn.click();
+  const simples = page.getByRole("dialog", { name: "Calculadora", exact: true });
+  await expect(simplesBtn).toHaveAttribute("aria-pressed", "true");
+  for (const t of ["1", "2", "+", "3", "0", ",", "5", "="]) await simples.getByRole("button", { name: t, exact: true }).click();
+  await expect(simples).toContainText("42,5");
+
+  await horasBtn.click();
+  const horas = page.getByRole("dialog", { name: "Calculadora de horas" });
+  const campo = horas.getByLabel("Duração");
+  for (const v of ["2:30", "45m"]) { await campo.fill(v); await campo.press("Enter"); }
+  await campo.fill("1h"); await campo.press("Shift+Enter");
+  await expect(horas).toContainText("2:15");
+  await expect(horas).toContainText("2,25 h");
+
+  // com as duas abertas o formulário continua usável
+  await page.fill("#printGrams", "62,5");
+  await expect(page.locator("#printGrams")).toHaveValue("62,5");
+
+  await horas.getByRole("button", { name: "Fechar calculadora de horas" }).click();
+  await expect(horas).toHaveCount(0);
+  await expect(horasBtn).toHaveAttribute("aria-pressed", "false");
+  await simplesBtn.click();
+  await expect(simples).toHaveCount(0);
+});
