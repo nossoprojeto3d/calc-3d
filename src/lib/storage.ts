@@ -57,6 +57,19 @@ export function saveStoreLogo(dataUrl: string | null) {
 }
 
 export function readLogoFile(file: File, maxSide = 480): Promise<string> {
+  return readImageFile(file, maxSide, "image/png");
+}
+
+// ---------------------------------------------------------
+// FOTO DA PEÇA (vai no PDF do cliente). Fica só na memória da página, não
+// no aparelho: foto pesa e cada abertura começa um orçamento novo.
+// Reduzida pra no máximo 1600px, em JPEG (fundo branco onde for transparente).
+// ---------------------------------------------------------
+export function readPhotoFile(file: File, maxSide = 1600): Promise<string> {
+  return readImageFile(file, maxSide, "image/jpeg");
+}
+
+function readImageFile(file: File, maxSide: number, type: "image/png" | "image/jpeg"): Promise<string> {
   return new Promise((resolve, reject) => {
     if (!file.type.startsWith("image/")) { reject(new Error("Não é uma imagem.")); return; }
     const url = URL.createObjectURL(file);
@@ -66,9 +79,14 @@ export function readLogoFile(file: File, maxSide = 480): Promise<string> {
       const canvas = document.createElement("canvas");
       canvas.width = Math.max(1, Math.round(img.naturalWidth * scale));
       canvas.height = Math.max(1, Math.round(img.naturalHeight * scale));
-      canvas.getContext("2d")!.drawImage(img, 0, 0, canvas.width, canvas.height);
+      const ctx = canvas.getContext("2d")!;
+      if (type === "image/jpeg") {
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
       URL.revokeObjectURL(url);
-      resolve(canvas.toDataURL("image/png"));
+      resolve(canvas.toDataURL(type, 0.88));
     };
     img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Não foi possível ler a imagem.")); };
     img.src = url;

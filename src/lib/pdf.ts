@@ -232,39 +232,211 @@ export async function exportPdf(r: CalcResult, settings: StoreSettings) {
   pdf.doc.save(`${exportFileBaseName(r)}.pdf`);
 }
 
+// ---------------------------------------------------------
+// PDF PARA O CLIENTE
+// Layout próprio, mais limpo que o completo: página branca com a marca da
+// loja no topo, a foto da peça em destaque (se houver), os detalhes numa
+// grade, o preço num cartão grafite e a assinatura da loja no rodapé.
+// Só o que interessa pra quem compra: nunca custos, lucro nem taxas.
+// ---------------------------------------------------------
+const INK: RGB = [18, 21, 26];
+const INK_2: RGB = [75, 82, 93];
+const INK_3: RGB = [120, 127, 138];
+const LINE: RGB = [226, 229, 234];
+const VIOLET: RGB = [123, 92, 250];
+const VIOLET_DARK: RGB = [91, 63, 217];
+const VIOLET_LIGHT: RGB = [164, 139, 255];
+const GRAPHITE: RGB = [12, 14, 17];
+type RGB = [number, number, number];
+
+/** A fonte padrão do PDF só tem o alfabeto latino: emojis e símbolos viram lixo, então saem. */
+const pdfText = (s: string) =>
+  s.replace(/[^\n\x20-\x7E\xA0-\xFF\u2013\u2014\u2018\u2019\u201C\u201D\u2022\u2026\u20AC]/gu, "")
+    .replace(/[ \t]{2,}/g, " ").replace(/ ([,.;:!?])/g, "$1").replace(/[ \t]+$/gm, "").trim();
+
 /**
- * PDF para o cliente: mesmo estilo do completo, com a marca da loja no topo
- * e só o que interessa pra quem compra. Sem custos, lucro nem taxas.
+ * Foto com cantos arredondados e no tamanho certo pro PDF (o jsPDF não
+ * recorta imagens): desenha num canvas com fundo branco e devolve JPEG.
  */
-export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings: StoreSettings, logo: string | null) {
-  const storeName = settings.storeName.trim();
-  const pdf = await createPdf({
-    title: storeName || "Orçamento",
-    subtitle: storeName ? "Orçamento de impressão 3D" : "Impressão 3D",
-    logo,
-    logoOnTile: true,
+async function roundedPhoto(dataUrl: string, wMm: number, hMm: number, radiusMm: number) {
+  const img = await new Promise<HTMLImageElement>((resolve, reject) => {
+    const i = new Image();
+    i.onload = () => resolve(i);
+    i.onerror = () => reject(new Error("Foto inválida."));
+    i.src = dataUrl;
   });
+  const pxPerMm = Math.min(9, img.naturalWidth / wMm); // ~230 dpi, sem ampliar a foto
+  const w = Math.round(wMm * pxPerMm);
+  const h = Math.round(hMm * pxPerMm);
+  const r = radiusMm * pxPerMm;
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = "#fff";
+  ctx.fillRect(0, 0, w, h);
+  ctx.beginPath();
+  ctx.moveTo(r, 0);
+  ctx.arcTo(w, 0, w, h, r);
+  ctx.arcTo(w, h, 0, h, r);
+  ctx.arcTo(0, h, 0, 0, r);
+  ctx.arcTo(0, 0, w, 0, r);
+  ctx.closePath();
+  ctx.clip();
+  ctx.drawImage(img, 0, 0, w, h);
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
 
-  pdf.title(r.jobName, r.calculatedAt);
+export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings: StoreSettings, logo: string | null, photo: string | null = null) {
+  const { jsPDF } = await import("jspdf");
+  const doc: Doc = new jsPDF({ unit: "mm", format: "a4" });
+  const W = doc.internal.pageSize.getWidth();
+  const H = doc.internal.pageSize.getHeight();
+  const M = MARGIN_X;
+  const contentW = W - M * 2;
+  const color = (c: RGB) => doc.setTextColor(c[0], c[1], c[2]);
+  const font = (style: "normal" | "bold", size: number, c: RGB) => { doc.setFont("helvetica", style); doc.setFontSize(size); color(c); };
+  /** rótulo pequeno em maiúsculas, espaçado */
+  const caption = (text: string, x: number, y: number, c: RGB = INK_3) => {
+    font("bold", 7.5, c);
+    doc.text(text.toUpperCase(), x, y, { charSpace: 0.35 });
+  };
 
-  pdf.section("Detalhes");
-  if (d.clientName) pdf.row("Para", d.clientName);
-  pdf.row("Material", r.materialName);
-  if (r.quantity > 1) pdf.row("Quantidade", piecesLabel(r.quantity));
-  if (d.deliveryTime) pdf.row("Prazo de entrega", d.deliveryTime);
-  if (d.validUntil) pdf.row("Validade do orçamento", `até ${formatDate(d.validUntil)}`);
-  pdf.gap(4);
+  const storeName = pdfText(settings.storeName);
+  const clientName = pdfText(d.clientName);
+  const notes = pdfText(d.notes);
+  const signature = pdfText(storeSignature(settings));
+  const plate = r.quantity > 1;
 
-  if (d.notes) {
-    pdf.section("Observações");
-    pdf.paragraph(d.notes);
-    pdf.gap(4);
+  // ---- faixa violeta fina no topo
+  doc.setFillColor(VIOLET[0], VIOLET[1], VIOLET[2]);
+  doc.rect(0, 0, W, 2.2, "F");
+
+  // ---- cabeçalho: logo + nome da loja à esquerda, "Orçamento" + data à direita
+  let textX = M;
+  if (logo) {
+    try {
+      const { w, h } = await imageSize(logo);
+      const scale = Math.min(18 / w, 18 / h);
+      doc.addImage(logo, "PNG", M + 9 - (w * scale) / 2, 25 - (h * scale) / 2, w * scale, h * scale, undefined, "FAST");
+      textX = M + 23;
+    } catch { /* segue sem o logo */ }
+  }
+  font("bold", 15, INK);
+  doc.text(storeName || "Orçamento", textX, 23.5, { maxWidth: W - M - 60 - textX });
+  font("normal", 9.5, INK_3);
+  doc.text("Impressão 3D sob medida", textX, 29.5);
+
+  const right = W - M;
+  font("bold", 7.5, VIOLET_DARK);
+  const tag = "ORÇAMENTO";
+  doc.text(tag, right - doc.getTextWidth(tag) - 0.35 * (tag.length - 1), 22.5, { charSpace: 0.35 });
+  font("normal", 9.5, INK_2);
+  doc.text(r.calculatedAt.toLocaleDateString("pt-BR", { dateStyle: "long" }), right, 28.5, { align: "right" });
+
+  doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
+  doc.setLineWidth(0.25);
+  doc.line(M, 40, right, 40);
+
+  // ---- para quem é + nome da peça
+  let y = 53;
+  if (clientName) {
+    caption("Preparado para", M, y);
+    font("bold", 12, INK);
+    doc.text(clientName, M, y + 6, { maxWidth: contentW });
+    y += 17;
+  }
+  font("bold", 22, INK);
+  const jobLines: string[] = doc.splitTextToSize(pdfText(r.jobName) || "Peça personalizada", contentW).slice(0, 2);
+  doc.text(jobLines, M, y + 2);
+  y += 2 + 9 * (jobLines.length - 1) + 10;
+
+  // ---- grade de detalhes (medida antes, pra saber quanto sobra pra foto)
+  const cells: { k: string; v: string }[] = [{ k: "Material", v: pdfText(r.materialName) }];
+  if (plate) cells.push({ k: "Quantidade", v: piecesLabel(r.quantity) });
+  const delivery = pdfText(d.deliveryTime);
+  if (delivery) cells.push({ k: "Prazo de entrega", v: delivery });
+  if (d.validUntil) cells.push({ k: "Válido até", v: formatDate(d.validUntil) });
+  const cellW = contentW / cells.length;
+  font("bold", 11, INK);
+  const cellLines = cells.map((c) => (doc.splitTextToSize(c.v, cellW - 10) as string[]).slice(0, 2));
+  const gridH = 17 + 5 * (Math.max(...cellLines.map((l) => l.length)) - 1);
+
+  font("normal", 10.5, INK_2);
+  const noteLines: string[] = notes ? doc.splitTextToSize(notes, contentW - 6) : [];
+  const notesH = notes ? 7 + 5.2 * noteLines.length + 8 : 0;
+
+  const priceH = 30;
+  font("normal", 8.5, INK_3);
+  const sigLines: string[] = signature ? doc.splitTextToSize(signature, contentW) : [];
+  const footerTop = H - 14 - 4.2 * sigLines.length;
+
+  // ---- foto da peça: o maior tamanho que couber, sem cortar
+  if (photo) {
+    try {
+      const { w, h } = await imageSize(photo);
+      const available = footerTop - 8 - y - 9 - gridH - 9 - notesH - priceH;
+      const maxH = Math.max(45, Math.min(118, available));
+      let pw = contentW;
+      let ph = (pw * h) / w;
+      if (ph > maxH) { ph = maxH; pw = (ph * w) / h; }
+      const px = M + (contentW - pw) / 2;
+      doc.addImage(await roundedPhoto(photo, pw, ph, 3.5), "JPEG", px, y, pw, ph, undefined, "FAST");
+      doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
+      doc.roundedRect(px, y, pw, ph, 3.5, 3.5, "S");
+      y += ph + 9;
+    } catch { /* segue sem a foto */ }
   }
 
-  if (r.quantity > 1) pdf.priceCard("Total", r.plateTotal, { label: "Valor por peça", value: r.finalPrice });
-  else pdf.priceCard("Preço final", r.finalPrice);
-  pdf.footer(storeSignature(settings));
+  // ---- detalhes
+  doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
+  doc.setLineWidth(0.25);
+  doc.roundedRect(M, y, contentW, gridH, 2.5, 2.5, "S");
+  cells.forEach((c, i) => {
+    const x = M + cellW * i;
+    if (i > 0) doc.line(x, y + 4, x, y + gridH - 4);
+    caption(c.k, x + 5, y + 7);
+    font("bold", 11, INK);
+    doc.text(cellLines[i], x + 5, y + 12.8);
+  });
+  y += gridH + 9;
+
+  // ---- observações, com fio violeta à esquerda
+  if (notes) {
+    caption("Observações", M, y, VIOLET_DARK);
+    doc.setFillColor(VIOLET_LIGHT[0], VIOLET_LIGHT[1], VIOLET_LIGHT[2]);
+    doc.rect(M, y + 3.2, 0.8, 5.2 * noteLines.length + 0.6, "F");
+    font("normal", 10.5, INK_2);
+    doc.text(noteLines, M + 5, y + 7.4);
+    y += notesH;
+  }
+
+  // ---- preço: cartão grafite
+  doc.setFillColor(GRAPHITE[0], GRAPHITE[1], GRAPHITE[2]);
+  doc.roundedRect(M, y, contentW, priceH - 6, 3, 3, "F");
+  caption(plate ? "Valor total" : "Valor", M + 7, y + 8.5, [163, 170, 180]);
+  font("bold", 22, VIOLET_LIGHT);
+  doc.text(brl(plate ? r.plateTotal : r.finalPrice), M + 7, y + 18);
+  if (plate) {
+    font("normal", 9, [163, 170, 180]);
+    doc.text(`Valor por peça (${piecesLabel(r.quantity)})`, right - 7, y + 8.5, { align: "right" });
+    font("bold", 13, [236, 238, 241]);
+    doc.text(brl(r.finalPrice), right - 7, y + 17.5, { align: "right" });
+  }
+
+  // ---- rodapé fixo no pé da página
+  doc.setDrawColor(LINE[0], LINE[1], LINE[2]);
+  doc.line(M, footerTop, right, footerTop);
+  let fy = footerTop + 6;
+  if (sigLines.length) {
+    font("normal", 8.5, INK_2);
+    doc.text(sigLines, M, fy);
+    fy += 4.2 * sigLines.length + 1;
+  }
+  font("normal", 7.5, INK_3);
+  doc.text(CREDIT, M, fy);
+  doc.link(M, fy - 3, doc.getTextWidth(CREDIT), 4, { url: CREDIT_URL });
 
   const who = d.clientName ? `-${slugify(d.clientName)}` : "";
-  pdf.doc.save(`orcamento-${slugify(r.jobName)}${who}-${r.calculatedAt.toISOString().slice(0, 10)}.pdf`);
+  doc.save(`orcamento-${slugify(r.jobName)}${who}-${r.calculatedAt.toISOString().slice(0, 10)}.pdf`);
 }

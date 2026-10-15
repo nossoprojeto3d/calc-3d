@@ -9,11 +9,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { AnimatePresence, LazyMotion, domAnimation, m, useReducedMotion } from "motion/react";
 import {
   ArrowRight, ArrowUpRight, Briefcase, ClockCounterClockwise, Cylinder, DownloadSimple, GearSix, InstagramLogo,
-  CaretDown, Minus, Play, Plus, Printer, Timer, TrendUp, UserCircle, X,
+  CaretDown, ImageSquare, Minus, Play, Plus, Printer, Timer, Trash, TrendUp, UserCircle, X,
 } from "@phosphor-icons/react";
 import { CUSTOM_PRINTER_ID } from "./lib/data";
 import { PLATE_QTY_MAX, brl, formatDuration, formatGrams, getPlateQty } from "./lib/calc";
-import { KEYS, read, track, write } from "./lib/storage";
+import { KEYS, read, readPhotoFile, track, write } from "./lib/storage";
 import { useCalculator } from "./lib/useCalculator";
 import { InputField, Section, Switch, useIsDesktop } from "./components/ui";
 import { MaterialPicker, PrinterPicker } from "./components/Pickers";
@@ -484,13 +484,28 @@ function PlateQty({ value, onChange }: { value: string; onChange: (v: string) =>
 // cliente, não entram na conta. Abre sozinho se já houver algo preenchido.
 // ---------------------------------------------------------
 function ClientSection({ calc }: { calc: ReturnType<typeof useCalculator> }) {
-  const { state, set } = calc;
+  const { state, set, productPhoto, setProductPhoto } = calc;
   const v = state.values;
   const reduce = useReducedMotion();
-  const filled = ["clientName", "deliveryTime", "notes"].some((id) => String(v[id] ?? "").trim() !== "");
+  const filled = !!productPhoto || ["clientName", "deliveryTime", "notes"].some((id) => String(v[id] ?? "").trim() !== "");
   const [open, setOpen] = useState(filled);
   useEffect(() => { if (filled) setOpen(true); }, [filled]);
   const str = (id: string) => String(v[id] ?? "");
+
+  const photoRef = useRef<HTMLInputElement>(null);
+  const [photoState, setPhotoState] = useState<"idle" | "busy" | "error">("idle");
+  const onPhoto = async (file: File | undefined) => {
+    if (!file) return;
+    setPhotoState("busy");
+    try {
+      setProductPhoto(await readPhotoFile(file));
+      setPhotoState("idle");
+      track("foto_adicionada");
+    } catch {
+      setPhotoState("error");
+    }
+    if (photoRef.current) photoRef.current.value = "";
+  };
 
   return (
     <section id="secao-cliente" className="bezel" aria-labelledby="secao-cliente-title">
@@ -525,6 +540,35 @@ function ClientSection({ calc }: { calc: ReturnType<typeof useCalculator> }) {
                   <textarea id="notes" rows={3} maxLength={500} placeholder="Ex: cor preta, acabamento lixado, pagamento no Pix."
                     value={str("notes")} onChange={(e) => set("notes", e.target.value)}
                     className="field-box min-h-[96px] resize-y py-3 text-[16px] leading-[1.45] text-ink outline-none" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <span className="label">Foto da peça</span>
+                  <div className="flex items-center gap-3 rounded-2xl bg-surface-2 p-3" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
+                    <button type="button" onClick={() => photoRef.current?.click()} aria-label={productPhoto ? "Trocar foto da peça" : "Adicionar foto da peça"}
+                      className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
+                      {productPhoto
+                        ? <img src={productPhoto} alt="Foto da peça" className="size-full object-cover" />
+                        : <ImageSquare size={26} className="text-ink-3" aria-hidden="true" />}
+                    </button>
+                    <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
+                      <span className="text-[13px] leading-snug text-ink-3">Vai em destaque no PDF do cliente.</span>
+                      <div className="flex flex-wrap items-center gap-2">
+                        <button type="button" className="btn btn-secondary min-h-[40px] px-4 text-[14px]" disabled={photoState === "busy"}
+                          onClick={() => photoRef.current?.click()}>
+                          {photoState === "busy" ? "Carregando…" : productPhoto ? "Trocar" : "Adicionar foto"}
+                        </button>
+                        {productPhoto && (
+                          <button type="button" className="icon-btn hover:text-danger" aria-label="Remover foto da peça"
+                            onClick={() => { setProductPhoto(null); setPhotoState("idle"); }}>
+                            <Trash size={18} />
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                    <input ref={photoRef} type="file" accept="image/*" className="sr-only" aria-label="Escolher foto da peça"
+                      tabIndex={-1} onChange={(e) => onPhoto(e.target.files?.[0])} />
+                  </div>
+                  {photoState === "error" && <p className="error-text" role="alert">Não foi possível ler essa imagem. Use uma foto JPG ou PNG.</p>}
                 </div>
               </div>
             </m.div>

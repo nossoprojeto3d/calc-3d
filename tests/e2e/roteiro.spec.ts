@@ -232,6 +232,9 @@ test("10. orçamento para o cliente: sem custos e com os dados da loja", async (
   await page.fill("#deliveryTime", "5 dias úteis");
   await expect(page.locator("#validityDays")).toHaveValue("7");
   await page.fill("#notes", "Cor preta 🖤");
+  // foto da peça: vai só no PDF do cliente, com prévia e botão de remover
+  await page.getByLabel("Escolher foto da peça").setInputFiles("public/assets/compartilhar.jpg");
+  await expect(page.getByRole("img", { name: "Foto da peça" })).toBeVisible();
 
   const href = await page.getByRole("link", { name: "Enviar ao cliente" }).getAttribute("href");
   const text = decodeURIComponent(href!.split("text=")[1]).replace(/\u00a0/g, " ");

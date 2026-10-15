@@ -20,6 +20,8 @@ export type Toast = { text: string; at: number } | null;
 export function useCalculator() {
   const [settings, setSettings] = useState<StoreSettings>(() => loadStoreSettings());
   const [storeLogo, setStoreLogoState] = useState<string | null>(() => loadStoreLogo());
+  // foto da peça pro PDF do cliente: só na memória (some ao trocar de orçamento)
+  const [productPhoto, setProductPhoto] = useState<string | null>(null);
   const [state, dispatch] = useReducer(formReducer, undefined, () =>
     initialFormState(loadStoreSettings(), loadMode(), loadCustomPrinter()));
   const [history, setHistory] = useState<SavedBudget[]>(() => loadHistory());
@@ -114,6 +116,7 @@ export function useCalculator() {
     restoring.current = true;
     dispatch({ type: "restore", snapshot: entry.state, settings });
     setBudgetId(entry.id);
+    setProductPhoto(null);
     setTimeout(() => { restoring.current = false; }, 0);
     showToast(`“${entry.name}” aberto. Edite à vontade.`);
   }, [settings, showToast]);
@@ -169,11 +172,13 @@ export function useCalculator() {
 
   const clearAll = useCallback(() => {
     setBudgetId(null);
+    setProductPhoto(null);
     dispatch({ type: "clear", settings });
   }, [settings]);
 
   const fillExample = useCallback(() => {
     setBudgetId(null);
+    setProductPhoto(null);
     dispatch({ type: "example", settings });
     track("exemplo_usado");
     showToast("Exemplo preenchido. Troque pelos dados da sua peça.");
@@ -199,7 +204,7 @@ export function useCalculator() {
   }, []);
 
   return {
-    storeLogo, updateStoreLogo,
+    storeLogo, updateStoreLogo, productPhoto, setProductPhoto,
     state, resolved, validation, result, complete, pendingPro, progress, settings, history, budgetId, toast, clearedBackup,
     set, toggle, setMode, submit, clearAll, fillExample, updateSettings,
     setShopeeTier: (tier: typeof state.shopeeTier) => dispatch({ type: "shopeeTier", tier }),

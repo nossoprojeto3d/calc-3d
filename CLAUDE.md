@@ -23,7 +23,7 @@ O README.md explica a fórmula de preço e onde ficam os dados. Leia-o antes de 
 - `src/lib/form.ts`: comportamentos automáticos do formulário (preço/kg do material, desgaste, faixas da Shopee/ML).
 - `src/lib/useCalculator.ts`: liga o formulário, as configurações, o resultado e "Meus orçamentos".
 - `src/lib/storage.ts`: localStorage (mesmas chaves da V3) e eventos de medição.
-- `src/lib/pdf.ts`: PDFs do orçamento (completo e para o cliente, com o logo da loja).
+- `src/lib/pdf.ts`: PDFs do orçamento. O completo segue o estilo da V3; o do cliente tem layout próprio (logo da loja, foto da peça em destaque, detalhes em grade, preço em cartão grafite).
 - `src/lib/miniCalc.ts` e `src/components/MiniCalcs.tsx`: calculadoras de apoio do computador (simples e de horas). Botões no cabeçalho só a partir de 1024px, começam desligadas, cartões flutuantes arrastáveis que não bloqueiam a página e sobem acima do aviso de cookies. No celular não existem.
 - `src/App.tsx` e `src/components/`: telas. `src/styles.css`: identidade visual (tokens de cor, tipografia, componentes).
 - `index.html`: casca da página. A Content Security Policy está em `vite.config.ts` e entra só no build.
@@ -68,7 +68,7 @@ Usado pelo `/conferir-site`, no celular e no desktop (automatizado em `tests/e2e
 7. WhatsApp: confira o `href` e os emojis no texto com `evaluate_script`, sem clicar.
 8. PDF: clicar gera o arquivo.
 9. Em 375px, nenhum campo dá zoom e não há rolagem horizontal.
-10. "Compartilhar orçamento": "Mim (completo)" é o padrão e é igual à V3; "Cliente" não mostra custos, lucro nem taxas e leva nome do cliente, prazo, validade, observações e os dados/logo da loja.
+10. "Compartilhar orçamento": "Mim (completo)" é o padrão e é igual à V3; "Cliente" não mostra custos, lucro nem taxas e leva nome do cliente, prazo, validade, observações, os dados/logo da loja e a foto da peça (só no PDF; a foto fica só na memória da página, não no `localStorage`).
 12. Profissional: ligar um custo e deixar vazio mantém o preço (sem esse custo), mostra "Falta preencher" e bloqueia WhatsApp/Copiar/PDF/Salvar; "Calcular" marca o campo em vermelho.
 13. Calculadoras de apoio (computador): os dois botões do cabeçalho começam desligados; cada um liga a sua; conta simples e soma de horas funcionam; o formulário segue usável com elas abertas. No celular os botões não aparecem.
 11. No computador, a coluna da direita (modo + orçamento) fica fixa e cabe na tela; ela compacta em até 3 níveis (`data-density`) conforme o conteúdo cresce.

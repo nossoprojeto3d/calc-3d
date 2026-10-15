@@ -29,7 +29,7 @@ function buildSlices(r: CalcResult) {
 type ExportVersion = "cliente" | "completo";
 
 export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculator; onJumpTo: (id: string) => void; onOpenSettings: () => void }) {
-  const { result: r, progress, settings, state, budgetId, saveBudget, storeLogo, complete, pendingPro } = calc;
+  const { result: r, progress, settings, state, budgetId, saveBudget, storeLogo, productPhoto, complete, pendingPro } = calc;
   // pronto pra compartilhar: com preço e sem custo PRO ligado vazio
   const ready = !!r && complete;
   const reduce = useReducedMotion();
@@ -104,9 +104,9 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
     if (!r || !ready) return;
     setPdfState("busy");
     try {
-      if (forClient) await exportClientPdf(r, details!, settings, storeLogo);
+      if (forClient) await exportClientPdf(r, details!, settings, storeLogo, productPhoto);
       else await exportPdf(r, settings);
-      track("pdf_exportado", { modo: state.mode, versao: version });
+      track("pdf_exportado", { modo: state.mode, versao: version, foto: forClient && !!productPhoto });
       saveBudget({ silent: true });
       setPdfState("idle");
     } catch {
