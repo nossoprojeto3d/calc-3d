@@ -236,7 +236,7 @@ export async function exportPdf(r: CalcResult, settings: StoreSettings) {
 // PDF PARA O CLIENTE
 // Layout próprio, mais limpo que o completo: página branca com a marca da
 // loja no topo, a foto da peça em destaque (se houver), os detalhes numa
-// grade, o preço num cartão grafite e a assinatura da loja no rodapé.
+// grade, o preço num cartão branco com borda violeta e a assinatura da loja no rodapé.
 // Só o que interessa pra quem compra: nunca custos, lucro nem taxas.
 // ---------------------------------------------------------
 const INK: RGB = [18, 21, 26];
@@ -246,7 +246,6 @@ const LINE: RGB = [226, 229, 234];
 const VIOLET: RGB = [123, 92, 250];
 const VIOLET_DARK: RGB = [91, 63, 217];
 const VIOLET_LIGHT: RGB = [164, 139, 255];
-const GRAPHITE: RGB = [12, 14, 17];
 type RGB = [number, number, number];
 
 /** A fonte padrão do PDF só tem o alfabeto latino: emojis e símbolos viram lixo, então saem. */
@@ -338,18 +337,18 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
   doc.setLineWidth(0.25);
   doc.line(M, 40, right, 40);
 
-  // ---- para quem é + nome da peça
+  // ---- cliente e peça: rótulo pequeno + nome em negrito
   let y = 53;
-  if (clientName) {
-    caption("Preparado para", M, y);
+  const field = (label: string, value: string) => {
+    caption(label, M, y);
     font("bold", 12, INK);
-    doc.text(clientName, M, y + 6, { maxWidth: contentW });
-    y += 17;
-  }
-  font("bold", 22, INK);
-  const jobLines: string[] = doc.splitTextToSize(pdfText(r.jobName) || "Peça personalizada", contentW).slice(0, 2);
-  doc.text(jobLines, M, y + 2);
-  y += 2 + 9 * (jobLines.length - 1) + 10;
+    const lines: string[] = doc.splitTextToSize(value, contentW).slice(0, 2);
+    doc.text(lines, M, y + 6);
+    y += 15 + 5 * (lines.length - 1);
+  };
+  if (clientName) field("Cliente", clientName);
+  field("Peça", pdfText(r.jobName) || "Peça personalizada");
+  y += 2;
 
   // ---- grade de detalhes (medida antes, pra saber quanto sobra pra foto)
   const cells: { k: string; v: string }[] = [{ k: "Material", v: pdfText(r.materialName) }];
@@ -411,16 +410,19 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
     y += notesH;
   }
 
-  // ---- preço: cartão grafite
-  doc.setFillColor(GRAPHITE[0], GRAPHITE[1], GRAPHITE[2]);
-  doc.roundedRect(M, y, contentW, priceH - 6, 3, 3, "F");
-  caption(plate ? "Valor total" : "Valor", M + 7, y + 8.5, [163, 170, 180]);
-  font("bold", 22, VIOLET_LIGHT);
+  // ---- preço: cartão branco com borda violeta
+  doc.setFillColor(255, 255, 255);
+  doc.setDrawColor(VIOLET[0], VIOLET[1], VIOLET[2]);
+  doc.setLineWidth(0.6);
+  doc.roundedRect(M, y, contentW, priceH - 6, 3, 3, "FD");
+  doc.setLineWidth(0.25);
+  caption(plate ? "Valor total" : "Valor", M + 7, y + 8.5);
+  font("bold", 22, VIOLET_DARK);
   doc.text(brl(plate ? r.plateTotal : r.finalPrice), M + 7, y + 18);
   if (plate) {
-    font("normal", 9, [163, 170, 180]);
+    font("normal", 9, INK_3);
     doc.text(`Valor por peça (${piecesLabel(r.quantity)})`, right - 7, y + 8.5, { align: "right" });
-    font("bold", 13, [236, 238, 241]);
+    font("bold", 13, INK);
     doc.text(brl(r.finalPrice), right - 7, y + 17.5, { align: "right" });
   }
 

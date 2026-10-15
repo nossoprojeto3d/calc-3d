@@ -23,7 +23,7 @@ O README.md explica a fórmula de preço e onde ficam os dados. Leia-o antes de 
 - `src/lib/form.ts`: comportamentos automáticos do formulário (preço/kg do material, desgaste, faixas da Shopee/ML).
 - `src/lib/useCalculator.ts`: liga o formulário, as configurações, o resultado e "Meus orçamentos".
 - `src/lib/storage.ts`: localStorage (mesmas chaves da V3) e eventos de medição.
-- `src/lib/pdf.ts`: PDFs do orçamento. O completo segue o estilo da V3; o do cliente tem layout próprio (logo da loja, foto da peça em destaque, detalhes em grade, preço em cartão grafite).
+- `src/lib/pdf.ts`: PDFs do orçamento. O completo segue o estilo da V3; o do cliente tem layout próprio (logo da loja, foto da peça em destaque, detalhes em grade, preço em cartão branco com borda violeta).
 - `src/lib/miniCalc.ts` e `src/components/MiniCalcs.tsx`: calculadoras de apoio do computador (simples e de horas). Botões no cabeçalho só a partir de 1024px, começam desligadas, cartões flutuantes arrastáveis que não bloqueiam a página e sobem acima do aviso de cookies. No celular não existem.
 - `src/App.tsx` e `src/components/`: telas. `src/styles.css`: identidade visual (tokens de cor, tipografia, componentes).
 - `index.html`: casca da página. A Content Security Policy está em `vite.config.ts` e entra só no build.
