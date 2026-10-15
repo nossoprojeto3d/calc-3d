@@ -348,7 +348,7 @@ export async function exportClientPdf(r: CalcResult, d: ClientDetails, settings:
   };
   if (clientName) field("Cliente", clientName);
   field("Peça", pdfText(r.jobName) || "Peça personalizada");
-  y += 2;
+  y -= 2; // 7mm do nome da peça até a foto ou a grade
 
   // ---- grade de detalhes (medida antes, pra saber quanto sobra pra foto)
   const cells: { k: string; v: string }[] = [{ k: "Material", v: pdfText(r.materialName) }];

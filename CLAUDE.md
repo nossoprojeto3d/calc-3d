@@ -71,4 +71,6 @@ Usado pelo `/conferir-site`, no celular e no desktop (automatizado em `tests/e2e
 10. "Compartilhar orçamento": "Mim (completo)" é o padrão e é igual à V3; "Cliente" não mostra custos, lucro nem taxas e leva nome do cliente, prazo, validade, observações, os dados/logo da loja e a foto da peça (só no PDF; a foto fica só na memória da página, não no `localStorage`).
 12. Profissional: ligar um custo e deixar vazio mantém o preço (sem esse custo), mostra "Falta preencher" e bloqueia WhatsApp/Copiar/PDF/Salvar; "Calcular" marca o campo em vermelho.
 13. Calculadoras de apoio (computador): os dois botões do cabeçalho começam desligados; cada um liga a sua; conta simples e soma de horas funcionam; o formulário segue usável com elas abertas. No celular os botões não aparecem.
+14. Preço de venda próprio: "Editar preço" troca o preço pelo digitado (lucro, Shopee/ML e imposto refeitos sobre ele), vai no WhatsApp/PDF do completo e do cliente, avisa "Abaixo do custo" quando dá prejuízo e "Usar sugerido" volta à fórmula.
+15. Foto da peça no computador: além de escolher o arquivo, aceita colar (Ctrl+V / ⌘V, ex.: print) e arrastar a imagem pro campo. No celular, só escolher.
 11. No computador, a coluna da direita (modo + orçamento) fica fixa e cabe na tela; ela compacta em até 3 níveis (`data-density`) conforme o conteúdo cresce.

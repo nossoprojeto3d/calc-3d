@@ -324,3 +324,46 @@ test("12. calculadoras de apoio: só no computador, desligadas ao abrir e sem at
   await simplesBtn.click();
   await expect(simples).toHaveCount(0);
 });
+
+test("14. preço de venda próprio: edita, vai no envio e volta ao sugerido", async ({ page }) => {
+  await page.goto("./");
+  await fillBasic(page);
+  const suggested = await price(page);
+  await page.getByRole("button", { name: "Editar preço de venda" }).click();
+  await expect(page.locator("#salePrice")).toBeFocused();
+  await page.locator("#salePrice").fill("30,50");
+  await page.locator("#salePrice").press("Enter");
+  expect(await price(page)).toBe(30.5);
+  await expect(page.getByText("Seu preço", { exact: true })).toBeVisible();
+  const href = await page.getByRole("link", { name: "Enviar no WhatsApp" }).getAttribute("href");
+  expect(decodeURIComponent(href!).replace(/ /g, " ")).toContain("✅ *Preço final: R$ 30,50*");
+  await page.getByRole("radio", { name: "Cliente", exact: true }).click();
+  const href2 = await page.getByRole("link", { name: "Enviar ao cliente" }).getAttribute("href");
+  expect(decodeURIComponent(href2!).replace(/ /g, " ")).toContain("💰 *Valor: R$ 30,50*");
+  // abaixo do custo avisa o prejuízo
+  await page.getByRole("button", { name: "Editar preço de venda" }).click();
+  await page.locator("#salePrice").fill("1");
+  await page.locator("#salePrice").press("Enter");
+  await expect(page.getByText(/Abaixo do custo: prejuízo de/)).toBeVisible();
+  await page.getByRole("button", { name: "Usar sugerido" }).click();
+  expect(await price(page)).toBe(suggested);
+  await expect(page.getByText(/Abaixo do custo/)).toHaveCount(0);
+});
+
+test("15. foto da peça no computador: cola com Ctrl+V / ⌘V", async ({ page, isMobile }) => {
+  test.skip(isMobile, "colar imagem é só no computador");
+  await page.goto("./");
+  await page.getByRole("button", { name: /Dados para o cliente/ }).click();
+  await expect(page.getByText(/cole com/)).toBeVisible();
+  // simula um print na área de transferência
+  await page.evaluate(async () => {
+    const canvas = document.createElement("canvas");
+    canvas.width = 40; canvas.height = 30;
+    canvas.getContext("2d")!.fillRect(0, 0, 40, 30);
+    const blob = await new Promise<Blob>((ok) => canvas.toBlob((b) => ok(b!), "image/png"));
+    const dt = new DataTransfer();
+    dt.items.add(new File([blob], "print.png", { type: "image/png" }));
+    document.dispatchEvent(new ClipboardEvent("paste", { clipboardData: dt, bubbles: true, cancelable: true }));
+  });
+  await expect(page.getByRole("img", { name: "Foto da peça" })).toBeVisible();
+});

@@ -57,6 +57,8 @@ export function emptyValues(): FormValues {
     proMeliCustomPct: "", proMeliCustomFixed: "",
     // dados do orçamento para o cliente (não entram na conta)
     clientName: "", deliveryTime: "", validityDays: "", notes: "",
+    // preço de venda escolhido pela pessoa (vazio = usa o sugerido)
+    salePrice: "",
   };
   PRO_COSTS.forEach((c) => { v[proToggleId(c.id)] = false; v[proFieldId(c.id)] = ""; });
   return v;
@@ -437,6 +439,10 @@ export interface CalcResult {
   proCosts: ProCostLine[]; proCostsTotal: number; totalCost: number;
   profit: number; calculatedPrice: number; finalPrice: number; roundingDiff: number;
   shouldRound: boolean; proMode: boolean;
+  /** preço sugerido pela fórmula (igual a finalPrice quando não há preço próprio) */
+  suggestedPrice: number;
+  /** a pessoa digitou o próprio preço de venda: finalPrice é o dela e o lucro sai dele */
+  customPrice: boolean;
   calculatedAt: Date;
 }
 
@@ -520,21 +526,57 @@ export function calculate(rawValues: FormValues, mode: Mode, settings: StoreSett
     ? (str(v, "customMaterialName").trim() || "Outro (personalizado)")
     : selectedMaterial.name;
 
-  return {
+  const base = {
     jobName: str(v, "jobName").trim() || DEFAULT_JOB_NAME,
     hasCustomName: str(v, "jobName").trim() !== "",
     totalHours,
     quantity: qty,
     pieceMinutes: totalHours * 60,
     pieceGrams,
-    plateTotal: Math.round(finalPrice * qty * 100) / 100,
     printerName: printer.name,
     materialName,
     hours, minutes, grams,
-    filamentCost, energyCost, energyKwh, baseCost, proCosts, proCostsTotal, totalCost,
-    profit, calculatedPrice, finalPrice, roundingDiff,
+    filamentCost, energyCost, energyKwh, baseCost,
     shouldRound, proMode,
     calculatedAt: now,
+  };
+
+  // 13) preço de venda próprio: as taxas que incidem sobre o preço (Shopee,
+  // Mercado Livre e imposto) são refeitas sobre ele, e o lucro é o que sobra
+  const salePrice = parseFloat(str(v, "salePrice")) || 0;
+  if (salePrice > 0) {
+    const price = Math.round(salePrice * 100) / 100;
+    const lines = proCosts.map((c) => {
+      if (c.id === "taxes") return { ...c, value: price * taxRate };
+      if (c.id === "shopee") {
+        const rate = shopeeTier === "custom" ? getSelectedShopeeRate(v, "custom")
+          : getEffectiveShopeeTiers()[Math.max(0, SHOPEE_TIER_RANGES.findIndex((r) => price >= r.min && price < r.max))];
+        return { ...c, value: price * (rate.commissionPct / 100) + rate.fixedFee };
+      }
+      if (c.id === "meli") {
+        const rate = meliTier === "custom" ? getSelectedMeliRate(v, "custom")
+          : getSelectedMeliRate(v, price < MELI_PRICE_THRESHOLD ? "below" : "from");
+        return { ...c, value: price * (rate.commissionPct / 100) + rate.fixedFee };
+      }
+      return c;
+    });
+    const linesTotal = lines.reduce((sum, c) => sum + c.value, 0);
+    const cost = baseCost + linesTotal;
+    return {
+      ...base,
+      plateTotal: Math.round(price * qty * 100) / 100,
+      proCosts: lines, proCostsTotal: linesTotal, totalCost: cost,
+      profit: price - cost, calculatedPrice: price, finalPrice: price, roundingDiff: 0,
+      suggestedPrice: finalPrice, customPrice: true,
+    };
+  }
+
+  return {
+    ...base,
+    plateTotal: Math.round(finalPrice * qty * 100) / 100,
+    proCosts, proCostsTotal, totalCost,
+    profit, calculatedPrice, finalPrice, roundingDiff,
+    suggestedPrice: finalPrice, customPrice: false,
   };
 }
 

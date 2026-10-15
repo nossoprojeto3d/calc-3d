@@ -507,6 +507,31 @@ function ClientSection({ calc }: { calc: ReturnType<typeof useCalculator> }) {
     if (photoRef.current) photoRef.current.value = "";
   };
 
+  // No computador a foto também entra colando (Ctrl+V / ⌘V, ex.: um print) ou
+  // arrastando o arquivo pro campo. Colar vale com a seção aberta e sem
+  // nenhuma gaveta/diálogo por cima; texto colado nos campos segue normal.
+  const isDesktop = useIsDesktop();
+  const [dragging, setDragging] = useState(false);
+  const imageFrom = (data: DataTransfer | null) => Array.from(data?.files ?? []).find((f) => f.type.startsWith("image/"));
+  useEffect(() => {
+    if (!isDesktop || !open) return;
+    const onPaste = (e: ClipboardEvent) => {
+      if (document.querySelector('[role="dialog"]')) return;
+      const file = imageFrom(e.clipboardData);
+      if (!file) return;
+      e.preventDefault();
+      onPhoto(file);
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  });
+  const dropProps = isDesktop ? {
+    onDragOver: (e: React.DragEvent) => { if (Array.from(e.dataTransfer.items).some((i) => i.kind === "file")) { e.preventDefault(); setDragging(true); } },
+    onDragLeave: () => setDragging(false),
+    onDrop: (e: React.DragEvent) => { e.preventDefault(); setDragging(false); onPhoto(imageFrom(e.dataTransfer)); },
+  } : {};
+  const pasteKey = /Mac|iPhone|iPad/.test(navigator.platform) ? "⌘V" : "Ctrl+V";
+
   return (
     <section id="secao-cliente" className="bezel" aria-labelledby="secao-cliente-title">
       <div className="bezel-core">
@@ -543,7 +568,8 @@ function ClientSection({ calc }: { calc: ReturnType<typeof useCalculator> }) {
                 </div>
                 <div className="flex flex-col gap-2">
                   <span className="label">Foto da peça</span>
-                  <div className="flex items-center gap-3 rounded-2xl bg-surface-2 p-3" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
+                  <div className="flex items-center gap-3 rounded-2xl bg-surface-2 p-3 transition-shadow" {...dropProps}
+                    style={{ boxShadow: dragging ? "inset 0 0 0 2px var(--accent)" : "inset 0 0 0 1px var(--line)" }}>
                     <button type="button" onClick={() => photoRef.current?.click()} aria-label={productPhoto ? "Trocar foto da peça" : "Adicionar foto da peça"}
                       className="flex size-[72px] shrink-0 items-center justify-center overflow-hidden rounded-xl bg-surface" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
                       {productPhoto
@@ -551,7 +577,9 @@ function ClientSection({ calc }: { calc: ReturnType<typeof useCalculator> }) {
                         : <ImageSquare size={26} className="text-ink-3" aria-hidden="true" />}
                     </button>
                     <div className="flex min-w-0 flex-1 flex-col items-start gap-1.5">
-                      <span className="text-[13px] leading-snug text-ink-3">Vai em destaque no PDF do cliente.</span>
+                      <span className="text-[13px] leading-snug text-ink-3">
+                        {dragging ? "Solte a imagem aqui." : isDesktop ? <>Vai em destaque no PDF do cliente. Escolha, arraste ou cole com <kbd className="mono text-[12px]">{pasteKey}</kbd>.</> : "Vai em destaque no PDF do cliente."}
+                      </span>
                       <div className="flex flex-wrap items-center gap-2">
                         <button type="button" className="btn btn-secondary min-h-[40px] px-4 text-[14px]" disabled={photoState === "busy"}
                           onClick={() => photoRef.current?.click()}>

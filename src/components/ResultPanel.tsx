@@ -1,8 +1,8 @@
 /* Painel do orçamento: preço ao vivo, composição, ações (WhatsApp, copiar, PDF, salvar). */
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AnimatePresence, m, useReducedMotion } from "motion/react";
-import { BookmarkSimple, Check, CheckCircle, Copy, FilePdf, Storefront, Warning, WhatsappLogo } from "@phosphor-icons/react";
-import { brl, buildWhatsAppText, formatGrams, formatPrintTime, piecesLabel, whatsAppHref, type CalcResult } from "../lib/calc";
+import { ArrowCounterClockwise, BookmarkSimple, Check, CheckCircle, Copy, FilePdf, PencilSimple, Storefront, Warning, WhatsappLogo } from "@phosphor-icons/react";
+import { brl, buildWhatsAppText, formatGrams, formatPrintTime, piecesLabel, sanitizeDecimal, whatsAppHref, type CalcResult } from "../lib/calc";
 import { buildClientWhatsAppText, clientWhatsAppHref, getClientDetails, hasStoreBranding } from "../lib/cliente";
 import { exportClientPdf, exportPdf } from "../lib/pdf";
 import { KEYS, read, track, write } from "../lib/storage";
@@ -42,6 +42,33 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
   const details = r ? getClientDetails(state.values, r.calculatedAt) : null;
 
   useEffect(() => { setPdfState((s) => (s === "error" ? "idle" : s)); }, [r]);
+
+  // preço de venda próprio: o lápis abre um campo; vazio ou 0 volta ao sugerido
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState("");
+  const editRef = useRef<HTMLInputElement>(null);
+  const cancelEdit = useRef(false);
+  const startEdit = () => {
+    if (!r) return;
+    setDraft(r.finalPrice.toFixed(2).replace(".", ","));
+    cancelEdit.current = false;
+    setEditing(true);
+  };
+  useEffect(() => { if (editing) { editRef.current?.focus(); editRef.current?.select(); } }, [editing]);
+  const commitEdit = () => {
+    if (!editing) return;
+    setEditing(false);
+    if (cancelEdit.current || !r) return;
+    const value = parseFloat(sanitizeDecimal(draft)) || 0;
+    // igual ao sugerido = sem preço próprio
+    if (value <= 0 || Math.abs(value - r.suggestedPrice) < 0.005) calc.set("salePrice", "");
+    else if (Math.abs(value - r.finalPrice) >= 0.005) {
+      calc.set("salePrice", value.toFixed(2));
+      track("preco_editado", { modo: state.mode });
+    }
+  };
+  // sem resultado (faltou um dado), fecha o campo
+  useEffect(() => { if (!r) setEditing(false); }, [r]);
 
   // No computador o painel fica numa coluna fixa com a altura da tela. Se o
   // conteúdo não couber, compacta em até 2 níveis (data-density, ver
@@ -136,19 +163,55 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
             {!r && <span className="num text-[13px] text-ink-3">{done}/{progress.length}</span>}
           </div>
 
-          <p className="mt-4 truncate text-[14px] text-ink-2 rp-mt">
-            {r && r.quantity > 1 ? `${r.hasCustomName ? r.jobName : "Preço"} · por peça` : r?.hasCustomName ? r.jobName : "Preço sugerido"}
-          </p>
-          <AnimatedPrice value={r ? r.finalPrice : 0} id="precoFinal"
-            className={`num rp-price mt-1 block text-[44px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[52px] ${r ? "text-ink" : "text-ink-3"}`} />
+          <div className="mt-4 flex items-center gap-2 rp-mt">
+            <p className="min-w-0 flex-1 truncate text-[14px] text-ink-2">
+              {!r ? "Preço sugerido"
+                : [r.customPrice ? "Seu preço" : r.hasCustomName ? r.jobName : r.quantity > 1 ? "Preço" : "Preço sugerido", r.quantity > 1 ? "por peça" : ""].filter(Boolean).join(" · ")}
+            </p>
+            {r && !editing && (
+              <button type="button" onClick={startEdit} className="rp-edit inline-flex min-h-[36px] shrink-0 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium text-accent-text hover:bg-accent-soft"
+                aria-label="Editar preço de venda">
+                <PencilSimple size={15} aria-hidden="true" />Editar preço
+              </button>
+            )}
+          </div>
+          {editing ? (
+            <form className="mt-1 flex items-center gap-2" onSubmit={(e) => { e.preventDefault(); commitEdit(); }}>
+              <label className="field-box flex min-w-0 flex-1 items-center gap-1.5" style={{ boxShadow: "inset 0 0 0 1.5px var(--accent)" }}>
+                <span className="num text-[22px] font-semibold text-ink-3">R$</span>
+                <input ref={editRef} id="salePrice" inputMode="decimal" autoComplete="off" aria-label="Seu preço de venda"
+                  className="num min-w-0 flex-1 bg-transparent text-[30px] font-semibold tracking-[-0.03em] text-ink outline-none"
+                  value={draft} onChange={(e) => setDraft(e.target.value.replace(/[^\d,.]/g, ""))}
+                  onBlur={commitEdit} onKeyDown={(e) => { if (e.key === "Escape") { cancelEdit.current = true; e.currentTarget.blur(); } }} />
+              </label>
+              <button type="submit" className="btn btn-primary min-h-[52px] px-4 text-[15px]" onMouseDown={(e) => e.preventDefault()}>OK</button>
+            </form>
+          ) : (
+            <AnimatedPrice value={r ? r.finalPrice : 0} id="precoFinal"
+              className={`num rp-price mt-1 block text-[44px] font-semibold leading-[1.05] tracking-[-0.045em] sm:text-[52px] ${r ? "text-ink" : "text-ink-3"}`} />
+          )}
           {r && r.quantity > 1 && (
             <p className="mt-1.5 text-[14px] text-ink-2">
               {piecesLabel(r.quantity)} = <span className="num font-semibold text-ink">{brl(r.plateTotal)}</span>
             </p>
           )}
-          {r && r.shouldRound && r.roundingDiff > 0.001 && (
+          {r && r.customPrice && (
+            <p className="mt-1.5 flex flex-wrap items-center gap-x-2 text-[13px] text-ink-3">
+              <span>Sugerido <span className="num">{brl(r.suggestedPrice)}</span></span>
+              <button type="button" onClick={() => calc.set("salePrice", "")} className="inline-flex min-h-[32px] items-center gap-1 font-medium text-accent-text hover:underline">
+                <ArrowCounterClockwise size={13} aria-hidden="true" />Usar sugerido
+              </button>
+            </p>
+          )}
+          {r && !r.customPrice && r.shouldRound && r.roundingDiff > 0.001 && (
             <p className="mt-1.5 text-[13px] text-ink-3">
               Calculado <span className="num">{brl(r.calculatedPrice)}</span>, arredondado <span className="num">+{brl(r.roundingDiff)}</span>
+            </p>
+          )}
+          {r && r.profit < 0 && (
+            <p className="mt-2 flex items-center gap-1.5 text-[13.5px] font-medium text-danger" role="status">
+              <Warning size={16} className="shrink-0" aria-hidden="true" />
+              <span>Abaixo do custo: prejuízo de <span className="num">{brl(-r.profit)}</span>{r.quantity > 1 ? " por peça" : ""}.</span>
             </p>
           )}
 
@@ -180,12 +243,12 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
                 <dl className="mt-5 grid grid-cols-3 gap-2 rp-mt">
                   {[
                     { k: "Custo", v: brl(r.totalCost) },
-                    { k: "Lucro", v: brl(r.profit), accent: true },
-                    { k: "Lucro/hora", v: r.totalHours > 0 ? brl(r.profit / r.totalHours) : "-" },
+                    { k: "Lucro", v: brl(r.profit), accent: r.profit >= 0, danger: r.profit < 0 },
+                    { k: "Lucro/hora", v: r.totalHours > 0 ? brl(r.profit / r.totalHours) : "-", danger: r.profit < 0 },
                   ].map((s) => (
                     <div key={s.k} className="rp-stat rounded-2xl bg-surface-2 px-3 py-3" style={{ boxShadow: "inset 0 0 0 1px var(--line)" }}>
                       <dt className="text-[12.5px] text-ink-3">{s.k}</dt>
-                      <dd className={`num mt-1 truncate text-[15px] font-medium sm:text-[16px] ${s.accent ? "text-accent-text" : ""}`}>{s.v}</dd>
+                      <dd className={`num mt-1 truncate text-[15px] font-medium sm:text-[16px] ${s.accent ? "text-accent-text" : s.danger ? "text-danger" : ""}`}>{s.v}</dd>
                     </div>
                   ))}
                 </dl>
@@ -194,7 +257,7 @@ export function ResultPanel({ calc, onJumpTo, onOpenSettings }: { calc: Calculat
                   <div className="mt-5 rp-mt">
                     <div className="flex items-baseline justify-between gap-2 text-[13px]">
                       <span className="font-medium text-ink-2">Composição do preço</span>
-                      <span className="text-ink-3">lucro = {Math.round((r.profit / r.finalPrice) * 100)}% do preço</span>
+                      {r.profit > 0 && <span className="text-ink-3">lucro = {Math.round((r.profit / r.finalPrice) * 100)}% do preço</span>}
                     </div>
                     <div className="mt-2.5 flex h-3 gap-[3px] overflow-hidden rounded-full" role="img" aria-label="Composição do preço">
                       {slices.map((s) => (

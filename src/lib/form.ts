@@ -31,7 +31,7 @@ export interface FormState {
 
 /** Campos de valor que aceitam vírgula (data-decimal na V3). */
 export const DECIMAL_FIELDS = new Set([
-  "kwhPrice", "customPrinterPrice", "pricePerKg", "printGrams", "marginPct", "marginFixed",
+  "kwhPrice", "customPrinterPrice", "pricePerKg", "salePrice", "printGrams", "marginPct", "marginFixed",
   "proShopeeCustomPct", "proShopeeCustomFixed", "proMeliCustomPct", "proMeliCustomFixed",
   ...PRO_COSTS.filter((c) => c.id !== "shopee" && c.id !== "meli").map((c) => proFieldId(c.id)),
 ]);
@@ -264,8 +264,14 @@ export function formReducer(state: FormState, action: FormAction): FormState {
       set("printHours", "2");
       set("printMinutes", "30");
       set("printGrams", "45");
+      set("salePrice", "");
       const margin = String(v.marginPct || "").trim() || (String(v.marginFixed || "").trim() ? "" : "100");
       if (margin) set("marginPct", margin);
+      // dados para o cliente (só nos campos vazios), pra mostrar o orçamento do cliente completo
+      const setIfEmpty = (id: string, value: string) => { if (!String(v[id] ?? "").trim()) set(id, value); };
+      setIfEmpty("clientName", "Maria");
+      setIfEmpty("deliveryTime", "5 dias úteis");
+      setIfEmpty("notes", "Cor preta, pagamento no Pix.");
       return ensureTiers({ ...s, errors: [] }, action.settings);
     }
   }

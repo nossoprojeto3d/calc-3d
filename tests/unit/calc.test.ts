@@ -174,3 +174,63 @@ describe("peças na mesa", () => {
     expect(client).not.toMatch(/Custo|Lucro|Energia|Filamento:|Taxa|Impostos|preparo/);
   });
 });
+
+describe("preço de venda próprio", () => {
+  const settings = defaultStoreSettings();
+  function calc(extra: FormAction[] = [], mode: "basico" | "profissional" = "basico") {
+    let state: FormState = initialFormState(settings, mode, {});
+    const d = (a: FormAction) => { state = formReducer(state, a); };
+    d({ type: "set", id: "printerSelect", value: "a1-combo" });
+    d({ type: "set", id: "kwhPrice", value: "0.85" });
+    d({ type: "set", id: "materialSelect", value: "pla-basic" });
+    d({ type: "set", id: "printHours", value: "2" });
+    d({ type: "set", id: "printMinutes", value: "30" });
+    d({ type: "set", id: "printGrams", value: "45" });
+    d({ type: "set", id: "marginPct", value: "100" });
+    extra.forEach(d);
+    return calculate(state.values, state.mode, settings, state.shopeeTier, state.meliTier)!;
+  }
+  const sale = (v: string): FormAction => ({ type: "set", id: "salePrice", value: v });
+
+  it("vazio: igual ao sugerido", () => {
+    const r = calc();
+    expect(r.customPrice).toBe(false);
+    expect(r.suggestedPrice).toBe(r.finalPrice);
+  });
+
+  it("básico: o preço é o digitado e o lucro é preço − custo", () => {
+    const sug = calc();
+    const r = calc([sale("25,00")]);
+    expect(r.customPrice).toBe(true);
+    expect(r.finalPrice).toBe(25);
+    expect(r.suggestedPrice).toBe(sug.finalPrice);
+    expect(r.totalCost).toBeCloseTo(sug.totalCost, 10);
+    expect(r.profit).toBeCloseTo(25 - sug.totalCost, 10);
+    expect(r.roundingDiff).toBe(0);
+    expect(decodeURIComponent(whatsAppHref(r, settings)).replace(/\u00a0/g, " ")).toContain("✅ *Preço final: R$ 25,00*");
+  });
+
+  it("abaixo do custo: lucro negativo", () => {
+    expect(calc([sale("1")]).profit).toBeLessThan(0);
+  });
+
+  it("imposto e Shopee são refeitos sobre o preço digitado", () => {
+    const pro: FormAction[] = [
+      { type: "toggle", cost: "taxes", on: true, settings },
+      { type: "set", id: "proTaxes", value: "6" },
+      { type: "toggle", cost: "shopee", on: true, settings },
+    ];
+    const r = calc([...pro, sale("50")], "profissional");
+    const value = (id: string) => r.proCosts.find((c) => c.id === id)!.value;
+    expect(value("taxes")).toBeCloseTo(3, 10); // 6% de 50
+    expect(value("shopee")).toBeCloseTo(50 * 0.2 + 4, 10); // faixa de R$ 8 a R$ 80
+    // o que sobra depois de todos os custos é o lucro
+    expect(r.finalPrice - r.totalCost).toBeCloseTo(r.profit, 10);
+  });
+
+  it("várias peças: o preço é por peça e o total multiplica", () => {
+    const r = calc([{ type: "set", id: "plateQty", value: "4" }, sale("12,5")]);
+    expect(r.finalPrice).toBe(12.5);
+    expect(r.plateTotal).toBe(50);
+  });
+});

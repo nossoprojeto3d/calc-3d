@@ -8,19 +8,26 @@ const url = process.argv[2];
 const scenarios = JSON.parse(readFileSync(new URL("./scenarios.json", import.meta.url)));
 const browser = await chromium.launch();
 const page = await browser.newPage();
-// bloqueia estatísticas externas
-await page.route(/googletagmanager|cloudflareinsights|google-analytics|fonts\.googleapis|fonts\.gstatic/, (r) => r.abort());
+// bloqueia tudo que não for a V3 local (estatísticas, fontes): um pedido externo
+// pendurado chegou a travar a abertura da página
+await page.route((u) => !u.href.startsWith(new URL(url).origin), (r) => r.abort());
+// abre de novo se a página travar (em ~4.000 aberturas, uma às vezes trava)
+async function load(action) {
+  for (let i = 0; ; i++) {
+    try { return await action(); } catch (err) { if (i >= 2) throw err; }
+  }
+}
 const results = [];
 
 for (const sc of scenarios) {
   await page.goto("about:blank");
-  await page.goto(url, { waitUntil: "domcontentloaded" });
+  await load(() => page.goto(url, { waitUntil: "domcontentloaded", timeout: 15000 }));
   await page.evaluate((settings) => {
     localStorage.clear();
     localStorage.setItem("nossoprojeto3d-medicao", "denied");
     if (settings) localStorage.setItem("np3d_store_settings", JSON.stringify(settings));
   }, sc.settings);
-  await page.reload({ waitUntil: "domcontentloaded" });
+  await load(() => page.reload({ waitUntil: "domcontentloaded", timeout: 15000 }));
   await page.waitForFunction(() => document.getElementById("proWearToggle"));
 
   const out = await page.evaluate((actions) => {

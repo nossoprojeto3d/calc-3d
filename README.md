@@ -75,6 +75,15 @@ taxas de marketplace são por peça. O preço final é por peça, e o total é
 Desgaste, Taxa Shopee e Taxa Mercado Livre entram na conta arredondados em
 centavos, como na V3.
 
+**Preço de venda próprio** ("Editar preço" no painel, campo `salePrice`): a
+fórmula acima continua calculando o preço sugerido, mas o preço do orçamento
+passa a ser o digitado (por peça). O que incide sobre o preço é refeito sobre
+ele: imposto = preço × alíquota; Shopee = preço × comissão + taxa fixa da faixa
+em que o preço cai; Mercado Livre = preço × comissão do anúncio + custo fixo se
+o preço for menor que R$ 79 (faixas personalizadas usam os valores digitados).
+O lucro é o que sobra: `preço − custos`, e pode ficar negativo (o painel avisa).
+Sem preço próprio, o resultado é idêntico ao da V3.
+
 ## Testes
 
 - `npm test`: o motor contra uma amostra de resultados gravados da V3
